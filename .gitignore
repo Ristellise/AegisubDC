@@ -22,7 +22,6 @@
 *.obj
 *.opensdf
 *.orig
-*.patch
 *.pch
 *.pdb
 *.profdata
