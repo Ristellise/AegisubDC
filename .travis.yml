@@ -62,7 +62,7 @@ script:
     export CPPFLAGS="-fprofile-arcs -ftest-coverage";
     export LIBS="-lgcov";
     ./autogen.sh;
-    ./configure --enable-debug agi_cv_with_openal=yes || cat config.log;
+    ./configure --enable-debug || cat config.log;
     make -j2;
     make test || travis_terminate 1;
     coveralls --exclude vendor --exclude src --exclude build --exclude tools --exclude libaegisub/windows > /dev/null;
