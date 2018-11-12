@@ -35,10 +35,10 @@ namespace agi { struct Context; }
 #define CMD_TYPE(a) int Type() const override { using namespace cmd; return a; }
 
 #define CMD_ICON(icon) wxBitmap Icon(int size, wxLayoutDirection dir = wxLayout_LeftToRight) const override { \
-	if (size == 64) return GETIMAGEDIR(icon##_64, dir); \
-	if (size == 48) return GETIMAGEDIR(icon##_48, dir); \
-	if (size == 32) return GETIMAGEDIR(icon##_32, dir); \
-	if (size == 24) return GETIMAGEDIR(icon##_24, dir); \
+	if (size >= 64) return GETIMAGEDIR(icon##_64, dir); \
+	if (size >= 48) return GETIMAGEDIR(icon##_48, dir); \
+	if (size >= 32) return GETIMAGEDIR(icon##_32, dir); \
+	if (size >= 24) return GETIMAGEDIR(icon##_24, dir); \
 	return GETIMAGEDIR(icon##_16, dir); \
 }
 
