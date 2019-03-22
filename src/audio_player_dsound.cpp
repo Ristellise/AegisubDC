@@ -45,6 +45,7 @@
 
 #include <mmsystem.h>
 #include <dsound.h>
+#include <cguid.h>
 
 namespace {
 class DirectSoundPlayer;

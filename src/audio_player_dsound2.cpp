@@ -48,6 +48,7 @@
 #include <mmsystem.h>
 #include <process.h>
 #include <dsound.h>
+#include <cguid.h>
 
 namespace {
 class DirectSoundPlayer2Thread;
