@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.11)
+cmake_policy(SET CMP0074 NEW)
 
 project(Aegisub)
 
@@ -393,7 +394,7 @@ if (MSVC)
     add_definitions("-DNOMINMAX -MP -DINITGUID")
     set_target_properties(Aegisub PROPERTIES COMPILE_FLAGS "/Yu${PROJECT_SOURCE_DIR}/src/agi_pre.h" COMPILE_FLAGS "/FI${PROJECT_SOURCE_DIR}/src/agi_pre.h")
     target_link_libraries (Aegisub Usp10)
-    target_sources(Aegisub PRIVATE src/font_file_lister_gdi.cpp)
+    target_sources(Aegisub PRIVATE src/font_file_lister_gdi.cpp src/res/res.rc src/res/strings.rc)
 else(MSVC)
     target_compile_options(Aegisub PRIVATE -include "${PROJECT_SOURCE_DIR}/src/agi_pre.h")
 endif(MSVC)
@@ -411,7 +412,12 @@ find_package(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIR})
 target_link_libraries (Aegisub ${OPENGL_LIBRARIES})
 
-find_package(ICU REQUIRED uc)
+find_package(Iconv REQUIRED)
+include_directories(${Iconv_INCLUDE_DIRS})
+target_link_libraries (Aegisub ${Iconv_LIBRARIES})
+add_definitions("-DHAVE_ICONV")
+
+find_package(ICU REQUIRED uc dt in)
 include_directories(${ICU_INCLUDE_DIRS})
 target_link_libraries (Aegisub ${ICU_LIBRARIES})
 
@@ -422,13 +428,6 @@ target_link_libraries(Aegisub ${wxWidgets_LIBRARIES})
 find_package(ZLIB REQUIRED)
 include_directories(${ZLIB_INCLUDE_DIRS})
 target_link_libraries (Aegisub ${ZLIB_LIBRARIES})
-
-find_package(Iconv)
-if (Iconv_FOUND)
-    include_directories(${Iconv_INCLUDE_DIRS})
-    target_link_libraries (Aegisub ${Iconv_LIBRARIES})
-    add_definitions("-DHAVE_ICONV")
-endif(Iconv_FOUND)
 
 find_package(ALSA)
 if (ALSA_FOUND)
