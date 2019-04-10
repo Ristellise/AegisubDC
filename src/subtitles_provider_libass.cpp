@@ -54,7 +54,7 @@
 #include <wx/thread.h>
 
 extern "C" {
-#include <ass/ass.h>
+#include <ass.h>
 }
 
 namespace {
