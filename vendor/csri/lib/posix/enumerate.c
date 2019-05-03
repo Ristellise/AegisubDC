@@ -34,6 +34,9 @@
 #include "../csrilib.h"
 #include "subhelp.h"
 
+#ifndef CSRI_PATH
+#define CSRI_PATH "/usr/lib/csri:/usr/local/lib/csri:~/.csri/lib"
+#endif
 static const char csri_path[] = CSRI_PATH;
 
 static void csrilib_enum_dir(const char *dir);

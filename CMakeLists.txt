@@ -94,8 +94,20 @@ if (NOT MSVC)
 target_link_libraries(luajit-minilua m)
 endif(NOT MSVC)
 add_custom_command(TARGET luajit-minilua POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen
     COMMAND luajit-minilua ../dynasm/dynasm.lua -D P64 -D JIT -D FFI -D FPU -D HFABI -D VER= -o gen/buildvm_arch.h vm_x86.dasc
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
+)
+add_custom_command(TARGET luajit-minilua POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/src/libresrc/default_config_win.json ${PROJECT_SOURCE_DIR}/src/libresrc/default_config_platform.json
+    COMMAND luajit-minilua ../../tools/respack.lua manifest.respack default_config.cpp default_config.h
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/libresrc
+    BYPRODUCTS ${PROJECT_SOURCE_DIR}/src/libresrc/default_config.cpp ${PROJECT_SOURCE_DIR}/src/libresrc/default_config.h
+)
+add_custom_command(TARGET luajit-minilua POST_BUILD
+    COMMAND luajit-minilua ../../tools/respack.lua manifest.respack ../libresrc/bitmap.cpp ../libresrc/bitmap.h
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/bitmaps
+    BYPRODUCTS ${PROJECT_SOURCE_DIR}/src/libresrc/bitmap.cpp ${PROJECT_SOURCE_DIR}/src/libresrc/bitmap.h
 )
 
 add_executable(luajit-buildvm
@@ -111,12 +123,14 @@ if(UNIX)
     add_custom_command(TARGET luajit-buildvm POST_BUILD
         COMMAND luajit-buildvm -m elfasm -o lj_vm.s
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
+        BYPRODUCTS ${PROJECT_SOURCE_DIR}/vendor/luajit/src/lj_vm.s
     )
     set_property(SOURCE vendor/luajit/src/lj_vm.s PROPERTY LANGUAGE C)
 elseif(MSVC)
     add_custom_command(TARGET luajit-buildvm POST_BUILD
         COMMAND luajit-buildvm -m peobj -o lj_vm.obj
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
+        BYPRODUCTS ${PROJECT_SOURCE_DIR}/vendor/luajit/src/lj_vm.obj
     )
 endif(UNIX)
 add_custom_command(TARGET luajit-buildvm POST_BUILD
@@ -208,6 +222,21 @@ add_library(resrc STATIC
     src/libresrc/default_config.cpp
     src/libresrc/libresrc.cpp
 )
+add_dependencies(resrc luajit-minilua)
+
+add_library(csri STATIC
+    vendor/csri/lib/list.c
+    vendor/csri/lib/wrap.c
+    vendor/csri/subhelp/logging.c
+)
+target_include_directories(csri PRIVATE "vendor/csri/include")
+IF (WIN32)
+    target_include_directories(csri PRIVATE "vendor/csri/lib/win32")
+    target_sources(csri PRIVATE vendor/csri/lib/win32/enumerate.c)
+ELSE()
+    target_include_directories(csri PRIVATE "vendor/csri/lib/posix")
+    target_sources(csri PRIVATE vendor/csri/lib/posix/enumerate.c)
+ENDIF()
 
 add_executable(Aegisub WIN32
     src/command/app.cpp
@@ -307,14 +336,12 @@ add_executable(Aegisub WIN32
     src/auto4_lua_assfile.cpp
     src/auto4_lua_dialog.cpp
     src/auto4_lua_progresssink.cpp
-    src/avisynth_wrap.cpp
     src/base_grid.cpp
     src/charset_detect.cpp
     src/colorspace.cpp
     src/colour_button.cpp
     src/compat.cpp
     src/context.cpp
-    src/crash_writer.cpp
     src/export_fixstyle.cpp
     src/export_framerate.cpp
     src/fft.cpp
@@ -371,12 +398,8 @@ add_executable(Aegisub WIN32
     src/video_provider_yuv4mpeg.cpp
     src/video_slider.cpp
     src/visual_feature.cpp
-    src/audio_provider_ffmpegsource.cpp
-    src/video_provider_ffmpegsource.cpp
-    src/ffmpegsource_common.cpp
-    src/spellchecker_hunspell.cpp
 )
-target_link_libraries(Aegisub ${CMAKE_DL_LIBS} libaegisub luabins luajit resrc)
+target_link_libraries(Aegisub ${CMAKE_DL_LIBS} libaegisub luabins luajit resrc csri)
 
 if (MSVC)
     set_target_properties(libaegisub PROPERTIES COMPILE_FLAGS "/Yu${PROJECT_SOURCE_DIR}/libaegisub/lagi_pre.h" COMPILE_FLAGS "/FI${PROJECT_SOURCE_DIR}/libaegisub/lagi_pre.h")
@@ -394,10 +417,22 @@ if (MSVC)
     add_definitions("-DNOMINMAX -MP -DINITGUID")
     set_target_properties(Aegisub PROPERTIES COMPILE_FLAGS "/Yu${PROJECT_SOURCE_DIR}/src/agi_pre.h" COMPILE_FLAGS "/FI${PROJECT_SOURCE_DIR}/src/agi_pre.h")
     target_link_libraries (Aegisub Usp10)
-    target_sources(Aegisub PRIVATE src/font_file_lister_gdi.cpp src/res/res.rc src/res/strings.rc)
+    #target_sources(Aegisub PRIVATE src/res/res.rc src/res/strings.rc src/crash_writer_minidump.cpp)
+    target_sources(Aegisub PRIVATE src/res/res.rc src/res/strings.rc src/crash_writer.cpp src/dpi_aware.manifest)
+    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT Aegisub)
 else(MSVC)
+    target_sources(Aegisub PRIVATE src/crash_writer.cpp)
     target_compile_options(Aegisub PRIVATE -include "${PROJECT_SOURCE_DIR}/src/agi_pre.h")
 endif(MSVC)
+
+if (WIN32)
+    target_sources(Aegisub PRIVATE src/font_file_lister_gdi.cpp)
+else (WIN32)
+    find_package(Fontconfig REQUIRED)
+    target_link_libraries (Aegisub ${Fontconfig_LIBRARIES})
+    target_sources(Aegisub PRIVATE src/font_file_lister_fontconfig.cpp)
+    set_property(SOURCE src/font_file_lister_fontconfig.cpp PROPERTY INCLUDE_DIRECTORIES "${Fontconfig_INCLUDE_DIRS}")
+endif (WIN32)
 
 find_package(ass REQUIRED)
 include_directories(${ass_INCLUDE_DIRS})
@@ -412,10 +447,22 @@ find_package(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIR})
 target_link_libraries (Aegisub ${OPENGL_LIBRARIES})
 
+find_package(Hunspell REQUIRED)
+include_directories(${HUNSPELL_INCLUDE_DIR})
+target_link_libraries (Aegisub ${HUNSPELL_LIBRARIES})
+add_definitions("-DWITH_HUNSPELL")
+target_sources(Aegisub PRIVATE src/spellchecker_hunspell.cpp)
+
 find_package(Iconv REQUIRED)
 include_directories(${Iconv_INCLUDE_DIRS})
 target_link_libraries (Aegisub ${Iconv_LIBRARIES})
 add_definitions("-DHAVE_ICONV")
+if (NOT Iconv_IS_BUILT_IN)
+set_property(
+    SOURCE libaegisub/common/charset_conv.cpp
+    PROPERTY COMPILE_DEFINITIONS AGI_ICONV_CONST
+)
+endif (NOT Iconv_IS_BUILT_IN)
 
 find_package(ICU REQUIRED uc dt in)
 include_directories(${ICU_INCLUDE_DIRS})
@@ -437,14 +484,17 @@ if (ALSA_FOUND)
     target_sources(Aegisub PRIVATE src/audio_player_alsa.cpp)
 endif(ALSA_FOUND)
 
-#ifdef WITH_AVISYNTH
-#ifdef WITH_CSRI
+# target_compile_definitions(Aegisub PRIVATE "WITH_AVISYNTH")
+# target_sources(Aegisub PRIVATE src/audio_provider_avs.cpp src/avisynth_wrap.cpp src/video_provider_avs.cpp)
+
+target_compile_definitions(Aegisub PRIVATE "WITH_CSRI")
+target_sources(Aegisub PRIVATE src/subtitles_provider_csri.cpp)
+set_property(SOURCE src/subtitles_provider_csri.cpp PROPERTY INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/vendor/csri/include")
 
 if(MSVC)
     target_link_libraries (Aegisub dsound)
     add_definitions("-DWITH_DIRECTSOUND")
-    target_sources(Aegisub PRIVATE src/audio_player_dsound.cpp)
-    target_sources(Aegisub PRIVATE src/audio_player_dsound2.cpp)
+    target_sources(Aegisub PRIVATE src/audio_player_dsound.cpp src/audio_player_dsound2.cpp)
 endif(MSVC)
 
 find_package(FFMS2)
@@ -452,6 +502,7 @@ if (FFMS2_FOUND)
     include_directories(${FFMS2_INCLUDE_DIRS})
     target_link_libraries (Aegisub ${FFMS2_LIBRARIES})
     add_definitions("-DWITH_FFMS2")
+    target_sources(Aegisub PRIVATE src/audio_provider_ffmpegsource.cpp src/ffmpegsource_common.cpp src/video_provider_ffmpegsource.cpp)
 endif(FFMS2_FOUND)
 
 find_package(FFTW)
@@ -461,30 +512,17 @@ if (FFTW_FOUND)
     add_definitions("-DWITH_FFTW3")
 endif(FFTW_FOUND)
 
-find_package(Fontconfig)
-if (Fontconfig_FOUND)
-    include_directories(${FONTCONFIG_INCLUDE_DIRS})
-    target_link_libraries (Aegisub ${FONTCONFIG_LIBRARIES})
-    target_sources(Aegisub PRIVATE src/font_file_lister_fontconfig.cpp)
-endif(Fontconfig_FOUND)
-
-find_package(Hunspell)
-if (HUNSPELL_FOUND)
-    include_directories(${HUNSPELL_INCLUDE_DIR})
-    target_link_libraries (Aegisub ${HUNSPELL_LIBRARIES})
-    add_definitions("-DWITH_HUNSPELL")
-endif(HUNSPELL_FOUND)
-
 #ifdef WITH_LIBPULSE
 #add_definitions("-DWITH_LIBPULSE")
 #target_sources(Aegisub PRIVATE src/audio_player_pulse.cpp)
 
 find_package(OpenAL)
-if (OpenAL_FOUND)
-    include_directories(${OpenAL_INCLUDE_DIRS})
-    target_link_libraries (Aegisub ${OpenAL_LIBRARIES})
+if (OPENAL_FOUND)
+    include_directories(${OPENAL_INCLUDE_DIR})
+    target_link_libraries (Aegisub ${OPENAL_LIBRARY})
     add_definitions("-DWITH_OPENAL")
-endif(OpenAL_FOUND)
+    target_sources(Aegisub PRIVATE src/audio_player_openal.cpp)
+endif(OPENAL_FOUND)
 
 #ifdef WITH_OSS
 #ifdef WITH_PORTAUDIO
@@ -498,4 +536,3 @@ if (uchardet_FOUND)
 endif(uchardet_FOUND)
 
 #ifdef WITH_UPDATE_CHECKER
-
