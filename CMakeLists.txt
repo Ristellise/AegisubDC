@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.14)
 cmake_policy(SET CMP0074 NEW)
 
 project(Aegisub)
@@ -212,6 +212,7 @@ if(MSVC)
 else(MSVC)
     target_sources(luajit PRIVATE vendor/luajit/src/lj_vm.s)
     set_property(SOURCE vendor/luajit/src/lj_vm.s PROPERTY LANGUAGE C)
+    target_link_libraries(luajit dl)
 endif(MSVC)
 target_include_directories(luajit PRIVATE vendor/luajit/src/gen)
 add_dependencies(luajit luajit-buildvm)
