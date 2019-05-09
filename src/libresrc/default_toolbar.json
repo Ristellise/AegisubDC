@@ -42,6 +42,7 @@
         "subtitle/select/visible",
         "time/snap/scene",
         "time/frame/current",
+        "time/align",
         "",
         "tool/style/manager",
         "subtitle/properties",
