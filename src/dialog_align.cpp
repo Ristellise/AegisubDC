@@ -281,7 +281,7 @@ namespace {
 			return;
 		}
 		int x = int(lx), y = int(ly);
-		unsigned char tolerance = unsigned char(lt);
+		unsigned char tolerance = (unsigned char)(lt);
 
 		auto color = selected_color->GetColor();
 		auto r = color.r;
@@ -323,8 +323,8 @@ namespace {
 
 		auto timecode = context->project->Timecodes();
 		auto line = context->selectionController->GetActiveLine();
-		line->Start = timecode.TimeAtFrame(left);
-		line->End = timecode.TimeAtFrame(right + 1); // exclusive
+		line->Start = timecode.TimeAtFrame(left, agi::vfr::Time::START);
+		line->End = timecode.TimeAtFrame(right, agi::vfr::Time::END); // exclusive
 		context->ass->Commit(_("Align to video by key point"), AssFile::COMMIT_DIAG_TIME);
 		Close();
 	}
