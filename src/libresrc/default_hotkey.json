@@ -286,6 +286,9 @@
 		],
 		"video/frame/prev/large" : [
 			"Alt-Left"
+		],
+		"time/align" : [
+			"KP_TAB"
 		]
 	},
 	"Translation Assistant" : {

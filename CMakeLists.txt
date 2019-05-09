@@ -256,6 +256,7 @@ add_executable(Aegisub WIN32
     src/command/video.cpp
     src/command/vis_tool.cpp
     src/dialog_about.cpp
+    src/dialog_align.cpp
     src/dialog_attachments.cpp
     src/dialog_automation.cpp
     src/dialog_autosave.cpp
@@ -354,6 +355,7 @@ add_executable(Aegisub WIN32
     src/help_button.cpp
     src/hotkey.cpp
     src/hotkey_data_view_model.cpp
+    src/image_position_picker.cpp
     src/initial_line_state.cpp
     src/main.cpp
     src/menu.cpp

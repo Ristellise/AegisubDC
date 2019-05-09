@@ -235,6 +235,18 @@ struct time_snap_scene final : public validate_video_loaded {
 	}
 };
 
+struct time_align_subtitle_to_point final : public validate_video_loaded {
+	CMD_NAME("time/align")
+	CMD_ICON(button_align)
+	STR_MENU("Align subtitle to video")
+	STR_DISP("Align subtitle to video")
+	STR_HELP("Align subtitle to video by key points.")
+	void operator()(agi::Context* c) override {
+		c->videoController->Stop();
+		ShowAlignToVideoDialog(c);
+	}
+};
+
 struct time_add_lead_both final : public Command {
 	CMD_NAME("time/lead/both")
 	STR_MENU("Add lead in and out")
@@ -393,6 +405,7 @@ namespace cmd {
 		reg(agi::make_unique<time_snap_end_video>());
 		reg(agi::make_unique<time_snap_scene>());
 		reg(agi::make_unique<time_snap_start_video>());
+		reg(agi::make_unique<time_align_subtitle_to_point>());
 		reg(agi::make_unique<time_start_decrease>());
 		reg(agi::make_unique<time_start_increase>());
 	}

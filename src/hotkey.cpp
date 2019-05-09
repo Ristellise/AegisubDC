@@ -29,6 +29,11 @@
 #include <wx/msgdlg.h>
 
 namespace {
+	const char* added_hotkeys_cj[][3] = {
+		{"time/align", "Video", "KP_TAB"},
+		{nullptr}
+	};
+
 	const char *added_hotkeys_7035[][3] = {
 		{"audio/play/line", "Audio", "R"},
 		{nullptr}
@@ -80,6 +85,11 @@ void init() {
 		GET_DEFAULT_CONFIG(default_hotkey));
 
 	auto migrations = OPT_GET("App/Hotkey Migrations")->GetListString();
+
+	if (boost::find(migrations, "cj") == end(migrations)) {
+		migrate_hotkeys(added_hotkeys_cj);
+		migrations.emplace_back("cj");
+	}
 
 	if (boost::find(migrations, "7035") == end(migrations)) {
 		migrate_hotkeys(added_hotkeys_7035);
