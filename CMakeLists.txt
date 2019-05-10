@@ -93,11 +93,35 @@ add_executable(luajit-minilua vendor/luajit/src/host/minilua.c)
 if (NOT MSVC)
 target_link_libraries(luajit-minilua m)
 endif(NOT MSVC)
-add_custom_command(TARGET luajit-minilua POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen
-    COMMAND luajit-minilua ../dynasm/dynasm.lua -D P64 -D JIT -D FFI -D FPU -D HFABI -D VER= -o gen/buildvm_arch.h vm_x86.dasc
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
-)
+if (WIN32)
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        add_custom_command(TARGET luajit-minilua POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen
+            COMMAND luajit-minilua ../dynasm/dynasm.lua -LN -D WIN -D JIT -D FFI -D P64 -o gen/buildvm_arch.h vm_x86.dasc
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
+        )
+    else()
+        add_custom_command(TARGET luajit-minilua POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen
+            COMMAND luajit-minilua ../dynasm/dynasm.lua -LN -D WIN -D JIT -D FFI -o gen/buildvm_arch.h vm_x86.dasc
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
+        )
+    endif()
+else (WIN32)
+    if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+        add_custom_command(TARGET luajit-minilua POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen
+            COMMAND luajit-minilua ../dynasm/dynasm.lua -D P64 -D JIT -D FFI -D FPU -D HFABI -D VER= -o gen/buildvm_arch.h vm_x86.dasc
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
+        )
+    else()
+        add_custom_command(TARGET luajit-minilua POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen
+            COMMAND luajit-minilua ../dynasm/dynasm.lua -D JIT -D FFI -D FPU -D HFABI -D VER= -o gen/buildvm_arch.h vm_x86.dasc
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
+        )
+    endif()
+endif (WIN32)
 add_custom_command(TARGET luajit-minilua POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/src/libresrc/default_config_win.json ${PROJECT_SOURCE_DIR}/src/libresrc/default_config_platform.json
     COMMAND luajit-minilua ../../tools/respack.lua manifest.respack default_config.cpp default_config.h
@@ -142,6 +166,7 @@ add_custom_command(TARGET luajit-buildvm POST_BUILD
     COMMAND luajit-buildvm -m vmdef -o jit/vmdef.lua lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
 )
+target_compile_definitions(luajit-buildvm PRIVATE LUAJIT_ENABLE_LUA52COMPAT)
 
 
 add_library(luajit STATIC
