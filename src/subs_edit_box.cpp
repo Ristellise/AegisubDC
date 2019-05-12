@@ -143,8 +143,7 @@ SubsEditBox::SubsEditBox(wxWindow *parent, agi::Context *context)
 	top_sizer->Add(effect_box, 3, wxALIGN_CENTER, 5);
 
 	char_count = new wxTextCtrl(this, -1, "0", wxDefaultPosition, wxDefaultSize, wxTE_READONLY | wxTE_CENTER);
-	char_count->SetMinSize(char_count->GetSizeFromTextSize(GetTextExtent(wxS("000"))));
-	char_count->SetSize(char_count->GetSizeFromTextSize(GetTextExtent(wxS("000"))));
+	char_count->SetInitialSize(char_count->GetSizeFromTextSize(GetTextExtent(wxS("000"))));
 	char_count->SetToolTip(_("Number of characters in the longest line of this subtitle."));
 	top_sizer->Add(char_count, 0, wxALIGN_CENTER, 5);
 
@@ -152,8 +151,7 @@ SubsEditBox::SubsEditBox(wxWindow *parent, agi::Context *context)
 	middle_left_sizer = new wxBoxSizer(wxHORIZONTAL);
 
 	layer = new wxSpinCtrl(this,-1,"",wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS | wxTE_PROCESS_ENTER,0,0x7FFFFFFF,0);
-	layer->SetMinSize(layer->GetSizeFromTextSize(GetTextExtent(wxS("0"))));
-	layer->SetSize(layer->GetSizeFromTextSize(GetTextExtent(wxS("0"))));
+	layer->SetInitialSize(layer->GetSizeFromTextSize(GetTextExtent(wxS("0"))));
 	layer->SetToolTip(_("Layer number"));
 	middle_left_sizer->Add(layer, wxSizerFlags().Center());
 	middle_left_sizer->AddSpacer(5);
@@ -252,8 +250,7 @@ SubsEditBox::~SubsEditBox() {
 
 wxTextCtrl *SubsEditBox::MakeMarginCtrl(wxString const& tooltip, int margin, wxString const& commit_msg) {
 	wxTextCtrl *ctrl = new wxTextCtrl(this, -1, "", wxDefaultPosition, wxDefaultSize, wxTE_CENTRE | wxTE_PROCESS_ENTER, IntValidator());
-	ctrl->SetMinSize(ctrl->GetSizeFromTextSize(GetTextExtent(wxS("0000"))));
-	ctrl->SetSize(ctrl->GetSizeFromTextSize(GetTextExtent(wxS("0000"))));
+	ctrl->SetInitialSize(ctrl->GetSizeFromTextSize(GetTextExtent(wxS("0000"))));
 	ctrl->SetMaxLength(4);
 	ctrl->SetToolTip(tooltip);
 	middle_left_sizer->Add(ctrl, wxSizerFlags().Center());
@@ -269,8 +266,7 @@ wxTextCtrl *SubsEditBox::MakeMarginCtrl(wxString const& tooltip, int margin, wxS
 
 TimeEdit *SubsEditBox::MakeTimeCtrl(wxString const& tooltip, TimeField field) {
 	TimeEdit *ctrl = new TimeEdit(this, -1, c, "", wxDefaultSize, field == TIME_END);
-	ctrl->SetMinSize(ctrl->GetSizeFromTextSize(GetTextExtent(wxS("0:00:00.000"))));
-	ctrl->SetSize(ctrl->GetSizeFromTextSize(GetTextExtent(wxS("0:00:00.000"))));
+	ctrl->SetInitialSize(ctrl->GetSizeFromTextSize(GetTextExtent(wxS("0:00:00.000"))));
 	ctrl->SetToolTip(tooltip);
 	Bind(wxEVT_TEXT, [=](wxCommandEvent&) { CommitTimes(field); }, ctrl->GetId());
 	ctrl->Bind(wxEVT_CHAR_HOOK, time_edit_char_hook);
