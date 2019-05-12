@@ -110,8 +110,7 @@ int ShowEbuExportConfigurationDialog(wxWindow *owner, EbuExportSettings &s) {
 	wxRadioBox *tv_standard_box = new wxRadioBox(&d, -1, _("TV standard"), wxDefaultPosition, wxDefaultSize, 6, tv_standards, 0, wxRA_SPECIFY_ROWS);
 
 	wxTextCtrl *timecode_offset_entry = new wxTextCtrl(&d, -1, "00:00:00:00");
-	timecode_offset_entry->SetMinSize(timecode_offset_entry->GetSizeFromTextSize(timecode_offset_entry->GetTextExtent(wxS("00:00:00:00"))));
-	timecode_offset_entry->SetSize(timecode_offset_entry->GetSizeFromTextSize(timecode_offset_entry->GetTextExtent(wxS("00:00:00:00"))));
+	timecode_offset_entry->SetInitialSize(timecode_offset_entry->GetSizeFromTextSize(timecode_offset_entry->GetTextExtent(wxS("00:00:00:00"))));
 	wxCheckBox *inclusive_end_times_check = new wxCheckBox(&d, -1, _("Out-times are inclusive"));
 
 	wxString text_encodings[] = {
@@ -132,8 +131,7 @@ int ShowEbuExportConfigurationDialog(wxWindow *owner, EbuExportSettings &s) {
 	};
 
 	wxSpinCtrl *max_line_length_ctrl = new wxSpinCtrl(&d, -1, wxString());
-	max_line_length_ctrl->SetMinSize(max_line_length_ctrl->GetSizeFromTextSize(max_line_length_ctrl->GetTextExtent(wxS("00"))));
-	max_line_length_ctrl->SetSize(max_line_length_ctrl->GetSizeFromTextSize(max_line_length_ctrl->GetTextExtent(wxS("00"))));
+	max_line_length_ctrl->SetInitialSize(max_line_length_ctrl->GetSizeFromTextSize(max_line_length_ctrl->GetTextExtent(wxS("00"))));
 	wxComboBox *wrap_mode_ctrl = new wxComboBox(&d, -1, wrap_modes[0], wxDefaultPosition, wxDefaultSize, 4, wrap_modes, wxCB_DROPDOWN | wxCB_READONLY);
 	wxCheckBox *translate_alignments_check = new wxCheckBox(&d, -1, _("Translate alignments"));
 

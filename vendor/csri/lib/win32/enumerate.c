@@ -36,7 +36,7 @@ static const char *get_errstr()
 	if (!FormatMessageA(
 		FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
 		NULL, err, 0, msg, sizeof(msg), NULL))
-		strcpy(msg, "Unknown Error");
+		strcpy_s(msg, sizeof(msg), "Unknown Error");
 	else {
 		size_t msglen = strlen(msg) - 1;
 		if (msg[msglen] == '\n')
@@ -141,7 +141,7 @@ static void csrilib_enum_dir(const wchar_t *dir)
 	HANDLE res;
 	wchar_t buf[MAX_PATH];
 
-	_snwprintf(buf, sizeof(buf) / sizeof(buf[0]), L"%ls\\*", dir);
+	swprintf_s(buf, sizeof(buf) / sizeof(buf[0]), L"%ls\\*", dir);
 	res = FindFirstFileW(buf, &data);
 	if (res == INVALID_HANDLE_VALUE) {
 		subhelp_log(CSRI_LOG_WARNING, "ignoring directory \"%ls\": %s",
@@ -153,7 +153,7 @@ static void csrilib_enum_dir(const wchar_t *dir)
 	do {
 		if (data.cFileName[0] == '.')
 			continue;
-		_snwprintf(buf, sizeof(buf) / sizeof(buf[0]),
+		swprintf_s(buf, sizeof(buf) / sizeof(buf[0]),
 			L"%ls\\%ls", dir, data.cFileName);
 		csrilib_load(buf);
 	} while (FindNextFileW(res, &data));
@@ -169,7 +169,7 @@ void csrilib_os_init()
 	slash = wcsrchr(filename, L'\\');
 	slash = slash ? slash + 1 : filename;
 	*slash = L'\0';
-	wcsncpy(slash, L"csri", filename + MAX_PATH - slash);
+	wcscpy_s(slash, filename + MAX_PATH - slash, L"csri");
 	csrilib_enum_dir(filename);
 }
 
