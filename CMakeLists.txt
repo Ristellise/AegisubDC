@@ -512,8 +512,11 @@ if (ALSA_FOUND)
     target_sources(Aegisub PRIVATE src/audio_player_alsa.cpp)
 endif(ALSA_FOUND)
 
-# target_compile_definitions(Aegisub PRIVATE "WITH_AVISYNTH")
-# target_sources(Aegisub PRIVATE src/audio_provider_avs.cpp src/avisynth_wrap.cpp src/video_provider_avs.cpp)
+if (WIN32)
+target_compile_definitions(Aegisub PRIVATE "WITH_AVISYNTH")
+target_link_libraries(Aegisub Vfw32)
+target_sources(Aegisub PRIVATE src/audio_provider_avs.cpp src/avisynth_wrap.cpp src/video_provider_avs.cpp)
+endif (WIN32)
 
 target_compile_definitions(Aegisub PRIVATE "WITH_CSRI")
 target_sources(Aegisub PRIVATE src/subtitles_provider_csri.cpp)
