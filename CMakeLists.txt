@@ -567,3 +567,8 @@ if (uchardet_FOUND)
 endif(uchardet_FOUND)
 
 #ifdef WITH_UPDATE_CHECKER
+
+if (NOT WIN32)
+set_target_properties(Aegisub PROPERTIES OUTPUT_NAME aegisub)
+endif (NOT WIN32)
+install (TARGETS Aegisub RENAME aegisub DESTINATION bin)
