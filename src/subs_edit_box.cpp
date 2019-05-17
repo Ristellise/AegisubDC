@@ -276,8 +276,7 @@ TimeEdit *SubsEditBox::MakeTimeCtrl(wxString const& tooltip, TimeField field) {
 
 void SubsEditBox::MakeButton(const char *cmd_name) {
 	cmd::Command *command = cmd::get(cmd_name);
-	// FIXME: Hard coded icon size. Use icon size in config instead. Or maybe use toolbar to construct this
-	wxBitmapButton *btn = new wxBitmapButton(this, -1, command->Icon(int(16 * GetContentScaleFactor())));
+	wxBitmapButton *btn = new wxBitmapButton(this, -1, command->Icon(OPT_GET("App/Toolbar Icon Size")->GetInt()));
 	ToolTipManager::Bind(btn, command->StrHelp(), "Subtitle Edit Box", cmd_name);
 
 	middle_right_sizer->Add(btn, wxSizerFlags().Expand());
