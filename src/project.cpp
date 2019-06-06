@@ -505,6 +505,9 @@ void Project::LoadList(std::vector<agi::fs::path> const& files) {
 			subs.clear();
 	}
 
+	if (!audio.empty())
+		DoLoadAudio(audio, false);
+
 	if (!video.empty() && DoLoadVideo(video)) {
 		double dar = video_provider->GetDAR();
 		if (dar > 0)
@@ -520,12 +523,11 @@ void Project::LoadList(std::vector<agi::fs::path> const& files) {
 			LoadTimecodes(timecodes);
 		if (!keyframes.empty())
 			LoadKeyframes(keyframes);
-	}
 
-	if (!audio.empty())
-		DoLoadAudio(audio, false);
-	else if (!video.empty() && OPT_GET("Video/Open Audio")->GetBool() && audio_file != video_file)
-		DoLoadAudio(video_file, true);
+		// Load audio from video
+		if (audio.empty() && OPT_GET("Video/Open Audio")->GetBool() && audio_file != video_file)
+			DoLoadAudio(video_file, true);
+	}
 
 	if (!subs.empty())
 		LoadUnloadFiles(properties);
