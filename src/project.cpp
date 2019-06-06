@@ -524,7 +524,7 @@ void Project::LoadList(std::vector<agi::fs::path> const& files) {
 
 	if (!audio.empty())
 		DoLoadAudio(audio, false);
-	else if (OPT_GET("Video/Open Audio")->GetBool() && audio_file != video_file)
+	else if (!video.empty() && OPT_GET("Video/Open Audio")->GetBool() && audio_file != video_file)
 		DoLoadAudio(video_file, true);
 
 	if (!subs.empty())
