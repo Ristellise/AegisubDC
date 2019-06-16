@@ -29,6 +29,14 @@ namespace agi { namespace charset {
 std::string Detect(agi::fs::path const& file) {
 	agi::read_file_mapping fp(file);
 
+	// FIXME: Dirty hack for Matroska. These 4 bytes are the magic
+	// number of EBML which is used by mkv and webm
+	if (fp.size() >= 4) {
+		const char* buf = fp.read(0, 4);
+		if (!strncmp(buf, "\x1a\x45\xdf\xa3", 4))
+			return "binary";
+	}
+
 #ifdef WITH_UCHARDET
 	agi::scoped_holder<uchardet_t> ud(uchardet_new(), uchardet_delete);
 	for (uint64_t offset = 0; offset < fp.size(); ) {
