@@ -240,7 +240,7 @@ struct time_align_subtitle_to_point final : public validate_video_loaded {
 	CMD_ICON(button_align)
 	STR_MENU("Align subtitle to video")
 	STR_DISP("Align subtitle to video")
-	STR_HELP("Align subtitle to video by key points.")
+	STR_HELP("Align subtitle to video by key points")
 	void operator()(agi::Context* c) override {
 		c->videoController->Stop();
 		ShowAlignToVideoDialog(c);
