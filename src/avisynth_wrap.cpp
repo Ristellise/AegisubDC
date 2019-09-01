@@ -35,7 +35,7 @@
 #ifdef WITH_AVISYNTH
 #include "avisynth_wrap.h"
 
-#include "avisynth.h"
+#include <avisynth.h>
 #include "options.h"
 
 #include <mutex>
