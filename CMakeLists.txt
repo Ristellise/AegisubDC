@@ -475,12 +475,6 @@ find_package(OpenGL REQUIRED)
 include_directories(${OPENGL_INCLUDE_DIR})
 target_link_libraries (Aegisub ${OPENGL_LIBRARIES})
 
-find_package(Hunspell REQUIRED)
-include_directories(${HUNSPELL_INCLUDE_DIR})
-target_link_libraries (Aegisub ${HUNSPELL_LIBRARIES})
-add_definitions("-DWITH_HUNSPELL")
-target_sources(Aegisub PRIVATE src/spellchecker_hunspell.cpp)
-
 find_package(Iconv REQUIRED)
 include_directories(${Iconv_INCLUDE_DIRS})
 target_link_libraries (Aegisub ${Iconv_LIBRARIES})
@@ -544,6 +538,14 @@ if (FFTW_FOUND)
     target_link_libraries (Aegisub ${FFTW_LIBRARIES})
     add_definitions("-DWITH_FFTW3")
 endif(FFTW_FOUND)
+
+find_package(Hunspell)
+if (HUNSPELL_FOUND)
+    include_directories(${HUNSPELL_INCLUDE_DIR})
+    target_link_libraries (Aegisub ${HUNSPELL_LIBRARIES})
+    add_definitions("-DWITH_HUNSPELL")
+    target_sources(Aegisub PRIVATE src/spellchecker_hunspell.cpp)
+endif (HUNSPELL_FOUND)
 
 #ifdef WITH_LIBPULSE
 #add_definitions("-DWITH_LIBPULSE")
