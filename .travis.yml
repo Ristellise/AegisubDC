@@ -1,5 +1,5 @@
 sudo: required
-dist: xenial
+dist: bionic
 language: cpp
 
 git:
@@ -23,24 +23,45 @@ addons:
     - libboost-all-dev
     - libffms2-dev
     - libfontconfig1-dev
-    - libopenal-dev
+    - libalut-dev
     - libuchardet-dev
     - libwxgtk3.0-dev
+    - portaudio19-dev
+    - libpulse-dev
+
+matrix:
+  include:
+  - {}
+  - env: BUILD_SUIT=autotools
 
 install:
-  - sudo luarocks install busted > /dev/null
-  - sudo luarocks install moonscript > /dev/null
-  - sudo luarocks install uuid > /dev/null
+- sudo luarocks install busted > /dev/null
+- sudo luarocks install moonscript > /dev/null
+- sudo luarocks install uuid > /dev/null
+# Remove the CMake provided by travis
+- sudo rm -rf /usr/local/cmake*
+- if [ "$BUILD_SUIT" = "autotools" ]; then
+    sudo pip install -U cpp-coveralls;
+    git submodule --quiet init;
+    git submodule --quiet update vendor/googletest;
+  fi
 
 script:
-  # Remove the CMake provided by travis
-  - sudo rm -rf /usr/local/cmake*
-
-  - ./build/version.sh .
-  - mkdir build-dir
-  - cd build-dir
-  - cmake -DCMAKE_CXX_FLAGS='-std=gnu++11' ..
-  - make -j2
+- if [ "$BUILD_SUIT" = "autotools" ]; then
+    export CPPFLAGS="-fprofile-arcs -ftest-coverage";
+    export LIBS="-lgcov";
+    ./autogen.sh;
+    ./configure --enable-debug || cat config.log;
+    make -j2;
+    make test || travis_terminate 1;
+    coveralls --exclude vendor --exclude src --exclude build --exclude tools --exclude libaegisub/windows > /dev/null;
+  else
+    ./build/version.sh .;
+    mkdir build-dir;
+    cd build-dir;
+    cmake -DCMAKE_CXX_FLAGS='-Wall -Wextra -pedantic -std=gnu++11' ..;
+    make -j2;
+  fi
 
 notifications:
   email:

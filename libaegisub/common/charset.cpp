@@ -29,6 +29,9 @@ namespace agi { namespace charset {
 std::string Detect(agi::fs::path const& file) {
 	agi::read_file_mapping fp(file);
 
+	// FIXME: It is an empty file. Treat as ascii
+	if (fp.size() == 0) return "ascii";
+
 	// FIXME: Dirty hack for Matroska. These 4 bytes are the magic
 	// number of EBML which is used by mkv and webm
 	if (fp.size() >= 4) {
