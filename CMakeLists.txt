@@ -78,6 +78,7 @@ elseif(WIN32)
     )
 endif(UNIX)
 SET_TARGET_PROPERTIES(libaegisub PROPERTIES PREFIX "")
+target_compile_definitions(libaegisub PRIVATE CMAKE_BUILD)
 
 add_library(luabins STATIC
     vendor/luabins/src/fwrite.c
@@ -428,6 +429,7 @@ add_executable(Aegisub WIN32
     src/visual_feature.cpp
 )
 target_link_libraries(Aegisub ${CMAKE_DL_LIBS} libaegisub luabins luajit resrc csri)
+target_compile_definitions(Aegisub PRIVATE CMAKE_BUILD)
 
 if (MSVC)
     set_target_properties(libaegisub PROPERTIES COMPILE_FLAGS "/Yu${PROJECT_SOURCE_DIR}/libaegisub/lagi_pre.h" COMPILE_FLAGS "/FI${PROJECT_SOURCE_DIR}/libaegisub/lagi_pre.h")

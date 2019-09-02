@@ -48,6 +48,10 @@
 #define _CRT_SECURE_NO_WARNINGS
 #endif
 
+#if !defined(_WIN32) && !defined(CMAKE_BUILD)
+#include "../acconf.h"
+#endif
+
 #define WIN32_LEAN_AND_MEAN
 
 // Common C

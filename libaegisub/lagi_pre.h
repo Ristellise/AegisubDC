@@ -1,4 +1,7 @@
 #ifdef __cplusplus
+#if !defined(_WIN32) && !defined(CMAKE_BUILD)
+#include "../acconf.h"
+#endif
 
 #define WIN32_LEAN_AND_MEAN
 
