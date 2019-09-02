@@ -66,6 +66,7 @@ src_OBJ := \
 	$(d)help_button.o \
 	$(d)hotkey.o \
 	$(d)hotkey_data_view_model.o \
+	$(d)image_position_picker.o \
 	$(d)initial_line_state.o \
 	$(d)main.o \
 	$(d)menu.o \
