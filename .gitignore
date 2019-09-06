@@ -15,6 +15,7 @@
 *.ilk
 *.log
 *.manifest
+!src/dpi_aware.manifest
 *.mkv
 *.mo
 *.ncb
