@@ -128,8 +128,9 @@ public:
 	/// Get the current Selection colour
 	wxColour Selection() const { return focused ? sel_focused_colour : sel_colour; }
 };
+}
 
-class AudioDisplayScrollbar final : public AudioDisplayInteractionObject {
+class AudioDisplay::AudioDisplayScrollbar final : public AudioDisplayInteractionObject {
 	static const int height = 15;
 	static const int min_width = 10;
 
@@ -267,9 +268,9 @@ public:
 	}
 };
 
-const int AudioDisplayScrollbar::min_width;
+const int AudioDisplay::AudioDisplayScrollbar::min_width;
 
-class AudioDisplayTimeline final : public AudioDisplayInteractionObject {
+class AudioDisplay::AudioDisplayTimeline final : public AudioDisplayInteractionObject {
 	int duration = 0;          ///< Total duration in ms
 	double ms_per_pixel = 1.0; ///< Milliseconds per pixel
 	int pixel_left = 0;        ///< Leftmost visible pixel (i.e. scroll position)
@@ -478,6 +479,7 @@ public:
 	}
 };
 
+namespace {
 class AudioStyleRangeMerger final : public AudioRenderingStyleRanges {
 	typedef std::map<int, AudioRenderingStyle> style_map;
 public:

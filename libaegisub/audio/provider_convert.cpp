@@ -41,14 +41,14 @@ public:
 
 	void FillBuffer(void *buf, int64_t start, int64_t count64) const override {
 		auto count = static_cast<size_t>(count64);
-		assert(count == count64);
+		assert(count64 >= 0 && count == static_cast<uint64_t>(count64));
 
 		src_buf.resize(count * src_bytes_per_sample * channels);
 		source->GetAudio(src_buf.data(), start, count);
 
 		auto dest = static_cast<int16_t*>(buf);
 
-		for (int64_t i = 0; i < count * channels; ++i) {
+		for (size_t i = 0; i < count * channels; ++i) {
 			int64_t sample = 0;
 
 			// 8 bits per sample is assumed to be unsigned with a bias of 127,
@@ -85,7 +85,7 @@ public:
 
 	void FillBuffer(void *buf, int64_t start, int64_t count64) const override {
 		auto count = static_cast<size_t>(count64);
-		assert(count == count64);
+		assert(count64 >= 0 && count == static_cast<uint64_t>(count64));
 
 		src_buf.resize(count * channels);
 		source->GetAudio(&src_buf[0], start, count);
@@ -119,7 +119,7 @@ public:
 
 	void FillBuffer(void *buf, int64_t start, int64_t count64) const override {
 		auto count = static_cast<size_t>(count64);
-		assert(count == count64);
+		assert(count64 >= 0 && count == static_cast<uint64_t>(count64));
 
 		src_buf.resize(count * src_channels);
 		source->GetAudio(&src_buf[0], start, count);

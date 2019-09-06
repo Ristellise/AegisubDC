@@ -47,11 +47,6 @@ class AudioRenderer;
 class AudioRendererBitmapProvider;
 class TimeRange;
 
-// Helper classes used in implementation of the audio display
-namespace {
-	class AudioDisplayScrollbar;
-	class AudioDisplayTimeline;
-}
 class AudioDisplayInteractionObject;
 class AudioMarkerInteractionObject;
 
@@ -79,9 +74,11 @@ class AudioDisplay: public wxWindow {
 	agi::AudioProvider *provider = nullptr;
 
 	/// Scrollbar helper object
+	class AudioDisplayScrollbar;
 	std::unique_ptr<AudioDisplayScrollbar> scrollbar;
 
 	/// Timeline helper object
+	class AudioDisplayTimeline;
 	std::unique_ptr<AudioDisplayTimeline> timeline;
 
 	/// The interaction object for the last-dragged audio marker

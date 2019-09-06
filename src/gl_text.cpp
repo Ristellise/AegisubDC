@@ -52,10 +52,9 @@
 #include <GL/gl.h>
 #endif
 
-namespace {
 /// @class OpenGLTextGlyph
 /// @brief Struct storing the information needed to draw a glyph
-struct OpenGLTextGlyph {
+struct OpenGLText::OpenGLTextGlyph {
 	wxString str; ///< String containing the glyph(s) this is for
 	int tex = 0;  ///< OpenGL texture to draw for this glyph
 	float x1 = 0; ///< Left x coordinate of this glyph in the containing texture
@@ -108,7 +107,7 @@ struct OpenGLTextGlyph {
 
 /// @class OpenGLTextTexture
 /// @brief OpenGL texture which stores one or more glyphs as sprites
-class OpenGLTextTexture final : boost::noncopyable {
+class OpenGLText::OpenGLTextTexture final : boost::noncopyable {
 	int x = 0;      ///< Next x coordinate at which a glyph can be inserted
 	int y = 0;      ///< Next y coordinate at which a glyph can be inserted
 	int nextY = 0;  ///< Y coordinate of the next line; tracked due to that lines
@@ -217,8 +216,6 @@ public:
 	}
 };
 
-}
-
 OpenGLText::OpenGLText() { }
 OpenGLText::~OpenGLText() { }
 
@@ -286,12 +283,12 @@ void OpenGLText::GetExtent(std::string const& text, int &w, int &h) {
 	}
 }
 
-OpenGLTextGlyph const& OpenGLText::GetGlyph(int i) {
+OpenGLText::OpenGLTextGlyph const& OpenGLText::GetGlyph(int i) {
 	auto res = glyphs.find(i);
 	return res != glyphs.end() ? res->second : CreateGlyph(i);
 }
 
-OpenGLTextGlyph const& OpenGLText::CreateGlyph(int n) {
+OpenGLText::OpenGLTextGlyph const& OpenGLText::CreateGlyph(int n) {
 	OpenGLTextGlyph &glyph = glyphs.emplace(n, OpenGLTextGlyph(n, font)).first->second;
 
 	// Insert into some texture
