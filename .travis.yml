@@ -59,7 +59,7 @@ script:
     ./build/version.sh .;
     mkdir build-dir;
     cd build-dir;
-    cmake -DCMAKE_CXX_FLAGS='-Wall -Wextra -pedantic -std=gnu++11' ..;
+    cmake -DCMAKE_CXX_FLAGS='-Wall -Wextra -Wno-unused-parameter -pedantic' ..;
     make -j2;
   fi
 

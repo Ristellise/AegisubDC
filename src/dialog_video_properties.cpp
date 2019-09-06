@@ -131,7 +131,6 @@ bool update_video_properties(AssFile *file, const AsyncVideoProvider *new_provid
 		return true;
 
 	case MISMATCH_RESAMPLE:
-		// Fallthrough to prompt if the AR changed
 		if (!ar_changed) {
 			ResampleResolution(file, {
 				{0, 0, 0, 0},
@@ -141,6 +140,8 @@ bool update_video_properties(AssFile *file, const AsyncVideoProvider *new_provid
 			});
 			return true;
 		}
+		// Fallthrough
+		// to prompt if the AR changed
 
 	case MISMATCH_PROMPT:
 		int res = prompt(parent, ar_changed, sx, sy, vx, vy);

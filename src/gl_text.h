@@ -34,16 +34,13 @@
 
 #include <wx/font.h>
 
-namespace {
-struct OpenGLTextGlyph;
-class OpenGLTextTexture;
-}
-
 namespace agi { struct Color; }
 
-typedef boost::container::map<int, OpenGLTextGlyph> glyphMap;
-
 class OpenGLText {
+	struct OpenGLTextGlyph;
+	class OpenGLTextTexture;
+	typedef boost::container::map<int, OpenGLTextGlyph> glyphMap;
+
 	float r = 1.f, g = 1.f, b = 1.f, a = 1.f;
 
 	int fontSize = 0;

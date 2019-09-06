@@ -24,7 +24,7 @@
 #include <boost/gil/gil_all.hpp>
 #endif
 
-AGI_DEFINE_EVENT(EVT_COLOR, agi::Color);
+AGI_DEFINE_EVENT(EVT_COLOR, agi::Color)
 
 ColourButton::ColourButton(wxWindow *parent, wxSize const& size, bool alpha, agi::Color col, wxValidator const& validator)
 : wxButton(parent, -1, "", wxDefaultPosition, wxSize(size.GetWidth() + 6, size.GetHeight() + 6), 0, validator)

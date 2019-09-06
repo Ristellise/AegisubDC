@@ -47,7 +47,8 @@ IntValidator::IntValidator(int val, bool allow_negative)
 }
 
 IntValidator::IntValidator(IntValidator const& rgt)
-: value(rgt.value)
+: wxValidator(rgt)
+, value(rgt.value)
 , allow_negative(rgt.allow_negative)
 {
 	SetWindow(rgt.GetWindow());
@@ -96,7 +97,8 @@ DoubleValidator::DoubleValidator(double *val, double min, double max)
 }
 
 DoubleValidator::DoubleValidator(DoubleValidator const& rgt)
-: value(rgt.value)
+: wxValidator(rgt)
+, value(rgt.value)
 , min(rgt.min)
 , max(rgt.max)
 , decimal_sep(rgt.decimal_sep)
