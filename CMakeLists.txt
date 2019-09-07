@@ -549,9 +549,13 @@ if (HUNSPELL_FOUND)
     target_sources(Aegisub PRIVATE src/spellchecker_hunspell.cpp)
 endif (HUNSPELL_FOUND)
 
-#ifdef WITH_LIBPULSE
-#add_definitions("-DWITH_LIBPULSE")
-#target_sources(Aegisub PRIVATE src/audio_player_pulse.cpp)
+find_package(PulseAudio)
+if (PULSEAUDIO_FOUND)
+    target_compile_definitions(Aegisub PRIVATE "WITH_LIBPULSE")
+    target_include_directories(Aegisub PRIVATE ${PULSEAUDIO_INCLUDE_DIR})
+    target_link_libraries (Aegisub ${PULSEAUDIO_LIBRARY})
+    target_sources(Aegisub PRIVATE src/audio_player_pulse.cpp)
+endif(PULSEAUDIO_FOUND)
 
 find_package(OpenAL)
 if (OPENAL_FOUND)
