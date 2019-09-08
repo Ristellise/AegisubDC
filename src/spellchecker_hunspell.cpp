@@ -55,14 +55,18 @@ bool HunspellSpellChecker::CanAddWord(std::string const& word) {
 }
 
 bool HunspellSpellChecker::CanRemoveWord(std::string const& word) {
-	return !!customWords.count(word);
+	return customWords.count(word) != 0;
 }
 
 void HunspellSpellChecker::AddWord(std::string const& word) {
 	if (!hunspell) return;
 
 	// Add it to the in-memory dictionary
+#ifdef HUNSPELL_HAS_STRING_API
+	hunspell->add(conv->Convert(word));
+#else
 	hunspell->add(conv->Convert(word).c_str());
+#endif
 
 	// Add the word
 	if (customWords.insert(word).second)
@@ -73,7 +77,11 @@ void HunspellSpellChecker::RemoveWord(std::string const& word) {
 	if (!hunspell) return;
 
 	// Remove it from the in-memory dictionary
+#ifdef HUNSPELL_HAS_STRING_API
+	hunspell->remove(conv->Convert(word));
+#else
 	hunspell->remove(conv->Convert(word).c_str());
+#endif
 
 	auto word_iter = customWords.find(word);
 	if (word_iter != customWords.end()) {
@@ -120,7 +128,11 @@ void HunspellSpellChecker::WriteUserDictionary() {
 bool HunspellSpellChecker::CheckWord(std::string const& word) {
 	if (!hunspell) return true;
 	try {
-		return hunspell->spell(conv->Convert(word).c_str()) == 1;
+#ifdef HUNSPELL_HAS_STRING_API
+		return hunspell->spell(conv->Convert(word));
+#else
+		return hunspell->spell(conv->Convert(word).c_str()) != 0;
+#endif
 	}
 	catch (agi::charset::ConvError const&) {
 		return false;
@@ -131,6 +143,12 @@ std::vector<std::string> HunspellSpellChecker::GetSuggestions(std::string const&
 	std::vector<std::string> suggestions;
 	if (!hunspell) return suggestions;
 
+#ifdef HUNSPELL_HAS_STRING_API
+	std::vector<std::string> suggestions_dic_encoding = hunspell->suggest(conv->Convert(word));
+	suggestions.reserve(suggestions_dic_encoding.size());
+	for (std::string& result : suggestions_dic_encoding)
+		suggestions.push_back(rconv->Convert(result));
+#else
 	char **results;
 	int n = hunspell->suggest(&results, conv->Convert(word).c_str());
 
@@ -147,6 +165,7 @@ std::vector<std::string> HunspellSpellChecker::GetSuggestions(std::string const&
 	}
 
 	free(results);
+#endif
 
 	return suggestions;
 }
@@ -212,7 +231,11 @@ void HunspellSpellChecker::OnLanguageChanged() {
 
 	for (auto const& word : customWords) {
 		try {
+#ifdef HUNSPELL_HAS_STRING_API
+			hunspell->add(conv->Convert(word));
+#else
 			hunspell->add(conv->Convert(word).c_str());
+#endif
 		}
 		catch (agi::charset::ConvError const&) {
 			// Normally this shouldn't happen, but some versions of Aegisub
