@@ -28,7 +28,11 @@
 #include <OpenGL/glext.h>
 #else
 #include <GL/gl.h>
-#include "gl/glext.h"
+#endif
+
+#ifndef GL_GLEXT_VERSION
+// The following typedef is copied from glext.h
+typedef void (*PFNGLMULTIDRAWARRAYSPROC) (GLenum mode, const GLint* first, const GLsizei* count, GLsizei drawcount);
 #endif
 
 static const float deg2rad = 3.1415926536f / 180.f;
