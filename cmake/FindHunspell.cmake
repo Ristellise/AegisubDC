@@ -4,15 +4,11 @@
 #  HUNSPELL_FOUND - system has Hunspell
 #  HUNSPELL_INCLUDE_DIR - the Hunspell include directory
 #  HUNSPELL_LIBRARIES - Link these to use Hunspell
+#  HUNSPELL_HAS_STRING_API - Hunspell has vector<string> api (>=1.5.1)
 #
 # Redistribution and use of this file is allowed according to the terms of the
 # MIT license. For details see the file COPYING-CMAKE-MODULES.
 
-
-if ( HUNSPELL_INCLUDE_DIR AND HUNSPELL_LIBRARIES )
-   # in cache already
-   SET(Hunspell_FIND_QUIETLY TRUE)
-endif ( HUNSPELL_INCLUDE_DIR AND HUNSPELL_LIBRARIES )
 
 # use pkg-config to get the directories and then use these values
 # in the FIND_PATH() and FIND_LIBRARY() calls
@@ -45,9 +41,6 @@ FIND_LIBRARY(HUNSPELL_LIBRARIES NAMES hunspell-1.7 hunspell-1.6 hunspell-1.5 hun
 include(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(Hunspell DEFAULT_MSG HUNSPELL_LIBRARIES HUNSPELL_INCLUDE_DIR )
 
-# show the HUNSPELL_INCLUDE_DIR and HUNSPELL_LIBRARIES variables only in the advanced view
-MARK_AS_ADVANCED(HUNSPELL_INCLUDE_DIR HUNSPELL_LIBRARIES )
-
 add_library(hunspell UNKNOWN IMPORTED)
 set_target_properties(hunspell PROPERTIES IMPORTED_LOCATION ${HUNSPELL_LIBRARIES} INTERFACE_INCLUDE_DIRECTORIES ${HUNSPELL_INCLUDE_DIR})
 if (NOT BUILD_SHARED_LIBS)
@@ -55,3 +48,19 @@ if (NOT BUILD_SHARED_LIBS)
   # For other versions, it should not hurt
   set_target_properties(hunspell PROPERTIES INTERFACE_COMPILE_DEFINITIONS HUNSPELL_STATIC)
 endif ()
+
+if (HUNSPELL_FOUND)
+  try_compile(HUNSPELL_HAS_STRING_API "${CMAKE_BINARY_DIR}/hunspell_string_api"
+              "${CMAKE_CURRENT_LIST_DIR}/hunspell_string_api.cpp"
+              LINK_LIBRARIES ${HUNSPELL_LIBRARIES}
+              CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${HUNSPELL_INCLUDE_DIR}" "-DLINK_LIBRARIES=${HUNSPELL_LIBRARIES}"
+              OUTPUT_VARIABLE  debuggggg)
+  if (HUNSPELL_HAS_STRING_API)
+    message(STATUS "Hunspell has string API")
+  else(HUNSPELL_HAS_STRING_API)
+    message(STATUS "Hunspell does not have string API")
+  endif(HUNSPELL_HAS_STRING_API)
+endif(HUNSPELL_FOUND)
+
+# show the HUNSPELL_INCLUDE_DIR and HUNSPELL_LIBRARIES variables only in the advanced view
+MARK_AS_ADVANCED(HUNSPELL_INCLUDE_DIR HUNSPELL_LIBRARIES HUNSPELL_HAS_STRING_API)
