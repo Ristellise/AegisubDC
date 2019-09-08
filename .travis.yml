@@ -28,6 +28,7 @@ addons:
     - libwxgtk3.0-dev
     - portaudio19-dev
     - libpulse-dev
+    - autopoint
 
 matrix:
   include:
