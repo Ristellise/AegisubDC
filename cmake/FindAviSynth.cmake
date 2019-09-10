@@ -1,12 +1,13 @@
-find_package(PkgConfig)
+find_package(PkgConfig QUIET)
 pkg_check_modules(PC_AviSynth QUIET AviSynth)
 find_path(AviSynth_INCLUDE_DIRS
   NAMES avisynth.h
-  PATHS ${PC_AviSynth_INCLUDE_DIRS}
+  HINTS ${PC_AviSynth_INCLUDE_DIRS}
 )
 find_library(AviSynth_LIBRARIES
   NAMES avisynth
-  PATHS ${PC_AviSynth_LIBRARY_DIRS}
+  PATH_SUFFIXES c_api
+  HINTS ${PC_AviSynth_LIBRARY_DIRS}
 )
 set(AviSynth_VERSION ${PC_AviSynth_VERSION})
 include(FindPackageHandleStandardArgs)

@@ -36,10 +36,12 @@
 const char *GetAegisubLongVersionString();
 /// Version string used in About box, looks nicer
 const char *GetAegisubShortVersionString();
+#ifdef BUILD_CREDIT
 /// Timestamp of build, only shown in About box
 const char *GetAegisubBuildTime();
 /// Name of who built the binary
 const char *GetAegisubBuildCredit();
+#endif
 /// Is release?
 bool GetIsOfficialRelease();
 /// Version number

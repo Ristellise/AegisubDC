@@ -85,7 +85,7 @@ wxIMPLEMENT_APP(AegisubApp);
 static const char *LastStartupState = nullptr;
 
 #ifdef WITH_STARTUPLOG
-#define StartupLog(a) MessageBox(0, L ## a, L"Aegisub startup log", 0)
+#define StartupLog(a) wxMessageBox(wxT(a), wxT("Aegisub startup log"))
 #else
 #define StartupLog(a) LastStartupState = a
 #endif

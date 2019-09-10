@@ -12,11 +12,10 @@
 
 # use pkg-config to get the directories and then use these values
 # in the FIND_PATH() and FIND_LIBRARY() calls
-if( NOT WIN32 )
-  find_package(PkgConfig)
 
-  pkg_check_modules(HUNSPELL_PKG QUIET hunspell)
-endif( NOT WIN32 )
+find_package(PkgConfig QUIET)
+
+pkg_check_modules(HUNSPELL_PKG QUIET hunspell)
 
 FIND_PATH(HUNSPELL_INCLUDE_DIR NAMES hunspell.h
   PATHS
@@ -53,8 +52,7 @@ if (HUNSPELL_FOUND)
   try_compile(HUNSPELL_HAS_STRING_API "${CMAKE_BINARY_DIR}/hunspell_string_api"
               "${CMAKE_CURRENT_LIST_DIR}/hunspell_string_api.cpp"
               LINK_LIBRARIES ${HUNSPELL_LIBRARIES}
-              CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${HUNSPELL_INCLUDE_DIR}" "-DLINK_LIBRARIES=${HUNSPELL_LIBRARIES}"
-              OUTPUT_VARIABLE  debuggggg)
+              CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${HUNSPELL_INCLUDE_DIR}")
   if (HUNSPELL_HAS_STRING_API)
     message(STATUS "Hunspell has string API")
   else(HUNSPELL_HAS_STRING_API)

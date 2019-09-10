@@ -1,12 +1,12 @@
-find_package(PkgConfig)
+find_package(PkgConfig QUIET)
 pkg_check_modules(PC_FFMS2 QUIET ffms2)
 find_path(FFMS2_INCLUDE_DIRS
   NAMES ffms.h ffmscompat.h
-  PATHS ${PC_FFMS2_INCLUDE_DIRS}
+  HINTS ${PC_FFMS2_INCLUDE_DIRS}
 )
 find_library(FFMS2_LIBRARIES
   NAMES ffms2
-  PATHS ${PC_FFMS2_LIBRARY_DIRS}
+  HINTS ${PC_FFMS2_LIBRARY_DIRS}
 )
 set(FFMS2_VERSION ${PC_FFMS2_VERSION})
 include(FindPackageHandleStandardArgs)

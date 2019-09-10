@@ -62,7 +62,6 @@ const char *GetAegisubBuildTime() {
 
 const char *GetAegisubBuildCredit() {
 	return BUILD_CREDIT;
-	return "";
 }
 #endif
 

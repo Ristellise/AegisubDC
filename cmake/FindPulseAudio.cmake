@@ -26,11 +26,10 @@ if(NOT PulseAudio_FIND_VERSION)
   set(PulseAudio_FIND_VERSION "0.9.9")
 endif(NOT PulseAudio_FIND_VERSION)
 
-if (NOT WIN32)
-   include(FindPkgConfig)
-   pkg_check_modules(PC_PULSEAUDIO QUIET libpulse>=${PulseAudio_FIND_VERSION})
-   pkg_check_modules(PC_PULSEAUDIO_MAINLOOP QUIET libpulse-mainloop-glib)
-endif (NOT WIN32)
+
+find_package(PkgConfig QUIET)
+pkg_check_modules(PC_PULSEAUDIO QUIET libpulse>=${PulseAudio_FIND_VERSION})
+pkg_check_modules(PC_PULSEAUDIO_MAINLOOP QUIET libpulse-mainloop-glib)
 
 find_path(PULSEAUDIO_INCLUDE_DIR pulse/pulseaudio.h
    HINTS

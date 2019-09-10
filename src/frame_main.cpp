@@ -74,7 +74,7 @@ enum {
 };
 
 #ifdef WITH_STARTUPLOG
-#define StartupLog(a) MessageBox(0, a, "Aegisub startup log", 0)
+#define StartupLog(a) wxMessageBox(a, "Aegisub startup log")
 #else
 #define StartupLog(a) LOG_I("frame_main/init") << a
 #endif

@@ -1,12 +1,13 @@
-find_package(PkgConfig)
+find_package(PkgConfig QUIET)
 pkg_check_modules(PC_uchardet QUIET uchardet)
 find_path(uchardet_INCLUDE_DIRS
   NAMES uchardet/uchardet.h
-  PATHS ${PC_uchardet_INCLUDE_DIRS}
+  HINTS ${PC_uchardet_INCLUDE_DIRS}
 )
 find_library(uchardet_LIBRARIES
   NAMES uchardet
-  PATHS ${PC_uchardet_LIBRARY_DIRS}
+  PATH_SUFFIXES build/src
+  HINTS ${PC_uchardet_LIBRARY_DIRS}
 )
 set(uchardet_VERSION ${PC_uchardet_VERSION})
 include(FindPackageHandleStandardArgs)
