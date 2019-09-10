@@ -1,12 +1,13 @@
-find_package(PkgConfig)
-pkg_check_modules(PC_ass QUIET ass)
+find_package(PkgConfig QUIET)
+pkg_check_modules(PC_ass QUIET libass)
 find_path(ass_INCLUDE_DIRS
   NAMES ass/ass.h ass/ass_types.h
-  PATHS ${PC_ass_INCLUDE_DIRS}
+  PATH_SUFFIXES libass
+  HINTS ${PC_ass_INCLUDE_DIRS}
 )
 find_library(ass_LIBRARIES
   NAMES ass
-  PATHS ${PC_ass_LIBRARY_DIRS}
+  HINTS ${PC_ass_LIBRARY_DIRS}
 )
 set(ass_VERSION ${PC_ass_VERSION})
 include(FindPackageHandleStandardArgs)

@@ -77,7 +77,7 @@ void RAMAudioProvider::FillBuffer(void *buf, int64_t start, int64_t count) const
 			break;
 		}
 
-		const int i = (start * bytes_per_sample) >> CacheBits;
+		const size_t i = (start * bytes_per_sample) >> CacheBits;
 		const int start_offset = (start * bytes_per_sample) & (CacheBlockSize-1);
 		const int read_size = std::min<int>(bytes_remaining, CacheBlockSize - start_offset);
 

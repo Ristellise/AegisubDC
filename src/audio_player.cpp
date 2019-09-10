@@ -40,13 +40,25 @@
 
 #include <boost/range/iterator_range.hpp>
 
+#ifdef WITH_ALSA
 std::unique_ptr<AudioPlayer> CreateAlsaPlayer(agi::AudioProvider *providers, wxWindow *window);
+#endif
+#ifdef WITH_DIRECTSOUND
 std::unique_ptr<AudioPlayer> CreateDirectSoundPlayer(agi::AudioProvider *providers, wxWindow *window);
 std::unique_ptr<AudioPlayer> CreateDirectSound2Player(agi::AudioProvider *providers, wxWindow *window);
+#endif
+#ifdef WITH_OPENAL
 std::unique_ptr<AudioPlayer> CreateOpenALPlayer(agi::AudioProvider *providers, wxWindow *window);
+#endif
+#ifdef WITH_PORTAUDIO
 std::unique_ptr<AudioPlayer> CreatePortAudioPlayer(agi::AudioProvider *providers, wxWindow *window);
+#endif
+#ifdef WITH_LIBPULSE
 std::unique_ptr<AudioPlayer> CreatePulseAudioPlayer(agi::AudioProvider *providers, wxWindow *window);
+#endif
+#ifdef WITH_OSS
 std::unique_ptr<AudioPlayer> CreateOSSPlayer(agi::AudioProvider *providers, wxWindow *window);
+#endif
 
 namespace {
 	struct factory {

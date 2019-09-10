@@ -58,13 +58,18 @@ add_library(libaegisub STATIC
     libaegisub/common/ycbcr_conv.cpp
     libaegisub/common/dispatch.cpp
 )
-if (UNIX)
+if(UNIX)
     target_sources(libaegisub PRIVATE
         libaegisub/unix/access.cpp
         libaegisub/unix/fs.cpp
         libaegisub/unix/log.cpp
         libaegisub/unix/path.cpp
         libaegisub/unix/util.cpp
+    )
+    set_property(
+        SOURCE libaegisub/unix/path.cpp
+        PROPERTY COMPILE_DEFINITIONS
+            P_DATA="${CMAKE_INSTALL_PREFIX}/share/aegisub/"
     )
 elseif(WIN32)
     target_sources(libaegisub PRIVATE
@@ -76,8 +81,8 @@ elseif(WIN32)
         libaegisub/windows/path_win.cpp
         libaegisub/windows/util_win.cpp
     )
-endif(UNIX)
-SET_TARGET_PROPERTIES(libaegisub PROPERTIES PREFIX "")
+endif()
+set_target_properties(libaegisub PROPERTIES PREFIX "")
 target_compile_definitions(libaegisub PRIVATE CMAKE_BUILD)
 
 add_library(luabins STATIC
@@ -91,48 +96,50 @@ add_library(luabins STATIC
 )
 
 add_executable(luajit-minilua vendor/luajit/src/host/minilua.c)
-if (NOT MSVC)
-target_link_libraries(luajit-minilua m)
-endif(NOT MSVC)
-if (WIN32)
+if(NOT WIN32)
+    target_link_libraries(luajit-minilua m)
+endif()
+if(WIN32)
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        add_custom_command(TARGET luajit-minilua POST_BUILD
+        add_custom_target(buildvm_arch
             COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen
             COMMAND luajit-minilua ../dynasm/dynasm.lua -LN -D WIN -D JIT -D FFI -D P64 -o gen/buildvm_arch.h vm_x86.dasc
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
         )
     else()
-        add_custom_command(TARGET luajit-minilua POST_BUILD
+        add_custom_target(buildvm_arch
             COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen
             COMMAND luajit-minilua ../dynasm/dynasm.lua -LN -D WIN -D JIT -D FFI -o gen/buildvm_arch.h vm_x86.dasc
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
         )
     endif()
-else (WIN32)
+else()
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        add_custom_command(TARGET luajit-minilua POST_BUILD
+        add_custom_target(buildvm_arch
             COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen
             COMMAND luajit-minilua ../dynasm/dynasm.lua -D P64 -D JIT -D FFI -D FPU -D HFABI -D VER= -o gen/buildvm_arch.h vm_x86.dasc
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
         )
     else()
-        add_custom_command(TARGET luajit-minilua POST_BUILD
+        add_custom_target(buildvm_arch
             COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen
             COMMAND luajit-minilua ../dynasm/dynasm.lua -D JIT -D FFI -D FPU -D HFABI -D VER= -o gen/buildvm_arch.h vm_x86.dasc
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
         )
     endif()
-endif (WIN32)
-add_custom_command(TARGET luajit-minilua POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/src/libresrc/default_config_win.json ${PROJECT_SOURCE_DIR}/src/libresrc/default_config_platform.json
+endif()
+
+add_custom_command(
+    OUTPUT ${PROJECT_SOURCE_DIR}/src/libresrc/default_config.cpp ${PROJECT_SOURCE_DIR}/src/libresrc/default_config.h
+    DEPENDS ${PROJECT_SOURCE_DIR}/src/libresrc/default_config_platform.json
     COMMAND luajit-minilua ../../tools/respack.lua manifest.respack default_config.cpp default_config.h
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/libresrc
-    BYPRODUCTS ${PROJECT_SOURCE_DIR}/src/libresrc/default_config.cpp ${PROJECT_SOURCE_DIR}/src/libresrc/default_config.h
 )
-add_custom_command(TARGET luajit-minilua POST_BUILD
+
+add_custom_command(
+    OUTPUT ${PROJECT_SOURCE_DIR}/src/libresrc/bitmap.cpp ${PROJECT_SOURCE_DIR}/src/libresrc/bitmap.h
     COMMAND luajit-minilua ../../tools/respack.lua manifest.respack ../libresrc/bitmap.cpp ../libresrc/bitmap.h
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/src/bitmaps
-    BYPRODUCTS ${PROJECT_SOURCE_DIR}/src/libresrc/bitmap.cpp ${PROJECT_SOURCE_DIR}/src/libresrc/bitmap.h
 )
 
 add_executable(luajit-buildvm
@@ -142,23 +149,23 @@ add_executable(luajit-buildvm
     vendor/luajit/src/host/buildvm_lib.c
     vendor/luajit/src/host/buildvm_fold.c
 )
+add_dependencies(luajit-buildvm buildvm_arch)
+target_compile_definitions(luajit-buildvm PRIVATE LUAJIT_ENABLE_LUA52COMPAT)
 target_include_directories(luajit-buildvm PRIVATE vendor/luajit/src vendor/luajit/src/gen)
-add_dependencies(luajit-buildvm luajit-minilua)
 if(UNIX)
-    add_custom_command(TARGET luajit-buildvm POST_BUILD
+    add_custom_command(
+        OUTPUT ${PROJECT_SOURCE_DIR}/vendor/luajit/src/lj_vm.s
         COMMAND luajit-buildvm -m elfasm -o lj_vm.s
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
-        BYPRODUCTS ${PROJECT_SOURCE_DIR}/vendor/luajit/src/lj_vm.s
     )
-    set_property(SOURCE vendor/luajit/src/lj_vm.s PROPERTY LANGUAGE C)
 elseif(MSVC)
-    add_custom_command(TARGET luajit-buildvm POST_BUILD
+    add_custom_command(
+        OUTPUT ${PROJECT_SOURCE_DIR}/vendor/luajit/src/lj_vm.obj
         COMMAND luajit-buildvm -m peobj -o lj_vm.obj
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
-        BYPRODUCTS ${PROJECT_SOURCE_DIR}/vendor/luajit/src/lj_vm.obj
     )
-endif(UNIX)
-add_custom_command(TARGET luajit-buildvm POST_BUILD
+endif()
+add_custom_target(luajit_buildvm_headers
     COMMAND luajit-buildvm -m ffdef -o gen/lj_ffdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c
     COMMAND luajit-buildvm -m bcdef -o gen/lj_bcdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c
     COMMAND luajit-buildvm -m folddef -o gen/lj_folddef.h lj_opt_fold.c
@@ -167,8 +174,6 @@ add_custom_command(TARGET luajit-buildvm POST_BUILD
     COMMAND luajit-buildvm -m vmdef -o jit/vmdef.lua lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
 )
-target_compile_definitions(luajit-buildvm PRIVATE LUAJIT_ENABLE_LUA52COMPAT)
-
 
 add_library(luajit STATIC
     vendor/luajit/src/lj_gc.c
@@ -233,23 +238,22 @@ add_library(luajit STATIC
     vendor/luajit/src/lib_ffi.c
     vendor/luajit/src/lib_init.c
 )
+add_dependencies(luajit luajit_buildvm_headers)
+target_compile_definitions(luajit PRIVATE LUAJIT_ENABLE_LUA52COMPAT)
+target_include_directories(luajit PRIVATE vendor/luajit/src/gen)
 if(MSVC)
     target_sources(luajit PRIVATE vendor/luajit/src/lj_vm.obj)
-else(MSVC)
+else()
     target_sources(luajit PRIVATE vendor/luajit/src/lj_vm.s)
     set_property(SOURCE vendor/luajit/src/lj_vm.s PROPERTY LANGUAGE C)
     target_link_libraries(luajit dl)
-endif(MSVC)
-target_include_directories(luajit PRIVATE vendor/luajit/src/gen)
-add_dependencies(luajit luajit-buildvm)
-target_compile_definitions(luajit PRIVATE LUAJIT_ENABLE_LUA52COMPAT)
+endif()
 
 add_library(resrc STATIC
     src/libresrc/bitmap.cpp
     src/libresrc/default_config.cpp
     src/libresrc/libresrc.cpp
 )
-add_dependencies(resrc luajit-minilua)
 
 add_library(csri STATIC
     vendor/csri/lib/list.c
@@ -257,13 +261,13 @@ add_library(csri STATIC
     vendor/csri/subhelp/logging.c
 )
 target_include_directories(csri PRIVATE "vendor/csri/include")
-IF (WIN32)
+if(WIN32)
     target_include_directories(csri PRIVATE "vendor/csri/lib/win32")
     target_sources(csri PRIVATE vendor/csri/lib/win32/enumerate.c)
-ELSE()
+else()
     target_include_directories(csri PRIVATE "vendor/csri/lib/posix")
     target_sources(csri PRIVATE vendor/csri/lib/posix/enumerate.c)
-ENDIF()
+endif()
 
 add_executable(Aegisub WIN32
     src/command/app.cpp
@@ -310,7 +314,6 @@ add_executable(Aegisub WIN32
     src/dialog_text_import.cpp
     src/dialog_timing_processor.cpp
     src/dialog_translation.cpp
-    src/dialog_version_check.cpp
     src/dialog_video_details.cpp
     src/dialog_video_properties.cpp
     src/subtitle_format.cpp
@@ -434,78 +437,72 @@ target_compile_definitions(Aegisub PRIVATE CMAKE_BUILD)
 set(WITH_BUILD_CREDIT OFF CACHE BOOL "Whether show build credit in about dialog")
 if(WITH_BUILD_CREDIT)
     set(BUILD_CREDIT "" CACHE STRING "Build credit shown in about dialog")
+    target_compile_definitions(Aegisub PRIVATE "BUILD_CREDIT=${BUILD_CREDIT}")
 else()
     unset(BUILD_CREDIT CACHE)
 endif()
 
-if (MSVC)
+if(MSVC)
     set_target_properties(libaegisub PROPERTIES COMPILE_FLAGS "/Yu${PROJECT_SOURCE_DIR}/libaegisub/lagi_pre.h" COMPILE_FLAGS "/FI${PROJECT_SOURCE_DIR}/libaegisub/lagi_pre.h")
-else(MSVC)
+else()
     target_compile_options(libaegisub PRIVATE -include "${PROJECT_SOURCE_DIR}/libaegisub/lagi_pre.h")
-endif(MSVC)
+endif()
 
-set_property(
-    SOURCE libaegisub/unix/path.cpp
-    PROPERTY COMPILE_DEFINITIONS
-        P_DATA="${CMAKE_INSTALL_PREFIX}/share/aegisub/"
-)
-
-if (MSVC)
-    add_definitions("-DNOMINMAX -MP -DINITGUID")
+if(MSVC)
+    add_definitions("/DNOMINMAX /MP /DINITGUID")
     set_target_properties(Aegisub PROPERTIES COMPILE_FLAGS "/Yu${PROJECT_SOURCE_DIR}/src/agi_pre.h" COMPILE_FLAGS "/FI${PROJECT_SOURCE_DIR}/src/agi_pre.h")
-    target_link_libraries (Aegisub Usp10)
+    target_link_libraries(Aegisub Usp10)
     #target_sources(Aegisub PRIVATE src/res/res.rc src/res/strings.rc src/crash_writer_minidump.cpp)
     target_sources(Aegisub PRIVATE src/res/res.rc src/res/strings.rc src/crash_writer.cpp src/dpi_aware.manifest)
     set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT Aegisub)
-else(MSVC)
+else()
     target_sources(Aegisub PRIVATE src/crash_writer.cpp)
     target_compile_options(Aegisub PRIVATE -include "${PROJECT_SOURCE_DIR}/src/agi_pre.h")
-endif(MSVC)
+endif()
 
-if (WIN32)
+if(WIN32)
     target_sources(Aegisub PRIVATE src/font_file_lister_gdi.cpp)
-else (WIN32)
+else()
     find_package(Fontconfig REQUIRED)
-    target_link_libraries (Aegisub ${Fontconfig_LIBRARIES})
+    target_include_directories(Aegisub PRIVATE ${Fontconfig_INCLUDE_DIRS})
+    target_link_libraries(Aegisub ${Fontconfig_LIBRARIES})
     target_sources(Aegisub PRIVATE src/font_file_lister_fontconfig.cpp)
-    set_property(SOURCE src/font_file_lister_fontconfig.cpp PROPERTY INCLUDE_DIRECTORIES "${Fontconfig_INCLUDE_DIRS}")
-endif (WIN32)
+endif()
 
 find_package(ass REQUIRED)
-include_directories(${ass_INCLUDE_DIRS})
-target_link_libraries (Aegisub ${ass_LIBRARIES})
+target_include_directories(Aegisub PRIVATE ${ass_INCLUDE_DIRS})
+target_link_libraries(Aegisub ${ass_LIBRARIES})
 
 find_package(Boost REQUIRED chrono filesystem locale regex system thread)
-include_directories(${Boost_INCLUDE_DIRS})
+target_include_directories(libaegisub PRIVATE ${Boost_INCLUDE_DIRS})
+target_include_directories(Aegisub PRIVATE ${Boost_INCLUDE_DIRS})
 target_link_directories(Aegisub PRIVATE ${Boost_LIBRARY_DIRS})
 target_link_libraries(Aegisub ${Boost_LIBRARIES})
 
 find_package(OpenGL REQUIRED)
-include_directories(${OPENGL_INCLUDE_DIR})
-target_link_libraries (Aegisub ${OPENGL_LIBRARIES})
+target_include_directories(Aegisub PRIVATE ${OPENGL_INCLUDE_DIR})
+target_link_libraries(Aegisub ${OPENGL_LIBRARIES})
 
 find_package(Iconv REQUIRED)
-include_directories(${Iconv_INCLUDE_DIRS})
-target_link_libraries (Aegisub ${Iconv_LIBRARIES})
-add_definitions("-DHAVE_ICONV")
-if (NOT Iconv_IS_BUILT_IN)
-set_property(
-    SOURCE libaegisub/common/charset_conv.cpp
-    PROPERTY COMPILE_DEFINITIONS AGI_ICONV_CONST
-)
-endif (NOT Iconv_IS_BUILT_IN)
+target_compile_definitions(libaegisub PRIVATE "HAVE_ICONV")
+target_include_directories(libaegisub PRIVATE ${Iconv_INCLUDE_DIRS})
+target_link_libraries(libaegisub ${Iconv_LIBRARIES})
+if(NOT Iconv_IS_BUILT_IN)
+    target_compile_definitions(libaegisub PRIVATE "AGI_ICONV_CONST")
+endif()
 
 find_package(ICU REQUIRED uc dt in)
-include_directories(${ICU_INCLUDE_DIRS})
-target_link_libraries (Aegisub ${ICU_LIBRARIES})
+target_include_directories(libaegisub PRIVATE ${ICU_INCLUDE_DIRS})
+target_include_directories(Aegisub PRIVATE ${ICU_INCLUDE_DIRS})
+target_link_libraries(Aegisub ${ICU_LIBRARIES})
 
 find_package(wxWidgets REQUIRED adv base core gl stc xml)
 include(${wxWidgets_USE_FILE})
 target_link_libraries(Aegisub ${wxWidgets_LIBRARIES})
 
 find_package(ZLIB REQUIRED)
-include_directories(${ZLIB_INCLUDE_DIRS})
-target_link_libraries (Aegisub ${ZLIB_LIBRARIES})
+target_include_directories(Aegisub PRIVATE ${ZLIB_INCLUDE_DIRS})
+target_link_libraries(Aegisub ${ZLIB_LIBRARIES})
 
 set(WITH_ALSA ON CACHE BOOL "Enable ALSA support")
 if(WITH_ALSA)
@@ -515,9 +512,9 @@ if(WITH_ALSA)
     endif()
 endif()
 if(WITH_ALSA)
-    include_directories(${ALSA_INCLUDE_DIRS})
-    target_link_libraries (Aegisub ${ALSA_LIBRARIES})
-    add_definitions("-DWITH_ALSA")
+    target_compile_definitions(Aegisub PRIVATE "WITH_ALSA")
+    target_include_directories(Aegisub PRIVATE ${ALSA_INCLUDE_DIRS})
+    target_link_libraries(Aegisub ${ALSA_LIBRARIES})
     target_sources(Aegisub PRIVATE src/audio_player_alsa.cpp)
 endif()
 
@@ -538,14 +535,17 @@ endif()
 set(WITH_CSRI ON CACHE BOOL "Enable CSRI support")
 if(WITH_CSRI)
     target_compile_definitions(Aegisub PRIVATE "WITH_CSRI")
+    target_include_directories(Aegisub PRIVATE "${PROJECT_SOURCE_DIR}/vendor/csri/include")
     target_sources(Aegisub PRIVATE src/subtitles_provider_csri.cpp)
-    set_property(SOURCE src/subtitles_provider_csri.cpp PROPERTY INCLUDE_DIRECTORIES "${PROJECT_SOURCE_DIR}/vendor/csri/include")
 endif()
 
 if(WIN32)
-    target_link_libraries (Aegisub dsound)
-    add_definitions("-DWITH_DIRECTSOUND")
+    target_compile_definitions(Aegisub PRIVATE "WITH_DIRECTSOUND")
+    target_link_libraries(Aegisub dsound)
     target_sources(Aegisub PRIVATE src/audio_player_dsound.cpp src/audio_player_dsound2.cpp)
+    set(WITH_DIRECTSOUND ON)
+else()
+    set(WITH_DIRECTSOUND OFF)
 endif()
 
 set(WITH_FFMS2 ON CACHE BOOL "Enable FFMS2 support")
@@ -556,10 +556,19 @@ if(WITH_FFMS2)
     endif()
 endif()
 if(WITH_FFMS2)
-    include_directories(${FFMS2_INCLUDE_DIRS})
-    target_link_libraries (Aegisub ${FFMS2_LIBRARIES})
-    add_definitions("-DWITH_FFMS2")
+    target_compile_definitions(Aegisub PRIVATE "WITH_FFMS2")
+    target_include_directories(Aegisub PRIVATE ${FFMS2_INCLUDE_DIRS})
+    target_link_libraries(Aegisub ${FFMS2_LIBRARIES})
     target_sources(Aegisub PRIVATE src/audio_provider_ffmpegsource.cpp src/ffmpegsource_common.cpp src/video_provider_ffmpegsource.cpp)
+else()
+    message(SEND_ERROR
+        "No supported video/audio reader interface was enabled.\n"
+        "You will not be able to open any video or audio files in Aegisub unless you install a supported video/audio provider.\n"
+        "You will however still be able to open \"dummy\" video, ie. a blank, virtual video clip with subtitles overlaid.\n"
+        "Currently we only support one video/audio provider on non-Windows systems:\n"
+        " - FFMS2\n"
+        "   * http://github.com/FFMS/ffms2\n"
+    )
 endif()
 
 set(WITH_FFTW3 ON CACHE BOOL "Enable fftw support")
@@ -570,9 +579,9 @@ if(WITH_FFTW3)
     endif()
 endif()
 if(WITH_FFTW3)
-    include_directories(${FFTW_INCLUDES})
-    target_link_libraries (Aegisub ${FFTW_LIBRARIES})
-    add_definitions("-DWITH_FFTW3")
+    target_compile_definitions(Aegisub PRIVATE "WITH_FFTW3")
+    target_include_directories(Aegisub PRIVATE ${FFTW_INCLUDES})
+    target_link_libraries(Aegisub ${FFTW_LIBRARIES})
 endif()
 
 set(WITH_HUNSPELL ON CACHE BOOL "Enable Hunspell support")
@@ -583,11 +592,11 @@ if(WITH_HUNSPELL)
     endif()
 endif()
 if(WITH_HUNSPELL)
-    include_directories(${HUNSPELL_INCLUDE_DIR})
-    target_link_libraries (Aegisub ${HUNSPELL_LIBRARIES})
-    add_definitions("-DWITH_HUNSPELL")
+    target_compile_definitions(Aegisub PRIVATE "WITH_HUNSPELL")
+    target_include_directories(Aegisub PRIVATE ${HUNSPELL_INCLUDE_DIR})
+    target_link_libraries(Aegisub ${HUNSPELL_LIBRARIES})
     target_sources(Aegisub PRIVATE src/spellchecker_hunspell.cpp)
-    if (HUNSPELL_HAS_STRING_API)
+    if(HUNSPELL_HAS_STRING_API)
         target_compile_definitions(Aegisub PRIVATE "HUNSPELL_HAS_STRING_API")
     endif(HUNSPELL_HAS_STRING_API)
 endif()
@@ -602,7 +611,7 @@ endif()
 if(WITH_LIBPULSE)
     target_compile_definitions(Aegisub PRIVATE "WITH_LIBPULSE")
     target_include_directories(Aegisub PRIVATE ${PULSEAUDIO_INCLUDE_DIR})
-    target_link_libraries (Aegisub ${PULSEAUDIO_LIBRARY})
+    target_link_libraries(Aegisub ${PULSEAUDIO_LIBRARY})
     target_sources(Aegisub PRIVATE src/audio_player_pulse.cpp)
 endif()
 
@@ -614,15 +623,43 @@ if(WITH_OPENAL)
     endif()
 endif()
 if(WITH_OPENAL)
-    include_directories(${OPENAL_INCLUDE_DIR})
-    target_link_libraries (Aegisub ${OPENAL_LIBRARY})
-    add_definitions("-DWITH_OPENAL")
+    target_compile_definitions(Aegisub PRIVATE "WITH_OPENAL")
+    target_include_directories(Aegisub PRIVATE ${OPENAL_INCLUDE_DIR})
+    target_link_libraries(Aegisub ${OPENAL_LIBRARY})
     target_sources(Aegisub PRIVATE src/audio_player_openal.cpp)
 endif()
 
-#ifdef WITH_OSS
-#ifdef WITH_PORTAUDIO
-#ifdef WITH_STARTUPLOG
+set(WITH_OSS OFF CACHE BOOL "Enable OSS support")
+if(WITH_OSS)
+    find_package(OSS)
+    if(NOT OSS_FOUND)
+        set(WITH_OSS OFF CACHE BOOL "Enable OSS support" FORCE)
+    endif()
+endif()
+if(WITH_OSS)
+    target_compile_definitions(Aegisub PRIVATE "WITH_OSS")
+    target_include_directories(Aegisub PRIVATE ${OSS_INCLUDE_DIRS})
+    target_sources(Aegisub PRIVATE src/audio_player_oss.cpp)
+endif()
+
+set(WITH_PORTAUDIO ON CACHE BOOL "Enable PortAudio support")
+if(WITH_PORTAUDIO)
+    find_package(PortAudio)
+    if(NOT PortAudio_FOUND)
+        set(WITH_PORTAUDIO OFF CACHE BOOL "Enable PortAudio support" FORCE)
+    endif()
+endif()
+if(WITH_PORTAUDIO)
+    target_compile_definitions(Aegisub PRIVATE "WITH_PORTAUDIO")
+    target_include_directories(Aegisub PRIVATE ${PortAudio_INCLUDE_DIRS})
+    target_link_libraries(Aegisub ${PortAudio_LIBRARIES})
+    target_sources(Aegisub PRIVATE src/audio_player_portaudio.cpp)
+endif()
+
+set(WITH_STARTUPLOG OFF CACHE BOOL "Enable startup log")
+if(WITH_STARTUPLOG)
+    target_compile_definitions(Aegisub PRIVATE "WITH_STARTUPLOG")
+endif()
 
 set(WITH_UCHARDET ON CACHE BOOL "Enable uchardet support")
 if(WITH_UCHARDET)
@@ -632,24 +669,99 @@ if(WITH_UCHARDET)
     endif()
 endif()
 if(WITH_UCHARDET)
-    include_directories(${uchardet_INCLUDE_DIRS})
-    target_link_libraries (Aegisub ${uchardet_LIBRARIES})
-    add_definitions("-DWITH_UCHARDET")
+    target_compile_definitions(Aegisub PRIVATE "WITH_UCHARDET")
+    target_include_directories(Aegisub PRIVATE ${uchardet_INCLUDE_DIRS})
+    target_link_libraries(Aegisub ${uchardet_LIBRARIES})
 endif()
 
-#ifdef WITH_UPDATE_CHECKER
+set(WITH_UPDATE_CHECKER OFF)
+if(WITH_UPDATE_CHECKER)
+    set(UPDATE_CHECKER_SERVER "\"updates.aegisub.org\"" CACHE STRING "Server for the update checker")
+    set(UPDATE_CHECKER_BASE_URL "\"/trunk\"" CACHE STRING "Base path for the update checker")
+    target_compile_definitions(Aegisub PRIVATE "WITH_UPDATE_CHECKER" "UPDATE_CHECKER_SERVER=${UPDATE_CHECKER_SERVER}" "UPDATE_CHECKER_BASE_URL=${UPDATE_CHECKER_BASE_URL}")
+    target_link_libraries(Aegisub ${Boost_asio_LIBRARY})
+    target_sources(Aegisub PRIVATE src/dialog_version_check.cpp)
+endif()
 
-if (NOT WIN32)
-set(AEGISUB_COMMAND "aegisub" CACHE STRING "The executable name of Aegisub")
-set_target_properties(Aegisub PROPERTIES OUTPUT_NAME "${AEGISUB_COMMAND}")
-configure_file("packages/desktop/aegisub.desktop.template.cmake.in" "aegisub.desktop" @ONLY)
-install(FILES "${CMAKE_BINARY_DIR}/aegisub.desktop" DESTINATION "share/applications")
-install(FILES "packages/desktop/16x16.png" DESTINATION "share/icons/hicolor/16x16/apps" RENAME aegisub.png)
-install(FILES "packages/desktop/22x22.png" DESTINATION "share/icons/hicolor/22x22/apps" RENAME aegisub.png)
-install(FILES "packages/desktop/24x24.png" DESTINATION "share/icons/hicolor/24x24/apps" RENAME aegisub.png)
-install(FILES "packages/desktop/32x32.png" DESTINATION "share/icons/hicolor/32x32/apps" RENAME aegisub.png)
-install(FILES "packages/desktop/48x48.png" DESTINATION "share/icons/hicolor/48x48/apps" RENAME aegisub.png)
-install(FILES "packages/desktop/64x64.png" DESTINATION "share/icons/hicolor/64x64/apps" RENAME aegisub.png)
-install(FILES "packages/desktop/scalable.svg" DESTINATION "share/icons/hicolor/scalable/apps" RENAME aegisub.svg)
-endif (NOT WIN32)
-install (TARGETS Aegisub DESTINATION bin)
+if(WIN32)
+    set(DEFAULT_PLAYER_AUDIO DirectSound)
+    configure_file("src/libresrc/default_config_win.json" "${PROJECT_SOURCE_DIR}/src/libresrc/default_config_platform.json" COPYONLY)
+else()
+    if(WITH_LIBPULSE)
+        set(DEFAULT_PLAYER_AUDIO "PulseAudio" CACHE STRING "Default audio player")
+    elseif(WITH_ALSA)
+        set(DEFAULT_PLAYER_AUDIO "ALSA" CACHE STRING "Default audio player")
+    elseif(WITH_OPENAL)
+        set(DEFAULT_PLAYER_AUDIO "OpenAL" CACHE STRING "Default audio player")
+    elseif(WITH_PORTAUDIO)
+        set(DEFAULT_PLAYER_AUDIO "PortAudio" CACHE STRING "Default audio player")
+    elseif(WITH_OSS)
+        set(DEFAULT_PLAYER_AUDIO "OSS" CACHE STRING "Default audio player")
+    else()
+        message(SEND_ERROR
+            "No supported audio player interface was enabled.\n"
+            "If you want audio support in Aegisub you need to install one of these libraries:\n"
+            " - PulseAudio\n"
+            "   * http://pulseaudio.org/\n"
+            " - ALSA (Linux only)\n"
+            "   * http://www.alsa-project.org/\n"
+            " - PortAudio (version 19 only)\n"
+            "   * http://www.portaudio.com/\n"
+            "\n"
+        )
+        set(DEFAULT_PLAYER_AUDIO "NONE" CACHE STRING "Default audio player")
+    endif()
+    add_custom_command(
+        OUTPUT ${PROJECT_SOURCE_DIR}/src/libresrc/default_config_platform.json
+        COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/src/libresrc/default_config_win.json ${PROJECT_SOURCE_DIR}/src/libresrc/default_config_platform.json
+    )
+    configure_file("src/libresrc/default_config_platform.json.in" "${PROJECT_SOURCE_DIR}/src/libresrc/default_config_platform.json" @ONLY)
+endif()
+
+if(NOT WIN32)
+    set(AEGISUB_COMMAND "aegisub" CACHE STRING "The executable name of Aegisub")
+    set_target_properties(Aegisub PROPERTIES OUTPUT_NAME "${AEGISUB_COMMAND}")
+    configure_file("packages/desktop/aegisub.desktop.template.cmake.in" "aegisub.desktop" @ONLY)
+    install(FILES "${CMAKE_BINARY_DIR}/aegisub.desktop" DESTINATION "share/applications")
+    install(FILES "packages/desktop/16x16.png" DESTINATION "share/icons/hicolor/16x16/apps" RENAME aegisub.png)
+    install(FILES "packages/desktop/22x22.png" DESTINATION "share/icons/hicolor/22x22/apps" RENAME aegisub.png)
+    install(FILES "packages/desktop/24x24.png" DESTINATION "share/icons/hicolor/24x24/apps" RENAME aegisub.png)
+    install(FILES "packages/desktop/32x32.png" DESTINATION "share/icons/hicolor/32x32/apps" RENAME aegisub.png)
+    install(FILES "packages/desktop/48x48.png" DESTINATION "share/icons/hicolor/48x48/apps" RENAME aegisub.png)
+    install(FILES "packages/desktop/64x64.png" DESTINATION "share/icons/hicolor/64x64/apps" RENAME aegisub.png)
+    install(FILES "packages/desktop/scalable.svg" DESTINATION "share/icons/hicolor/scalable/apps" RENAME aegisub.svg)
+endif()
+install(TARGETS Aegisub DESTINATION bin)
+
+message(STATUS "\n"
+    "Configure settings\n"
+    "  Install prefix:        ${CMAKE_INSTALL_PREFIX}\n"
+    "  CFLAGS                 ${CMAKE_C_FLAGS}\n"
+    "  CXXFLAGS               ${CMAKE_CXX_FLAGS}\n"
+    "\n"
+    "Default Settings\n"
+    "  Audio Player:          ${DEFAULT_PLAYER_AUDIO}\n"
+    "\n"
+    "Audio Players\n"
+    "  ALSA:                  ${WITH_ALSA}\n"
+    "  DirectSound:           ${WITH_DIRECTSOUND}\n"
+    "  DirectSound-old:       ${WITH_DIRECTSOUND}\n"
+    "  OpenAL:                ${WITH_OPENAL}\n"
+    "  OSS:                   ${WITH_OSS}\n"
+    "  PortAudio:             ${WITH_PORTAUDIO}\n"
+    "  PulseAudio:            ${WITH_LIBPULSE}\n"
+    "\n"
+    "Misc Packages\n"
+    "  AviSynth:              ${WITH_AVISYNTH}\n"
+    "  CSRI:                  ${WITH_CSRI}\n"
+    "  FFMS2:                 ${WITH_FFMS2}\n"
+    "  FFTW3:                 ${WITH_FFTW3}\n"
+    "  Hunspell:              ${WITH_HUNSPELL}\n"
+    "  uchardet:              ${WITH_UCHARDET}\n"
+    "  LuaJIT:                bundled\n"
+    "\n"
+    "Options\n"
+    "  Startup log:           ${WITH_STARTUPLOG}\n"
+    "  Update checker:        ${WITH_UPDATE_CHECKER}\n"
+    "\n"
+)
