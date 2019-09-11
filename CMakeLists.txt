@@ -101,13 +101,15 @@ if(NOT WIN32)
 endif()
 if(WIN32)
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        add_custom_target(buildvm_arch
+        add_custom_command(
+            OUTPUT ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen/buildvm_arch.h
             COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen
             COMMAND luajit-minilua ../dynasm/dynasm.lua -LN -D WIN -D JIT -D FFI -D P64 -o gen/buildvm_arch.h vm_x86.dasc
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
         )
     else()
-        add_custom_target(buildvm_arch
+        add_custom_command(
+            OUTPUT ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen/buildvm_arch.h
             COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen
             COMMAND luajit-minilua ../dynasm/dynasm.lua -LN -D WIN -D JIT -D FFI -o gen/buildvm_arch.h vm_x86.dasc
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
@@ -115,13 +117,15 @@ if(WIN32)
     endif()
 else()
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
-        add_custom_target(buildvm_arch
+        add_custom_command(
+            OUTPUT ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen/buildvm_arch.h
             COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen
             COMMAND luajit-minilua ../dynasm/dynasm.lua -D P64 -D JIT -D FFI -D FPU -D HFABI -D VER= -o gen/buildvm_arch.h vm_x86.dasc
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
         )
     else()
-        add_custom_target(buildvm_arch
+        add_custom_command(
+            OUTPUT ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen/buildvm_arch.h
             COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen
             COMMAND luajit-minilua ../dynasm/dynasm.lua -D JIT -D FFI -D FPU -D HFABI -D VER= -o gen/buildvm_arch.h vm_x86.dasc
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
@@ -148,8 +152,9 @@ add_executable(luajit-buildvm
     vendor/luajit/src/host/buildvm_peobj.c
     vendor/luajit/src/host/buildvm_lib.c
     vendor/luajit/src/host/buildvm_fold.c
+
+    vendor/luajit/src/gen/buildvm_arch.h
 )
-add_dependencies(luajit-buildvm buildvm_arch)
 target_compile_definitions(luajit-buildvm PRIVATE LUAJIT_ENABLE_LUA52COMPAT)
 target_include_directories(luajit-buildvm PRIVATE vendor/luajit/src vendor/luajit/src/gen)
 if(UNIX)
@@ -165,12 +170,33 @@ elseif(MSVC)
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
     )
 endif()
-add_custom_target(luajit_buildvm_headers
+add_custom_command(
+    OUTPUT ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen/lj_ffdef.h
     COMMAND luajit-buildvm -m ffdef -o gen/lj_ffdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
+)
+add_custom_command(
+    OUTPUT ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen/lj_bcdef.h
     COMMAND luajit-buildvm -m bcdef -o gen/lj_bcdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
+)
+add_custom_command(
+    OUTPUT ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen/lj_folddef.h
     COMMAND luajit-buildvm -m folddef -o gen/lj_folddef.h lj_opt_fold.c
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
+)
+add_custom_command(
+    OUTPUT ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen/lj_recdef.h
     COMMAND luajit-buildvm -m recdef -o gen/lj_recdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
+)
+add_custom_command(
+    OUTPUT ${PROJECT_SOURCE_DIR}/vendor/luajit/src/gen/lj_libdef.h
     COMMAND luajit-buildvm -m libdef -o gen/lj_libdef.h lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
+)
+add_custom_command(
+    OUTPUT ${PROJECT_SOURCE_DIR}/vendor/luajit/src/jit/vmdef.lua
     COMMAND luajit-buildvm -m vmdef -o jit/vmdef.lua lib_base.c lib_math.c lib_bit.c lib_string.c lib_table.c lib_io.c lib_os.c lib_package.c lib_debug.c lib_jit.c lib_ffi.c
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
 )
@@ -237,8 +263,14 @@ add_library(luajit STATIC
     vendor/luajit/src/lib_jit.c
     vendor/luajit/src/lib_ffi.c
     vendor/luajit/src/lib_init.c
+
+    vendor/luajit/src/gen/lj_ffdef.h
+    vendor/luajit/src/gen/lj_bcdef.h
+    vendor/luajit/src/gen/lj_folddef.h
+    vendor/luajit/src/gen/lj_recdef.h
+    vendor/luajit/src/gen/lj_libdef.h
+    vendor/luajit/src/jit/vmdef.lua
 )
-add_dependencies(luajit luajit_buildvm_headers)
 target_compile_definitions(luajit PRIVATE LUAJIT_ENABLE_LUA52COMPAT)
 target_include_directories(luajit PRIVATE vendor/luajit/src/gen)
 if(MSVC)
@@ -246,7 +278,7 @@ if(MSVC)
 else()
     target_sources(luajit PRIVATE vendor/luajit/src/lj_vm.s)
     set_property(SOURCE vendor/luajit/src/lj_vm.s PROPERTY LANGUAGE C)
-    target_link_libraries(luajit dl)
+    target_link_libraries(luajit ${CMAKE_DL_LIBS})
 endif()
 
 add_library(resrc STATIC
@@ -733,6 +765,11 @@ if(NOT WIN32)
 endif()
 install(TARGETS Aegisub DESTINATION bin)
 
+set(WITH_TEST OFF CACHE BOOL "Enable unit tests")
+if(WITH_TEST)
+    include("CMakeLists.test.txt")
+endif()
+
 message(STATUS "\n"
     "Configure settings\n"
     "  Install prefix:        ${CMAKE_INSTALL_PREFIX}\n"
@@ -763,5 +800,6 @@ message(STATUS "\n"
     "Options\n"
     "  Startup log:           ${WITH_STARTUPLOG}\n"
     "  Update checker:        ${WITH_UPDATE_CHECKER}\n"
+    "  Tests:                 ${WITH_TEST}\n"
     "\n"
 )

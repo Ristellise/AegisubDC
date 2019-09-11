@@ -1,0 +1,78 @@
+if(UNIX)
+    add_executable(aegisub-lua EXCLUDE_FROM_ALL
+        automation/tests/aegisub.cpp
+    )
+    target_include_directories(aegisub-lua PRIVATE ${Boost_INCLUDE_DIRS})
+    target_link_directories(aegisub-lua PRIVATE ${Boost_LIBRARY_DIRS})
+    target_link_libraries(aegisub-lua libaegisub luabins luajit ${Boost_LIBRARIES} ${ICU_LIBRARIES})
+    add_custom_target(test-automation
+        COMMAND sh -c "$(luarocks path); ${PROJECT_BINARY_DIR}/aegisub-lua tests/busted.lua -p moon tests/modules"
+        VERBATIM
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/automation"
+    )
+    add_dependencies(test-automation aegisub-lua)
+else()
+    add_custom_target(test-automation)
+endif()
+
+find_package(GTest)
+if(GTEST_FOUND)
+    add_executable(gtest-run EXCLUDE_FROM_ALL
+        tests/tests/access.cpp
+        tests/tests/audio.cpp
+        tests/tests/cajun.cpp
+        tests/tests/calltip_provider.cpp
+        tests/tests/character_count.cpp
+        tests/tests/color.cpp
+        tests/tests/dialogue_lexer.cpp
+        tests/tests/format.cpp
+        tests/tests/fs.cpp
+        tests/tests/hotkey.cpp
+        tests/tests/iconv.cpp
+        tests/tests/ifind.cpp
+        tests/tests/karaoke_matcher.cpp
+        tests/tests/keyframe.cpp
+        tests/tests/line_iterator.cpp
+        tests/tests/line_wrap.cpp
+        tests/tests/mru.cpp
+        tests/tests/option.cpp
+        tests/tests/path.cpp
+        tests/tests/signals.cpp
+        tests/tests/split.cpp
+        tests/tests/syntax_highlight.cpp
+        tests/tests/thesaurus.cpp
+        tests/tests/time.cpp
+        tests/tests/type_name.cpp
+        tests/tests/util.cpp
+        tests/tests/uuencode.cpp
+        tests/tests/vfr.cpp
+        tests/tests/word_split.cpp
+        tests/support/main.cpp
+        tests/support/util.cpp
+    )
+    target_compile_definitions(gtest-run PRIVATE CMAKE_BUILD)
+    target_include_directories(gtest-run PRIVATE tests/support ${GTEST_INCLUDE_DIRS})
+    target_link_libraries(gtest-run libaegisub ${Boost_LIBRARIES} ${ICU_LIBRARIES} ${GTEST_LIBRARIES})
+    if(MSVC)
+        set_target_properties(gtest-run PROPERTIES COMPILE_FLAGS "/Yu${PROJECT_SOURCE_DIR}/tests/support/tests_pre.h" COMPILE_FLAGS "/FI${PROJECT_SOURCE_DIR}/tests/support/tests_pre.h")
+    else()
+        target_compile_options(gtest-run PRIVATE -include "${PROJECT_SOURCE_DIR}/tests/support/tests_pre.h")
+    endif()
+    if(WIN32)
+        add_custom_target(test-aegisub
+            COMMAND "${PROJECT_SOURCE_DIR}/tests/setup.bat"
+            COMMAND gtest-run
+            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+        )
+    else()
+        add_custom_target(test-aegisub
+            COMMAND "${PROJECT_SOURCE_DIR}/tests/setup.sh"
+            COMMAND gtest-run
+            WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}/tests"
+        )
+    endif()
+else()
+    add_custom_target(test-aegisub)
+endif()
+
+add_custom_target(test DEPENDS test-automation test-aegisub)
