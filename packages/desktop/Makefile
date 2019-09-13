@@ -17,7 +17,7 @@ APPDATA_FILE_INSTALLED = $(DESTDIR)$(P_APPDATA)/$(notdir $(APPDATA_FILE))
 DISTCLEANFILES += $(APPDATA_FILE)
 
 %.desktop: %.desktop.template $(DESKTOP_FILE_PO)
-	intltool-merge --quiet --desktop-style $(DESKTOP_FILE_PO) $< $@
+	$(AM_V_GEN)$(BIN_MSGFMT) --desktop --template $< -o $@ $(DESKTOP_FILE_PO)
 
 %.appdata.xml: %.appdata.xml.template $(APPDATA_FILE_PO)
 	intltool-merge --quiet --xml-style $(APPDATA_FILE_PO) $< $@

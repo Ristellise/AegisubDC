@@ -510,7 +510,7 @@ AC_PCH_FLAG([-fpch-preprocess])
 # Internationalisation support
 ##############################
 AM_GNU_GETTEXT([external])
-AM_GNU_GETTEXT_VERSION([0.18.1])
+AM_GNU_GETTEXT_VERSION([0.19.7])
 
 ################
 # Update checker
