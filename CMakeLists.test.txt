@@ -51,7 +51,7 @@ if(GTEST_FOUND)
         tests/support/util.cpp
     )
     target_compile_definitions(gtest-run PRIVATE CMAKE_BUILD)
-    target_include_directories(gtest-run PRIVATE tests/support ${GTEST_INCLUDE_DIRS})
+    target_include_directories(gtest-run PRIVATE tests/support ${Boost_INCLUDE_DIRS} ${Iconv_INCLUDE_DIRS} ${GTEST_INCLUDE_DIRS})
     target_link_libraries(gtest-run libaegisub ${Boost_LIBRARIES} ${ICU_LIBRARIES} ${GTEST_LIBRARIES})
     if(MSVC)
         set_target_properties(gtest-run PROPERTIES COMPILE_FLAGS "/Yu${PROJECT_SOURCE_DIR}/tests/support/tests_pre.h" COMPILE_FLAGS "/FI${PROJECT_SOURCE_DIR}/tests/support/tests_pre.h")
