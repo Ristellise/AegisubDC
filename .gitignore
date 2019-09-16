@@ -65,6 +65,8 @@ git_version.h
 git_version.xml
 packages/desktop/aegisub.desktop
 packages/desktop/aegisub.desktop.template
+packages/desktop/aegisub.appdata.xml
+packages/desktop/aegisub.appdata.xml.template
 src/aegisub
 src/libresrc/bitmap.cpp
 src/libresrc/bitmap.h
