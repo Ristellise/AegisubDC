@@ -132,6 +132,11 @@ void ShowAboutDialog(wxWindow *parent) {
 	aboutString.Replace("(c)", wxString(copySymbol));
 
 	wxTextCtrl *textctrl = new wxTextCtrl(&d, -1, aboutString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_READONLY | wxBORDER_NONE);
+#if defined(__WXGTK__) && !wxCHECK_VERSION(3, 1, 3)
+	// Workaround for https://trac.wxwidgets.org/ticket/18507
+	textctrl->InvalidateBestSize();
+	textctrl->SetInitialSize();
+#endif
 
 	wxSizer *MainSizer = new wxBoxSizer(wxVERTICAL);
 	MainSizer->Add(new wxStaticBitmap(&d, -1, GETIMAGE(splash)), 0, wxCENTER, 0);
