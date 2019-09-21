@@ -8,6 +8,7 @@ git:
 addons:
   apt:
     sources:
+      - sourceline: 'ppa:ubuntu-toolchain-r/test'
       - sourceline: 'deb https://apt.kitware.com/ubuntu/ bionic main'
         key_url: 'https://apt.kitware.com/keys/kitware-archive-latest.asc'
     packages:
@@ -30,11 +31,14 @@ addons:
     - libpulse-dev
     - autopoint
     - libgtest-dev
+    - gcc-9
+    - g++-9
 
-matrix:
-  include:
-  - {}
-  - env: BUILD_SUIT=autotools
+env:
+- ''
+- BUILD_SUIT=autotools
+- CC=gcc-9 CXX=g++-9
+- BUILD_SUIT=autotools CC=gcc-9 CXX=g++-9
 
 install:
 - sudo luarocks install busted > /dev/null
