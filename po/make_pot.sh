@@ -7,7 +7,7 @@ maybe_append() {
     msgid=$(echo $msg | cut -d'|' -f3-)
 
     if ! grep -Fq "msgid $msgid" aegisub.pot; then
-      echo "\n#: $msgfile:$msgline\nmsgid $msgid\nmsgstr \"\"\n" >> aegisub.pot
+      echo -e "\n#: $msgfile:$msgline\nmsgid $msgid\nmsgstr \"\"\n" >> aegisub.pot
     fi
   done
 }
@@ -33,8 +33,8 @@ grep '"[A-Za-z ]\+" : {' -n ../src/libresrc/default_hotkey.json \
   | sed 's/^\([0-9]\+:\).*\("[^"]\+"\).*$/default_hotkey.json|\1|\2/' \
   | maybe_append
 
-find ../automation -name *.lua \
-  | xargs grep tr\"[^\"]\*\" -o -n \
+find ../automation -name '*.lua' \
+  | xargs grep 'tr"[^"]*"' -o -n \
   | sed 's/\(.*\):\([0-9]\+\):tr\(".*"\)/\1|\2|\3/' \
   | sed 's/\\/\\\\\\\\/g' \
   | maybe_append
