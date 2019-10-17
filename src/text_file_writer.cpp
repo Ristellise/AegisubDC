@@ -54,7 +54,11 @@ TextFileWriter::~TextFileWriter() {
 		file->Close();
 	}
 	catch (agi::fs::FileSystemError const&e) {
+#if wxCHECK_VERSION (3, 1, 0)
 		wxString m = wxString::FromUTF8(e.GetMessage());
+#else
+		wxString m = wxString::FromUTF8(e.GetMessage().c_str(), e.GetMessage().size());
+#endif
 		if (!m.empty())
 			wxMessageBox(m, "Exception in agi::io::Save", wxOK | wxCENTRE | wxICON_ERROR);
 		else
