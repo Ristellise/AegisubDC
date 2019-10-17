@@ -38,8 +38,9 @@ class Save {
 
 public:
 	Save(fs::path const& file, bool binary = false);
-	~Save() noexcept(false);
+	~Save();
 	std::ostream& Get() { return *fp; }
+	void Close();
 };
 
 	} // namespace io
