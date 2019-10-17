@@ -30,6 +30,26 @@ namespace ec = boost::system::errc;
 // boost::filesystem functions throw a single exception type for all
 // errors, which isn't really what we want, so do some crazy wrapper
 // shit to map error codes to more useful exceptions.
+#ifdef BOOST_WINDOWS_API
+#define CHECKED_CALL(exp, src_path, dst_path) \
+	boost::system::error_code ec; \
+	exp; \
+	switch (ec.value()) {\
+		case ERROR_SUCCESS: break; \
+		case ERROR_FILE_NOT_FOUND: throw FileNotFound(src_path); \
+		case ERROR_DIRECTORY: throw NotADirectory(src_path); \
+		case ERROR_DISK_FULL: throw DriveFull(dst_path); \
+		case ERROR_ACCESS_DENIED: \
+			if (!src_path.empty()) \
+				acs::CheckFileRead(src_path); \
+			if (!dst_path.empty()) \
+				acs::CheckFileWrite(dst_path); \
+			throw AccessDenied(src_path); \
+		default: \
+			LOG_D("filesystem") << "Unknown error when calling '" << #exp << "': " << ec << ": " << ec.message(); \
+			throw FileSystemUnknownError(ec.message()); \
+	}
+#else
 #define CHECKED_CALL(exp, src_path, dst_path) \
 	boost::system::error_code ec; \
 	exp; \
@@ -49,6 +69,7 @@ namespace ec = boost::system::errc;
 			LOG_D("filesystem") << "Unknown error when calling '" << #exp << "': " << ec << ": " << ec.message(); \
 			throw FileSystemUnknownError(ec.message()); \
 	}
+#endif
 
 #define CHECKED_CALL_RETURN(exp, src_path) \
 	CHECKED_CALL(auto ret = exp, src_path, agi::fs::path()); \

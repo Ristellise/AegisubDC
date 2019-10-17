@@ -56,7 +56,8 @@ Save::Save(fs::path const& file, bool binary)
 	}
 }
 
-Save::~Save() noexcept(false) {
+void Save::Close() {
+	if (!fp) return;
 	fp.reset(); // Need to close before rename on Windows to unlock the file
 	for (int i = 0; i < 10; ++i) {
 		try {
@@ -70,6 +71,13 @@ Save::~Save() noexcept(false) {
 			util::sleep_for(100);
 		}
 	}
+}
+
+Save::~Save() {
+	try {
+		Close();
+	}
+	catch (agi::fs::FileSystemError const&) {}
 }
 
 	} // namespace io

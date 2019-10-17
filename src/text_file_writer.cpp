@@ -24,6 +24,7 @@
 #include "options.h"
 
 #include <libaegisub/io.h>
+#include <libaegisub/fs.h>
 #include <libaegisub/charset_conv.h>
 #include <libaegisub/make_unique.h>
 
@@ -49,7 +50,16 @@ TextFileWriter::TextFileWriter(agi::fs::path const& filename, std::string encodi
 }
 
 TextFileWriter::~TextFileWriter() {
-	// Explicit empty destructor required with a unique_ptr to an incomplete class
+	try {
+		file->Close();
+	}
+	catch (agi::fs::FileSystemError const&e) {
+		wxString m = wxString::FromUTF8(e.GetMessage());
+		if (!m.empty())
+			wxMessageBox(m, "Exception in agi::io::Save", wxOK | wxCENTRE | wxICON_ERROR);
+		else
+			wxMessageBox(e.GetMessage(), "Exception in agi::io::Save", wxOK | wxCENTRE | wxICON_ERROR);
+	}
 }
 
 void TextFileWriter::WriteLineToFile(std::string const& line, bool addLineBreak) {
