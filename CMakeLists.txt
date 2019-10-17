@@ -528,7 +528,7 @@ target_include_directories(libaegisub PRIVATE ${ICU_INCLUDE_DIRS})
 target_include_directories(Aegisub PRIVATE ${ICU_INCLUDE_DIRS})
 target_link_libraries(Aegisub ${ICU_LIBRARIES})
 
-find_package(wxWidgets REQUIRED base core gl stc xml)
+find_package(wxWidgets REQUIRED adv base core gl stc xml)
 include(${wxWidgets_USE_FILE})
 target_link_libraries(Aegisub ${wxWidgets_LIBRARIES})
 
