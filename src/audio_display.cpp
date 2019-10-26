@@ -154,7 +154,7 @@ class AudioDisplay::AudioDisplayScrollbar final : public AudioDisplayInteraction
 	// Recalculate thumb bounds from position and length data
 	void RecalculateThumb()
 	{
-		thumb.width = std::max<int>(min_width, (int64_t)bounds.width * page_length / data_length);
+		thumb.width = int((int64_t)bounds.width * page_length / data_length);
 		thumb.height = height;
 		thumb.x = int((int64_t)bounds.width * position / data_length);
 		thumb.y = bounds.y;
@@ -264,7 +264,12 @@ public:
 
 		dc.SetPen(wxPen(colours.Light()));
 		dc.SetBrush(wxBrush(colours.Light()));
-		dc.DrawRectangle(thumb);
+
+		// Paint the thumb at least min_width, expand to both left and right
+		if (thumb.width < min_width)
+			dc.DrawRectangle(wxRect(thumb.x - (min_width - thumb.width) / 2, thumb.y, min_width, thumb.height));
+		else
+			dc.DrawRectangle(thumb);
 	}
 };
 
