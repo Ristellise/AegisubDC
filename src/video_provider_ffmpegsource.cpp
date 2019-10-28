@@ -231,8 +231,8 @@ void FFmpegSourceVideoProvider::LoadVideo(agi::fs::path const& filename, std::st
 
 	// set thread count
 	int Threads = OPT_GET("Provider/Video/FFmpegSource/Decoding Threads")->GetInt();
-#if FFMS_VERSION < ((2 << 24) | (30 << 16) | (0 << 8) | 0)
-	if (FFMS_GetVersion() < ((2 << 24) | (17 << 16) | (2 << 8) | 1) && FFMS_GetSourceType(Index) == FFMS_SOURCE_LAVF)
+#if FFMS_VERSION < ((2 << 24) | (17 << 16) | (2 << 8) | 1)
+	if (FFMS_GetSourceType(Index) == FFMS_SOURCE_LAVF)
 		Threads = 1;
 #endif
 
