@@ -351,7 +351,7 @@ void FFmpegSourceVideoProvider::GetFrame(int n, VideoFrame &out) {
 					out.data[4 * (Width * x + y) + ch] = data[frame->Linesize[0] * (Height - 1 - x) + 4 * (Width - 1 - y) + ch];
 		out.pitch = 4 * Width;
 	}
-	else if (VideoInfo->Rotation % 180 == 90 || VideoInfo->Rotation % 360 == -270) {
+	else if (VideoInfo->Rotation % 360 == 90 || VideoInfo->Rotation % 360 == -270) {
 		std::vector<unsigned char> data(std::move(out.data));
 		out.data.resize(Width * Height * 4);
 		for (int x = 0; x < Width; ++x)
@@ -362,7 +362,7 @@ void FFmpegSourceVideoProvider::GetFrame(int n, VideoFrame &out) {
 		out.height = Width;
 		out.pitch = 4 * Height;
 	}
-	else if (VideoInfo->Rotation % 180 == 270 || VideoInfo->Rotation % 360 == -90) {
+	else if (VideoInfo->Rotation % 360 == 270 || VideoInfo->Rotation % 360 == -90) {
 		std::vector<unsigned char> data(std::move(out.data));
 		out.data.resize(Width * Height * 4);
 		for (int x = 0; x < Width; ++x)
