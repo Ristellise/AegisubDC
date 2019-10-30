@@ -609,7 +609,7 @@ DWORD DirectSoundPlayer2Thread::FillAndUnlockBuffers(void *buf1, DWORD buf1sz, v
 			buf2sz = 0;
 		}
 
-		provider->GetAudioWithVolume(buf1, input_frame, buf1szf, volume);
+		provider->GetInt16MonoAudioWithVolume(reinterpret_cast<int16_t*>(buf1), input_frame, buf1szf, volume);
 
 		input_frame += buf1szf;
 	}
@@ -622,7 +622,7 @@ DWORD DirectSoundPlayer2Thread::FillAndUnlockBuffers(void *buf1, DWORD buf1sz, v
 			buf2sz = buf2szf * bytes_per_frame;
 		}
 
-		provider->GetAudioWithVolume(buf2, input_frame, buf2szf, volume);
+		provider->GetInt16MonoAudioWithVolume(reinterpret_cast<int16_t*>(buf2), input_frame, buf2szf, volume);
 
 		input_frame += buf2szf;
 	}

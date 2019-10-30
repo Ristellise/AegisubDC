@@ -224,8 +224,8 @@ RetryLock:
 	LOG_D_IF(!count1 && !count2, "audio/player/dsound1") << "DS fill: nothing";
 
 	// Get source wave
-	if (count1) provider->GetAudioWithVolume(ptr1, playPos, count1, volume);
-	if (count2) provider->GetAudioWithVolume(ptr2, playPos+count1, count2, volume);
+	if (count1) provider->GetInt16MonoAudioWithVolume(reinterpret_cast<int16_t*>(ptr1), playPos, count1, volume);
+	if (count2) provider->GetInt16MonoAudioWithVolume(reinterpret_cast<int16_t*>(ptr2), playPos+count1, count2, volume);
 	playPos += count1+count2;
 
 	buffer->Unlock(ptr1,count1*bytesps,ptr2,count2*bytesps);
