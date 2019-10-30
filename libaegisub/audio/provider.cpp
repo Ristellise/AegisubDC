@@ -21,7 +21,103 @@
 #include "libaegisub/log.h"
 #include "libaegisub/util.h"
 
+namespace {
+
+template<typename Source>
+class ConvertFloatToInt16 {
+	Source* src;
+public:
+	ConvertFloatToInt16(Source* src) :src(src) {}
+	int16_t operator[](size_t idx) const {
+		Source expanded = src[idx] * 32768;
+		return expanded < -32768 ? -32768 :
+			expanded > 32767 ? 32767 :
+			static_cast<int16_t>(expanded);
+	}
+};
+
+// 8 bits per sample is assumed to be unsigned with a bias of 128,
+// while everything else is assumed to be signed with zero bias
+class ConvertIntToInt16 {
+	void* src;
+	int bytes_per_sample;
+public:
+	ConvertIntToInt16(void* src, int bytes_per_sample) :src(src), bytes_per_sample(bytes_per_sample) {}
+	const int16_t& operator[](size_t idx) const {
+		return *reinterpret_cast<int16_t*>(reinterpret_cast<char*>(src) + (idx + 1) * bytes_per_sample - sizeof(int16_t));
+	}
+};
+class ConvertUInt8ToInt16 {
+	uint8_t* src;
+public:
+	ConvertUInt8ToInt16(uint8_t* src) :src(src) {}
+	int16_t operator[](size_t idx) const {
+		return int16_t(src[idx]-128) << 8;
+	}
+};
+
+template<typename Source>
+class DownmixToMono {
+	Source src;
+	int channels;
+public:
+	DownmixToMono(Source src, int channels) :src(src), channels(channels) {}
+	int16_t operator[](size_t idx) const {
+		int ret = 0;
+		// Just average the channels together
+		for (int i = 0; i < channels; ++i)
+			ret += src[idx * channels + i];
+		return ret / channels;
+	}
+};
+}
+
 namespace agi {
+void AudioProvider::FillBufferInt16Mono(int16_t* buf, int64_t start, int64_t count) const {
+	if (!float_samples && bytes_per_sample == 2 && channels == 1) {
+		FillBuffer(buf, start, count);
+		return;
+	}
+	void* buff = malloc(bytes_per_sample * count * channels);
+	FillBuffer(buff, start, count);
+	if (channels == 1) {
+		if (float_samples) {
+			if (bytes_per_sample == sizeof(float))
+				for (int64_t i = 0; i < count; ++i)
+					buf[i] = ConvertFloatToInt16<float>(reinterpret_cast<float*>(buff))[i];
+			else if (bytes_per_sample == sizeof(double))
+				for (int64_t i = 0; i < count; ++i)
+					buf[i] = ConvertFloatToInt16<double>(reinterpret_cast<double*>(buff))[i];
+		}
+		else {
+			if (bytes_per_sample == sizeof(uint8_t))
+				for (int64_t i = 0; i < count; ++i)
+					buf[i] = ConvertUInt8ToInt16(reinterpret_cast<uint8_t*>(buff))[i];
+			else
+				for (int64_t i = 0; i < count; ++i)
+					buf[i] = ConvertIntToInt16(buff, bytes_per_sample)[i];
+		}
+	}
+	else {
+		if (float_samples) {
+			if (bytes_per_sample == sizeof(float))
+				for (int64_t i = 0; i < count; ++i)
+					buf[i] = DownmixToMono<ConvertFloatToInt16<float> >(ConvertFloatToInt16<float>(reinterpret_cast<float*>(buff)), channels)[i];
+			else if (bytes_per_sample == sizeof(double))
+				for (int64_t i = 0; i < count; ++i)
+					buf[i] = DownmixToMono<ConvertFloatToInt16<double> >(ConvertFloatToInt16<double>(reinterpret_cast<double*>(buff)), channels)[i];
+		}
+		else {
+			if (bytes_per_sample == sizeof(uint8_t))
+				for (int64_t i = 0; i < count; ++i)
+					buf[i] = DownmixToMono<ConvertUInt8ToInt16>(ConvertUInt8ToInt16(reinterpret_cast<uint8_t*>(buff)), channels)[i];
+			else
+				for (int64_t i = 0; i < count; ++i)
+					buf[i] = DownmixToMono<ConvertIntToInt16>(ConvertIntToInt16(buff, bytes_per_sample), channels)[i];
+		}
+	}
+}
+
 void AudioProvider::GetInt16MonoAudioWithVolume(int16_t *buf, int64_t start, int64_t count, double volume) const {
 	GetInt16MonoAudio(buf, start, count);
 	if (volume == 1.0) return;

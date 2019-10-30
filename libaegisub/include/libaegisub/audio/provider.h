@@ -36,11 +36,7 @@ protected:
 	bool float_samples = false;
 
 	virtual void FillBuffer(void *buf, int64_t start, int64_t count) const = 0;
-	virtual void FillBufferInt16Mono(int16_t* buf, int64_t start, int64_t count) const {
-		if (float_samples || bytes_per_sample != 2 || channels != 1)
-			throw agi::InternalError("FillBufferInt16Mono called on unconverted audio stream");
-		FillBuffer(buf, start, count);
-	}
+	virtual void FillBufferInt16Mono(int16_t* buf, int64_t start, int64_t count) const;
 
 	void ZeroFill(void *buf, int64_t count) const;
 

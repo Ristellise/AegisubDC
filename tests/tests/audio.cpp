@@ -333,7 +333,7 @@ struct FloatAudioProvider : agi::AudioProvider {
 		auto out = static_cast<Float *>(buf);
 		for (int64_t end = start + count; start < end; ++start) {
 			auto shifted = start + SHRT_MIN;
-			*out++ = (Float)(1.0 * shifted / (shifted < 0 ? -SHRT_MIN : SHRT_MAX));
+			*out++ = (Float)(shifted) / (-SHRT_MIN);
 		}
 	}
 };
