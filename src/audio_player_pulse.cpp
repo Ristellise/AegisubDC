@@ -133,11 +133,11 @@ PulseAudioPlayer::PulseAudioPlayer(agi::AudioProvider *provider) : AudioPlayer(p
 	}
 
 	// Set up stream
-	bpf = provider->GetChannels() * provider->GetBytesPerSample();
+	bpf = /*provider->GetChannels() * provider->GetBytesPerSample()*/sizeof(int16_t);
 	pa_sample_spec ss;
 	ss.format = PA_SAMPLE_S16LE; // FIXME
 	ss.rate = provider->GetSampleRate();
-	ss.channels = provider->GetChannels();
+	ss.channels = /*provider->GetChannels()*/1;
 	pa_channel_map map;
 	pa_channel_map_init_auto(&map, ss.channels, PA_CHANNEL_MAP_DEFAULT);
 

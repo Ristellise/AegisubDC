@@ -320,8 +320,10 @@ void DirectSoundPlayer2Thread::Run()
 	WAVEFORMATEX waveFormat;
 	waveFormat.wFormatTag = WAVE_FORMAT_PCM;
 	waveFormat.nSamplesPerSec = provider->GetSampleRate();
-	waveFormat.nChannels = provider->GetChannels();
-	waveFormat.wBitsPerSample = provider->GetBytesPerSample() * 8;
+	//waveFormat.nChannels = provider->GetChannels();
+	//waveFormat.wBitsPerSample = provider->GetBytesPerSample() * 8;
+	waveFormat.nChannels = 1;
+	waveFormat.wBitsPerSample = sizeof(int16_t) * 8;
 	waveFormat.nBlockAlign = waveFormat.nChannels * waveFormat.wBitsPerSample / 8;
 	waveFormat.nAvgBytesPerSec = waveFormat.nSamplesPerSec * waveFormat.nBlockAlign;
 	waveFormat.cbSize = sizeof(waveFormat);
@@ -370,7 +372,7 @@ void DirectSoundPlayer2Thread::Run()
 	DWORD buffer_offset = 0;
 	bool playback_should_be_running = false;
 	int current_latency = wanted_latency;
-	const DWORD wanted_latency_bytes = wanted_latency*waveFormat.nSamplesPerSec*provider->GetBytesPerSample()/1000;
+	const DWORD wanted_latency_bytes = wanted_latency*waveFormat.nSamplesPerSec*/*provider->GetBytesPerSample()*/sizeof(int16_t)/1000;
 
 	while (running)
 	{
@@ -423,7 +425,7 @@ void DirectSoundPlayer2Thread::Run()
 				if (bytes_filled < wanted_latency_bytes)
 				{
 					// Very short playback length, do without streaming playback
-					current_latency = (bytes_filled*1000) / (waveFormat.nSamplesPerSec*provider->GetBytesPerSample());
+					current_latency = (bytes_filled*1000) / (waveFormat.nSamplesPerSec*/*provider->GetBytesPerSample()*/sizeof(int16_t));
 					if (FAILED(bfr->Play(0, 0, 0)))
 						REPORT_ERROR("Could not start single-buffer playback.")
 				}
@@ -554,7 +556,7 @@ do_fill_buffer:
 				else if (bytes_filled < wanted_latency_bytes)
 				{
 					// Didn't fill as much as we wanted to, let's get back to filling sooner than normal
-					current_latency = (bytes_filled*1000) / (waveFormat.nSamplesPerSec*provider->GetBytesPerSample());
+					current_latency = (bytes_filled*1000) / (waveFormat.nSamplesPerSec*/*provider->GetBytesPerSample()*/sizeof(int16_t));
 				}
 				else
 				{
@@ -578,7 +580,7 @@ DWORD DirectSoundPlayer2Thread::FillAndUnlockBuffers(void *buf1, DWORD buf1sz, v
 {
 	// Assume buffers have been locked and are ready to be filled
 
-	DWORD bytes_per_frame = provider->GetChannels() * provider->GetBytesPerSample();
+	DWORD bytes_per_frame = /*provider->GetChannels() * provider->GetBytesPerSample()*/sizeof(int16_t);
 	DWORD buf1szf = buf1sz / bytes_per_frame;
 	DWORD buf2szf = buf2sz / bytes_per_frame;
 

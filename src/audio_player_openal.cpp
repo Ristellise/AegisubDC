@@ -125,7 +125,7 @@ public:
 OpenALPlayer::OpenALPlayer(agi::AudioProvider *provider)
 : AudioPlayer(provider)
 , samplerate(provider->GetSampleRate())
-, bpf(provider->GetChannels() * provider->GetBytesPerSample())
+, bpf(/*provider->GetChannels() * provider->GetBytesPerSample()*/sizeof(int16_t))
 {
 	device = alcOpenDevice(nullptr);
 	if (!device) throw AudioPlayerOpenError("Failed opening default OpenAL device");

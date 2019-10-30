@@ -127,7 +127,7 @@ void AlsaPlayer::PlaybackThread()
 
 do_setup:
 	snd_pcm_format_t pcm_format;
-	switch (provider->GetBytesPerSample())
+	switch (/*provider->GetBytesPerSample()*/ sizeof(int16_t))
 	{
 	case 1:
 		LOG_D("audio/player/alsa") << "format U8";
@@ -143,7 +143,7 @@ do_setup:
 	if (snd_pcm_set_params(pcm,
 	                       pcm_format,
 	                       SND_PCM_ACCESS_RW_INTERLEAVED,
-	                       provider->GetChannels(),
+	                       /*provider->GetChannels()*/ 1,
 	                       provider->GetSampleRate(),
 	                       1, // allow resample
 	                       100*1000 // 100 milliseconds latency
@@ -151,7 +151,8 @@ do_setup:
 		return;
 	LOG_D("audio/player/alsa") << "set pcm params";
 
-	size_t framesize = provider->GetChannels() * provider->GetBytesPerSample();
+	//size_t framesize = provider->GetChannels() * provider->GetBytesPerSample();
+	size_t framesize = sizeof(int16_t);
 
 	while (true)
 	{
