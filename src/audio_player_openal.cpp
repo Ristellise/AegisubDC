@@ -241,7 +241,7 @@ void OpenALPlayer::FillBuffers(ALsizei count)
 
 		if (fill_len > 0)
 			// Get fill_len frames of audio
-			provider->GetAudioWithVolume(&decode_buffer[0], cur_frame, fill_len, volume);
+			provider->GetInt16MonoAudioWithVolume(reinterpret_cast<int16_t*>(decode_buffer.data()), cur_frame, fill_len, volume);
 		if ((size_t)fill_len * bpf < decode_buffer.size())
 			// And zerofill the rest
 			memset(&decode_buffer[fill_len * bpf], 0, decode_buffer.size() - fill_len * bpf);

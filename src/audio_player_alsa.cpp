@@ -175,7 +175,7 @@ do_setup:
 		{
 			auto avail = std::min(snd_pcm_avail(pcm), (snd_pcm_sframes_t)(end_position-position));
 			decode_buffer.resize(avail * framesize);
-			provider->GetAudioWithVolume(decode_buffer.data(), position, avail, volume);
+			provider->GetInt16MonoAudioWithVolume(reinterpret_cast<int16_t*>(decode_buffer.data()), position, avail, volume);
 
 			snd_pcm_sframes_t written = 0;
 			while (written <= 0)
@@ -235,7 +235,7 @@ do_setup:
 
 			{
 				decode_buffer.resize(avail * framesize);
-				provider->GetAudioWithVolume(decode_buffer.data(), position, avail, volume);
+				provider->GetInt16MonoAudioWithVolume(reinterpret_cast<int16_t*>(decode_buffer.data()), position, avail, volume);
 				snd_pcm_sframes_t written = 0;
 				while (written <= 0)
 				{

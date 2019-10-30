@@ -131,7 +131,7 @@ public:
 
         while (!TestDestroy() && parent->cur_frame < parent->end_frame) {
             int rsize = std::min(wsize, parent->end_frame - parent->cur_frame);
-            parent->provider->GetAudioWithVolume(buf, parent->cur_frame,
+            parent->provider->GetInt16MonoAudioWithVolume(reinterpret_cast<int16_t*>(buf), parent->cur_frame,
                                                  rsize, parent->volume);
             int written = ::write(parent->dspdev, buf, rsize * parent->bpf);
             parent->cur_frame += written / parent->bpf;

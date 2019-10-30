@@ -172,21 +172,21 @@ TEST(lagi_audio, save_audio_clip_out_of_audio_range) {
 
 TEST(lagi_audio, get_with_volume) {
 	TestAudioProvider<> provider;
-	uint16_t buff[4];
+	int16_t buff[4];
 
-	provider.GetAudioWithVolume(buff, 0, 4, 1.0);
+	provider.GetInt16MonoAudioWithVolume(buff, 0, 4, 1.0);
 	EXPECT_EQ(0, buff[0]);
 	EXPECT_EQ(1, buff[1]);
 	EXPECT_EQ(2, buff[2]);
 	EXPECT_EQ(3, buff[3]);
 
-	provider.GetAudioWithVolume(buff, 0, 4, 0.0);
+	provider.GetInt16MonoAudioWithVolume(buff, 0, 4, 0.0);
 	EXPECT_EQ(0, buff[0]);
 	EXPECT_EQ(0, buff[1]);
 	EXPECT_EQ(0, buff[2]);
 	EXPECT_EQ(0, buff[3]);
 
-	provider.GetAudioWithVolume(buff, 0, 4, 2.0);
+	provider.GetInt16MonoAudioWithVolume(buff, 0, 4, 2.0);
 	EXPECT_EQ(0, buff[0]);
 	EXPECT_EQ(2, buff[1]);
 	EXPECT_EQ(4, buff[2]);
@@ -195,8 +195,8 @@ TEST(lagi_audio, get_with_volume) {
 
 TEST(lagi_audio, volume_should_clamp_rather_than_wrap) {
 	TestAudioProvider<> provider;
-	uint16_t buff[1];
-	provider.GetAudioWithVolume(buff, 30000, 1, 2.0);
+	int16_t buff[1];
+	provider.GetInt16MonoAudioWithVolume(buff, 30000, 1, 2.0);
 	EXPECT_EQ(SHRT_MAX, buff[0]);
 }
 

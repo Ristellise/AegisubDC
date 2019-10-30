@@ -308,7 +308,7 @@ void PulseAudioPlayer::pa_stream_write(pa_stream *p, size_t length, PulseAudioPl
 	unsigned long maxframes = thread->end_frame - thread->cur_frame;
 	if (frames > maxframes) frames = maxframes;
 	void *buf = malloc(frames * bpf);
-	thread->provider->GetAudioWithVolume(buf, thread->cur_frame, frames, thread->volume);
+	thread->provider->GetInt16MonoAudioWithVolume(reinterpret_cast<int16_t*>(buf), thread->cur_frame, frames, thread->volume);
 	::pa_stream_write(p, buf, frames*bpf, free, 0, PA_SEEK_RELATIVE);
 	thread->cur_frame += frames;
 }

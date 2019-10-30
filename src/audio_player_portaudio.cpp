@@ -222,7 +222,7 @@ int PortAudioPlayer::paCallback(const void *inputBuffer, void *outputBuffer,
 
 	// Play something
 	if (lenAvailable > 0) {
-		player->provider->GetAudioWithVolume(outputBuffer, player->current, lenAvailable, player->GetVolume());
+		player->provider->GetInt16MonoAudioWithVolume(reinterpret_cast<int16_t*>(outputBuffer), player->current, lenAvailable, player->GetVolume());
 
 		// Set play position
 		player->current += lenAvailable;

@@ -22,12 +22,9 @@
 #include "libaegisub/util.h"
 
 namespace agi {
-void AudioProvider::GetAudioWithVolume(void *buf, int64_t start, int64_t count, double volume) const {
-	GetAudio(buf, start, count);
-
+void AudioProvider::GetInt16MonoAudioWithVolume(int16_t *buf, int64_t start, int64_t count, double volume) const {
+	GetInt16MonoAudio(buf, start, count);
 	if (volume == 1.0) return;
-	if (bytes_per_sample != 2)
-		throw agi::InternalError("GetAudioWithVolume called on unconverted audio stream");
 
 	auto buffer = static_cast<int16_t *>(buf);
 	for (size_t i = 0; i < (size_t)count; ++i)
@@ -71,6 +68,39 @@ void AudioProvider::GetAudio(void *buf, int64_t start, int64_t count) const {
 	catch (...) {
 		LOG_E("audio_provider") << "Unknown audio decoding error";
 		ZeroFill(buf, count);
+		return;
+	}
+}
+
+void AudioProvider::GetInt16MonoAudio(int16_t* buf, int64_t start, int64_t count) const {
+	if (start < 0) {
+		memset(buf, 0, sizeof(int16_t) * std::min(-start, count));
+		buf -= start;
+		count += start;
+		start = 0;
+	}
+
+	if (start + count > num_samples) {
+		int64_t zero_count = std::min(count, start + count - num_samples);
+		count -= zero_count;
+		memset(buf + count, 0, sizeof(int16_t) * zero_count);
+	}
+
+	if (count <= 0) return;
+
+	try {
+		FillBufferInt16Mono(buf, start, count);
+	}
+	catch (AudioDecodeError const& e) {
+		// We don't have any good way to report errors here, so just log the
+		// failure and return silence
+		LOG_E("audio_provider") << e.GetMessage();
+		memset(buf, 0, sizeof(int16_t) * count);
+		return;
+	}
+	catch (...) {
+		LOG_E("audio_provider") << "Unknown audio decoding error";
+		memset(buf, 0, sizeof(int16_t) * count);
 		return;
 	}
 }
