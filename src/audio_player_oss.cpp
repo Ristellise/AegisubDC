@@ -146,7 +146,7 @@ public:
 
 void OSSPlayer::OpenStream()
 {
-    bpf = provider->GetChannels() * provider->GetBytesPerSample();
+    bpf = /*provider->GetChannels() * provider->GetBytesPerSample()*/sizeof(int16_t);
 
     // Open device
     wxString device = to_wx(OPT_GET("Player/Audio/OSS/Device")->GetString());
@@ -162,14 +162,14 @@ void OSSPlayer::OpenStream()
 #endif
 
     // Set number of channels
-    int channels = provider->GetChannels();
+    int channels = /*provider->GetChannels()*/1;
     if (ioctl(dspdev, SNDCTL_DSP_CHANNELS, &channels) < 0) {
         throw AudioPlayerOpenError("OSS player: setting channels failed");
     }
 
     // Set sample format
     int sample_format;
-    switch (provider->GetBytesPerSample()) {
+    switch (/*provider->GetBytesPerSample()*/sizeof(int16_t)) {
         case 1:
             sample_format = AFMT_S8;
             break;

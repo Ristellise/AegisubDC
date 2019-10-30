@@ -112,8 +112,10 @@ DirectSoundPlayer::DirectSoundPlayer(agi::AudioProvider *provider, wxWindow *par
 	WAVEFORMATEX waveFormat;
 	waveFormat.wFormatTag = WAVE_FORMAT_PCM;
 	waveFormat.nSamplesPerSec = provider->GetSampleRate();
-	waveFormat.nChannels = provider->GetChannels();
-	waveFormat.wBitsPerSample = provider->GetBytesPerSample() * 8;
+	//waveFormat.nChannels = provider->GetChannels();
+	//waveFormat.wBitsPerSample = provider->GetBytesPerSample() * 8;
+	waveFormat.nChannels = 1;
+	waveFormat.wBitsPerSample = sizeof(int16_t) * 8;
 	waveFormat.nBlockAlign = waveFormat.nChannels * waveFormat.wBitsPerSample / 8;
 	waveFormat.nAvgBytesPerSec = waveFormat.nSamplesPerSec * waveFormat.nBlockAlign;
 	waveFormat.cbSize = sizeof(waveFormat);
@@ -161,7 +163,7 @@ bool DirectSoundPlayer::FillBuffer(bool fill) {
 	HRESULT res;
 	void *ptr1, *ptr2;
 	unsigned long int size1, size2;
-	int bytesps = provider->GetBytesPerSample();
+	int bytesps = /*provider->GetBytesPerSample()*/ sizeof(int16_t);
 
 	// To write length
 	int toWrite = 0;
@@ -255,7 +257,7 @@ void DirectSoundPlayer::Play(int64_t start,int64_t count) {
 	FillBuffer(true);
 
 	DWORD play_flag = 0;
-	if (count*provider->GetBytesPerSample() > bufSize) {
+	if (count*/*provider->GetBytesPerSample()*/sizeof(int16_t) > bufSize) {
 		// Start thread
 		thread = new DirectSoundPlayerThread(this);
 		thread->Create();
