@@ -167,7 +167,7 @@ void FFmpegSourceAudioProvider::LoadAudio(agi::fs::path const& filename) {
 			throw agi::AudioProviderError("unknown or unsupported sample format");
 	}
 
-#if FFMS_VERSION >= ((2 << 24) | (17 << 16) | (4 << 8) | 0)
+#if defined(FFMS_MONO_OUTPUT) && FFMS_VERSION >= ((2 << 24) | (17 << 16) | (4 << 8) | 0)
 	if (channels > 1 || bytes_per_sample != 2) {
 		std::unique_ptr<FFMS_ResampleOptions, decltype(&FFMS_DestroyResampleOptions)>
 			opt(FFMS_CreateResampleOptions(AudioSource), FFMS_DestroyResampleOptions);
