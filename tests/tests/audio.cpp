@@ -232,7 +232,7 @@ TEST(lagi_audio, convert_8bit) {
 	auto provider = agi::CreateConvertAudioProvider(agi::make_unique<TestAudioProvider<uint8_t>>());
 
 	int16_t data[256];
-	provider->GetAudio(data, 0, 256);
+	provider->GetInt16MonoAudio(data, 0, 256);
 	for (int i = 0; i < 256; ++i)
 		ASSERT_EQ((i - 128) * 256, data[i]);
 }
@@ -243,13 +243,13 @@ TEST(lagi_audio, convert_32bit) {
 	auto provider = agi::CreateConvertAudioProvider(std::move(src));
 
 	int16_t sample;
-	provider->GetAudio(&sample, 0, 1);
+	provider->GetInt16MonoAudio(&sample, 0, 1);
 	EXPECT_EQ(SHRT_MIN, sample);
 
-	provider->GetAudio(&sample, 1LL << 31, 1);
+	provider->GetInt16MonoAudio(&sample, 1LL << 31, 1);
 	EXPECT_EQ(0, sample);
 
-	provider->GetAudio(&sample, (1LL << 32) - 1, 1);
+	provider->GetInt16MonoAudio(&sample, (1LL << 32) - 1, 1);
 	EXPECT_EQ(SHRT_MAX, sample);
 }
 
@@ -310,10 +310,10 @@ TEST(lagi_audio, stereo_downmix) {
 	};
 
 	auto provider = agi::CreateConvertAudioProvider(agi::make_unique<AudioProvider>());
-	EXPECT_EQ(1, provider->GetChannels());
+	EXPECT_EQ(2, provider->GetChannels());
 
 	int16_t samples[100];
-	provider->GetAudio(samples, 0, 100);
+	provider->GetInt16MonoAudio(samples, 0, 100);
 	for (int i = 0; i < 100; ++i)
 		EXPECT_EQ(i, samples[i]);
 }
@@ -340,20 +340,20 @@ struct FloatAudioProvider : agi::AudioProvider {
 
 TEST(lagi_audio, float_conversion) {
 	auto provider = agi::CreateConvertAudioProvider(agi::make_unique<FloatAudioProvider<float>>());
-	EXPECT_FALSE(provider->AreSamplesFloat());
+	EXPECT_TRUE(provider->AreSamplesFloat());
 
 	int16_t samples[1 << 16];
-	provider->GetAudio(samples, 0, 1 << 16);
+	provider->GetInt16MonoAudio(samples, 0, 1 << 16);
 	for (int i = 0; i < (1 << 16); ++i)
 		ASSERT_EQ(i + SHRT_MIN, samples[i]);
 }
 
 TEST(lagi_audio, double_conversion) {
 	auto provider = agi::CreateConvertAudioProvider(agi::make_unique<FloatAudioProvider<double>>());
-	EXPECT_FALSE(provider->AreSamplesFloat());
+	EXPECT_TRUE(provider->AreSamplesFloat());
 
 	int16_t samples[1 << 16];
-	provider->GetAudio(samples, 0, 1 << 16);
+	provider->GetInt16MonoAudio(samples, 0, 1 << 16);
 	for (int i = 0; i < (1 << 16); ++i)
 		ASSERT_EQ(i + SHRT_MIN, samples[i]);
 }
