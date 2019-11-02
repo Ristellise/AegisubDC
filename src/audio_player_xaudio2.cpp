@@ -297,31 +297,33 @@ void XAudio2Thread::Run() {
 		REPORT_ERROR("Failed initializing XAudio2 MasteringVoice")
 	}
 
-#ifdef XAUDIO2_SAFE_FORMATS_ONLY
-	const bool original = provider->GetChannels() <= 2 && provider->AreSamplesFloat() ? provider->GetBytesPerSample() == 4 : provider->GetBytesPerSample() <= 2;
-#else
-	const bool original = true;
-#endif
-
 	// Describe the wave format
 	WAVEFORMATEX wfx;
 	wfx.nSamplesPerSec = provider->GetSampleRate();
 	wfx.cbSize = 0;
-	if (original) {
-		wfx.wFormatTag = provider->AreSamplesFloat() ? WAVE_FORMAT_IEEE_FLOAT : WAVE_FORMAT_PCM;
-		wfx.nChannels = provider->GetChannels();
-		wfx.wBitsPerSample = provider->GetBytesPerSample() * 8;
-	}
-	else {
-		wfx.wFormatTag = WAVE_FORMAT_PCM;
-		wfx.nChannels = 1;
-		wfx.wBitsPerSample = sizeof(int16_t) * 8;
-	}
+	bool original = true;
+	wfx.wFormatTag = provider->AreSamplesFloat() ? WAVE_FORMAT_IEEE_FLOAT : WAVE_FORMAT_PCM;
+	wfx.nChannels = provider->GetChannels();
+	wfx.wBitsPerSample = provider->GetBytesPerSample() * 8;
 	wfx.nBlockAlign = wfx.nChannels * wfx.wBitsPerSample / 8;
 	wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nBlockAlign;
 
 	if (FAILED(hr = pXAudio2->CreateSourceVoice(&pSourceVoice, &wfx, 0, 2, this))) {
-		REPORT_ERROR("Failed initializing XAudio2 SourceVoice")
+		if (hr == XAUDIO2_E_INVALID_CALL) {
+			// Retry with 16bit mono
+			original = false;
+			wfx.wFormatTag = WAVE_FORMAT_PCM;
+			wfx.nChannels = 1;
+			wfx.wBitsPerSample = sizeof(int16_t) * 8;
+			wfx.nBlockAlign = wfx.nChannels * wfx.wBitsPerSample / 8;
+			wfx.nAvgBytesPerSec = wfx.nSamplesPerSec * wfx.nBlockAlign;
+			if (FAILED(hr = pXAudio2->CreateSourceVoice(&pSourceVoice, &wfx, 0, 2, this))) {
+				REPORT_ERROR("Failed initializing XAudio2 SourceVoice")
+			}
+		}
+		else {
+			REPORT_ERROR("Failed initializing XAudio2 SourceVoice")
+		}
 	}
 
 	// Now we're ready to roll!
