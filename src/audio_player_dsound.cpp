@@ -257,7 +257,7 @@ void DirectSoundPlayer::Play(int64_t start,int64_t count) {
 	FillBuffer(true);
 
 	DWORD play_flag = 0;
-	if (count*/*provider->GetBytesPerSample()*/sizeof(int16_t) > bufSize) {
+	if (count* /*provider->GetBytesPerSample()*/ sizeof(int16_t) > bufSize) {
 		// Start thread
 		thread = new DirectSoundPlayerThread(this);
 		thread->Create();

@@ -372,7 +372,7 @@ void DirectSoundPlayer2Thread::Run()
 	DWORD buffer_offset = 0;
 	bool playback_should_be_running = false;
 	int current_latency = wanted_latency;
-	const DWORD wanted_latency_bytes = wanted_latency*waveFormat.nSamplesPerSec*/*provider->GetBytesPerSample()*/sizeof(int16_t)/1000;
+	const DWORD wanted_latency_bytes = wanted_latency*waveFormat.nSamplesPerSec* /*provider->GetBytesPerSample()*/ sizeof(int16_t)/1000;
 
 	while (running)
 	{
@@ -425,7 +425,7 @@ void DirectSoundPlayer2Thread::Run()
 				if (bytes_filled < wanted_latency_bytes)
 				{
 					// Very short playback length, do without streaming playback
-					current_latency = (bytes_filled*1000) / (waveFormat.nSamplesPerSec*/*provider->GetBytesPerSample()*/sizeof(int16_t));
+					current_latency = (bytes_filled*1000) / (waveFormat.nSamplesPerSec* /*provider->GetBytesPerSample()*/ sizeof(int16_t));
 					if (FAILED(bfr->Play(0, 0, 0)))
 						REPORT_ERROR("Could not start single-buffer playback.")
 				}
@@ -556,7 +556,7 @@ do_fill_buffer:
 				else if (bytes_filled < wanted_latency_bytes)
 				{
 					// Didn't fill as much as we wanted to, let's get back to filling sooner than normal
-					current_latency = (bytes_filled*1000) / (waveFormat.nSamplesPerSec*/*provider->GetBytesPerSample()*/sizeof(int16_t));
+					current_latency = (bytes_filled*1000) / (waveFormat.nSamplesPerSec* /*provider->GetBytesPerSample()*/ sizeof(int16_t));
 				}
 				else
 				{
