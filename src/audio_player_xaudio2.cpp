@@ -472,7 +472,7 @@ XAudio2Thread::XAudio2Thread(agi::AudioProvider* provider, int WantedLatency, in
 	, is_playing(CreateEvent(0, TRUE, FALSE, 0))
 	, error_happened(CreateEvent(0, FALSE, FALSE, 0))
 	, wanted_latency(WantedLatency)
-	, buffer_length(BufferLength)
+	, buffer_length(BufferLength < XAUDIO2_MAX_QUEUED_BUFFERS ? BufferLength : XAUDIO2_MAX_QUEUED_BUFFERS)
 	, provider(provider)
 	, buffer_occupied(BufferLength)
 {
