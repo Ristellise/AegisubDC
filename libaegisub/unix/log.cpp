@@ -24,14 +24,20 @@ void EmitSTDOUT::log(SinkMessage const& sm) {
 	tm tmtime;
 	localtime_r(&time, &tmtime);
 
+#ifdef LOG_WITH_FILE
 	printf("%c %02d:%02d:%02d %-9ld <%-25s> [%s:%s:%d]  %.*s\n",
+#else
+	printf("%c %02d:%02d:%02d %-9ld <%-25s> [%s:%d]  %.*s\n",
+#endif
 		Severity_ID[sm.severity],
 		tmtime.tm_hour,
 		tmtime.tm_min,
 		tmtime.tm_sec,
 		(long)(sm.time % 1000000000),
 		sm.section,
+#ifdef LOG_WITH_FILE
 		sm.file,
+#endif
 		sm.func,
 		sm.line,
 		(int)sm.message.size(),

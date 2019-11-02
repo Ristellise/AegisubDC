@@ -98,12 +98,6 @@ namespace agi {
 		std::string const& GetMessage() const { return message; }
 	};
 
-/// @brief Convenience macro to include the current location in code
-///
-/// Intended for use in error messages where it can sometimes be convenient to
-/// indicate the exact position the error occurred at.
-#define AG_WHERE " (at " __FILE__ ":" #__LINE__ ")"
-
 /// @brief Convenience macro for declaring exceptions
 /// @param classname   Name of the exception class to declare
 /// @param baseclass   Class to derive from

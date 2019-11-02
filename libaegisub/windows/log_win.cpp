@@ -27,8 +27,12 @@ void EmitSTDOUT::log(SinkMessage const& sm) {
 	localtime_s(&tmtime, &time);
 
 	char buff[65536];
+#ifdef LOG_WITH_FILE
 	_snprintf_s(buff, _TRUNCATE, "%s (%d): %c %02d:%02d:%02d.%-3ld <%-25s> [%s]  %.*s\n",
 		sm.file,
+#else
+	_snprintf_s(buff, _TRUNCATE, "Line %d: %c %02d:%02d:%02d.%-3ld <%-25s> [%s]  %.*s\n",
+#endif
 		sm.line,
 		Severity_ID[sm.severity],
 		tmtime.tm_hour,
