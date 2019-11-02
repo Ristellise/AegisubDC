@@ -572,12 +572,18 @@ if(WITH_CSRI)
 endif()
 
 if(WIN32)
-    target_compile_definitions(Aegisub PRIVATE "WITH_DIRECTSOUND" "WITH_XAUDIO2")
+    target_compile_definitions(Aegisub PRIVATE "WITH_DIRECTSOUND")
     target_link_libraries(Aegisub dsound)
-    target_sources(Aegisub PRIVATE src/audio_player_dsound.cpp src/audio_player_dsound2.cpp src/audio_player_xaudio2.cpp)
+    target_sources(Aegisub PRIVATE src/audio_player_dsound.cpp src/audio_player_dsound2.cpp)
     set(WITH_DIRECTSOUND ON)
+    set(WITH_XAUDIO2 ON CACHE BOOL "Enable XAudio2 support")
+    if(WITH_XAUDIO2)
+        target_compile_definitions(Aegisub PRIVATE "WITH_XAUDIO2")
+        target_sources(Aegisub PRIVATE src/audio_player_xaudio2.cpp)
+    endif()
 else()
     set(WITH_DIRECTSOUND OFF)
+    set(WITH_XAUDIO2 OFF)
 endif()
 
 set(WITH_FFMS2 ON CACHE BOOL "Enable FFMS2 support")
@@ -783,6 +789,7 @@ message(STATUS "\n"
     "  ALSA:                  ${WITH_ALSA}\n"
     "  DirectSound:           ${WITH_DIRECTSOUND}\n"
     "  DirectSound-old:       ${WITH_DIRECTSOUND}\n"
+    "  XAudio2:               ${WITH_XAUDIO2}\n"
     "  OpenAL:                ${WITH_OPENAL}\n"
     "  OSS:                   ${WITH_OSS}\n"
     "  PortAudio:             ${WITH_PORTAUDIO}\n"

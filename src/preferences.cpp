@@ -413,8 +413,14 @@ void Advanced_Audio(wxTreebook *book, Preferences *parent) {
 	p->OptionBrowse(oss, _("OSS Device"), "Player/Audio/OSS/Device");
 #endif
 
-#ifdef WITH_DIRECTSOUND
+#if defined(WITH_DIRECTSOUND) && defined(WITH_XAUDIO2)
+	auto dsound = p->PageSizer("DirectSound / XAudio2");
+#elif defined(WITH_DIRECTSOUND)
 	auto dsound = p->PageSizer("DirectSound");
+#elif defined(WITH_XAUDIO2)
+	auto dsound = p->PageSizer("XAudio2");
+#endif
+#if defined(WITH_DIRECTSOUND) || defined(WITH_XAUDIO2)
 	p->OptionAdd(dsound, _("Buffer latency"), "Player/Audio/DirectSound/Buffer Latency", 1, 1000);
 	p->OptionAdd(dsound, _("Buffer length"), "Player/Audio/DirectSound/Buffer Length", 1, 100);
 #endif
