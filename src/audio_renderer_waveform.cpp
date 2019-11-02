@@ -80,9 +80,6 @@ void AudioWaveformRenderer::Render(wxBitmap &bmp, int start, AudioRenderingStyle
 
 	double cur_sample = start * pixel_samples;
 
-	assert(provider->GetBytesPerSample() == 2);
-	assert(provider->GetChannels() == 1);
-
 	wxPen pen_peaks(wxPen(pal->get(0.4f)));
 	wxPen pen_avgs(wxPen(pal->get(0.7f)));
 
