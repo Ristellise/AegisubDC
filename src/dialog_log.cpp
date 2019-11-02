@@ -58,6 +58,7 @@ public:
 #ifndef _WIN32
 		tm tmtime;
 		localtime_r(&time, &tmtime);
+#ifdef LOG_WITH_FILE
 		auto log = fmt_wx("%c %02d:%02d:%02d %-6d <%-25s> [%s:%s:%d]  %s\n",
 			agi::log::Severity_ID[sm.severity],
 			tmtime.tm_hour,
@@ -70,6 +71,19 @@ public:
 			sm.line,
 			sm.message);
 #else
+		auto log = fmt_wx("%c %02d:%02d:%02d %-6d <%-25s> [%s:%d]  %s\n",
+			agi::log::Severity_ID[sm.severity],
+			tmtime.tm_hour,
+			tmtime.tm_min,
+			tmtime.tm_sec,
+			(sm.time % 1000000000),
+			sm.section,
+			sm.func,
+			sm.line,
+			sm.message);
+#endif
+#else
+#ifdef LOG_WITH_FILE
 		auto log = fmt_wx("%c %-6ld.%09ld <%-25s> [%s:%s:%d]  %s\n",
 			agi::log::Severity_ID[sm.severity],
 			(sm.time / 1000000000),
@@ -79,6 +93,16 @@ public:
 			sm.func,
 			sm.line,
 			sm.message);
+#else
+		auto log = fmt_wx("%c %-6ld.%09ld <%-25s> [%s:%d]  %s\n",
+			agi::log::Severity_ID[sm.severity],
+			(sm.time / 1000000000),
+			(sm.time % 1000000000),
+			sm.section,
+			sm.func,
+			sm.line,
+			sm.message);
+#endif
 #endif
 
 		if (wxIsMainThread())

@@ -21,7 +21,11 @@
 
 // These macros below aren't a perm solution, it will depend on how annoying they are through
 // actual usage, and also depends on msvc support.
+#ifdef LOG_WITH_FILE
 #define LOG_SINK(section, severity) agi::log::Message(section, severity, __FILE__, __FUNCTION__, __LINE__).stream()
+#else
+#define LOG_SINK(section, severity) agi::log::Message(section, severity, __FUNCTION__, __LINE__).stream()
+#endif
 #define LOG_E(section) LOG_SINK(section, agi::log::Exception)
 #define LOG_A(section) LOG_SINK(section, agi::log::Assert)
 #define LOG_W(section) LOG_SINK(section, agi::log::Warning)
@@ -59,7 +63,9 @@ struct SinkMessage {
 	std::string message; ///< Formatted message
 	int64_t time;        ///< Time at execution in nanoseconds since epoch
 	const char *section; ///< Section info eg "video/open" "video/seek" etc
+#ifdef LOG_WITH_FILE
 	const char *file;    ///< Source file
+#endif
 	const char *func;    ///< Function name
 	Severity severity;   ///< Severity
 	int line;            ///< Source line
@@ -125,7 +131,11 @@ class Message {
 	char buffer[2048];
 
 public:
-	Message(const char *section, Severity severity, const char *file, const char *func, int line);
+#ifdef LOG_WITH_FILE
+	Message(const char* section, Severity severity, const char* file, const char* func, int line);
+#else
+	Message(const char* section, Severity severity, const char* func, int line);
+#endif
 	~Message();
 	std::ostream& stream() { return msg; }
 };

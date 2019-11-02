@@ -81,13 +81,19 @@ decltype(LogSink::messages) LogSink::GetMessages() const {
 	return ret;
 }
 
+#ifdef LOG_WITH_FILE
 Message::Message(const char *section, Severity severity, const char *file, const char *func, int line)
+#else
+Message::Message(const char* section, Severity severity, const char* func, int line)
+#endif
 : msg(buffer, sizeof buffer)
 {
 	using namespace std::chrono;
 	sm.section = section;
 	sm.severity = severity;
+#ifdef LOG_WITH_FILE
 	sm.file = file;
+#endif
 	sm.func = func;
 	sm.line = line;
 	sm.time = duration_cast<nanoseconds>(steady_clock::now().time_since_epoch()).count();
@@ -109,7 +115,9 @@ void JsonEmitter::log(SinkMessage const& sm) {
 	entry["usec"]     = sm.time % 1000000000;
 	entry["severity"] = sm.severity;
 	entry["section"]  = sm.section;
+#ifdef LOG_WITH_FILE
 	entry["file"]     = sm.file;
+#endif
 	entry["func"]     = sm.func;
 	entry["line"]     = sm.line;
 	entry["message"]  = sm.message;
