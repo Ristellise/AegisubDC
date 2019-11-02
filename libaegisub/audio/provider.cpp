@@ -116,6 +116,7 @@ void AudioProvider::FillBufferInt16Mono(int16_t* buf, int64_t start, int64_t cou
 					buf[i] = DownmixToMono<ConvertIntToInt16>(ConvertIntToInt16(buff, bytes_per_sample), channels)[i];
 		}
 	}
+	free(buff);
 }
 
 void AudioProvider::GetInt16MonoAudioWithVolume(int16_t *buf, int64_t start, int64_t count, double volume) const {
