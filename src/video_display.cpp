@@ -104,7 +104,7 @@ VideoDisplay::VideoDisplay(wxToolBar *toolbar, bool freeSize, wxComboBox *zoomBo
 		con->videoController->AddARChangeListener(&VideoDisplay::UpdateSize, this),
 	});
 
-	Bind(wxEVT_PAINT, std::bind(&VideoDisplay::Render, this));
+	Bind(wxEVT_UPDATE_UI, &VideoDisplay::OnUpdateUIEvent, this);
 	Bind(wxEVT_SIZE, &VideoDisplay::OnSizeEvent, this);
 	Bind(wxEVT_CONTEXT_MENU, &VideoDisplay::OnContextMenu, this);
 	Bind(wxEVT_ENTER_WINDOW, &VideoDisplay::OnMouseEvent, this);
@@ -148,10 +148,23 @@ bool VideoDisplay::InitContext() {
 
 void VideoDisplay::UploadFrameData(FrameReadyEvent &evt) {
 	pending_frame = evt.frame;
-	Render();
+
+	// Instead of calling Render(), we force a render here to minimize delay
+	DoRender();
 }
 
-void VideoDisplay::Render() try {
+void VideoDisplay::Render() {
+	render_requested = true;
+}
+
+void VideoDisplay::OnUpdateUIEvent(wxUpdateUIEvent&) {
+	if (render_requested)
+		DoRender();
+}
+
+void VideoDisplay::DoRender() try {
+	render_requested = false;
+
 	if (!con->project->VideoProvider() || !InitContext() || (!videoOut && !pending_frame))
 		return;
 

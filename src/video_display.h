@@ -111,6 +111,8 @@ class VideoDisplay final : public wxGLCanvas {
 	int scale_factor;
 	agi::signal::Connection scale_factor_connection;
 
+	bool render_requested;
+
 	/// @brief Draw an overscan mask
 	/// @param horizontal_percent The percent of the video reserved horizontally
 	/// @param vertical_percent The percent of the video reserved vertically
@@ -140,6 +142,8 @@ class VideoDisplay final : public wxGLCanvas {
 	/// @brief Recalculate video positioning and scaling when the available area or zoom changes
 	void OnSizeEvent(wxSizeEvent &event);
 	void OnContextMenu(wxContextMenuEvent&);
+	void OnUpdateUIEvent(wxUpdateUIEvent& event);
+	void DoRender();
 
 public:
 	/// @brief Constructor
