@@ -558,7 +558,11 @@ DialogColorPicker::DialogColorPicker(wxWindow *parent, agi::Color initial_color,
 	colorspace_choice = new wxChoice(this, -1, wxDefaultPosition, wxDefaultSize, 5, modes);
 
 	ass_input = new wxTextCtrl(this, -1);
+#if wxCHECK_VERSION(3, 1, 3)
+	wxSize colorinput_size = ass_input->GetSizeFromText(wxS("&H10117B&"));
+#else
 	wxSize colorinput_size = ass_input->GetSizeFromTextSize(GetTextExtent(wxS("&H10117B&")));
+#endif
 	ass_input->SetInitialSize(colorinput_size);
 
 	wxSizer *rgb_box = new wxStaticBoxSizer(wxHORIZONTAL, this, _("RGB color"));
