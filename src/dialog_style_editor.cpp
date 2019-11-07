@@ -201,7 +201,11 @@ DialogStyleEditor::DialogStyleEditor(wxWindow *parent, AssStyle *style, agi::Con
 		margin[i] = new wxSpinCtrl(this, -1, std::to_wstring(style->Margin[i]),
 			wxDefaultPosition, wxDefaultSize,
 			wxSP_ARROW_KEYS, 0, 9999, style->Margin[i]);
+#if wxCHECK_VERSION(3, 1, 3)
+		margin[i]->SetInitialSize(margin[i]->GetSizeFromText(wxS("0000")));
+#else
 		margin[i]->SetInitialSize(margin[i]->GetSizeFromTextSize(GetTextExtent(wxS("0000"))));
+#endif
 	}
 
 	Alignment = new wxRadioBox(this, -1, _("Alignment"), wxDefaultPosition, wxDefaultSize, 9, alignValues, 3, wxRA_SPECIFY_COLS);
