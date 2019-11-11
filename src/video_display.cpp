@@ -104,6 +104,7 @@ VideoDisplay::VideoDisplay(wxToolBar *toolbar, bool freeSize, wxComboBox *zoomBo
 		con->videoController->AddARChangeListener(&VideoDisplay::UpdateSize, this),
 	});
 
+	Bind(wxEVT_PAINT, std::bind(&VideoDisplay::Render, this));
 	Bind(wxEVT_UPDATE_UI, &VideoDisplay::OnUpdateUIEvent, this);
 	Bind(wxEVT_SIZE, &VideoDisplay::OnSizeEvent, this);
 	Bind(wxEVT_CONTEXT_MENU, &VideoDisplay::OnContextMenu, this);
