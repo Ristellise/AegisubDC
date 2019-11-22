@@ -155,7 +155,11 @@ SubsEditBox::SubsEditBox(wxWindow *parent, agi::Context *context)
 	middle_left_sizer = new wxBoxSizer(wxHORIZONTAL);
 
 	layer = new wxSpinCtrl(this,-1,"",wxDefaultPosition, wxDefaultSize, wxSP_ARROW_KEYS | wxTE_PROCESS_ENTER,0,0x7FFFFFFF,0);
-#if wxCHECK_VERSION(3, 1, 3)
+#ifdef __WXGTK3__
+	// GTK3 has a bug that we cannot shrink the size of a widget, so do nothing here. See:
+	//  http://gtk.10911.n7.nabble.com/gtk-widget-set-size-request-stopped-working-with-GTK3-td26274.html
+	//  https://trac.wxwidgets.org/ticket/18568
+#elif wxCHECK_VERSION(3, 1, 3)
 	layer->SetInitialSize(layer->GetSizeFromText(wxS("0")));
 #else
 	layer->SetInitialSize(layer->GetSizeFromTextSize(GetTextExtent(wxS("0"))));
