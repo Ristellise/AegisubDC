@@ -124,4 +124,9 @@ void ImagePositionPicker::OnMouseEvent(wxMouseEvent& evt)
 		if (x >= 0 && x < w && y >= 0 && y < h)
 			update(x, y, image.GetRed(x, y), image.GetGreen(x, y), image.GetBlue(x, y));
 	}
+	else if (evt.LeftDClick()) {
+		// Propagate the double click event to submit
+		evt.ResumePropagation(wxEVENT_PROPAGATE_MAX);
+		evt.Skip();
+	}
 }

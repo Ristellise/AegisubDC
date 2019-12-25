@@ -76,7 +76,7 @@ namespace {
 		void update_from_textbox(wxCommandEvent&);
 
 		bool check_exists(int pos, int x, int y, int* lrud, double* orig, unsigned char tolerance);
-		void process(wxCommandEvent&);
+		void process(wxEvent&);
 	public:
 		DialogAlignToVideo(agi::Context* context);
 		~DialogAlignToVideo();
@@ -137,6 +137,7 @@ namespace {
 		CenterOnParent();
 
 		Bind(wxEVT_BUTTON, &DialogAlignToVideo::process, this, wxID_OK);
+		Bind(wxEVT_LEFT_DCLICK, &DialogAlignToVideo::process, this, preview_frame->GetId());
 		SetIcon(GETICON(button_align_16));
 		if (maximized)
 			wxDialog::Maximize(true);
@@ -255,7 +256,7 @@ namespace {
 		return true;
 	}
 
-	void DialogAlignToVideo::process(wxCommandEvent & evt)
+	void DialogAlignToVideo::process(wxEvent &)
 	{
 		auto n_frames = provider->GetFrameCount();
 		auto w = provider->GetWidth();
@@ -265,19 +266,16 @@ namespace {
 		if (!selected_x->GetValue().ToLong(&lx) || !selected_y->GetValue().ToLong(&ly) || !selected_tolerance->GetValue().ToLong(&lt))
 		{
 			wxMessageBox(_("Bad x or y position or tolerance value!"));
-			evt.Skip();
 			return;
 		}
 		if (lx < 0 || ly < 0 || lx >= w || ly >= h)
 		{
 			wxMessageBox(wxString::Format(_("Bad x or y position! Require: 0 <= x < %i, 0 <= y < %i"), w, h));
-			evt.Skip();
 			return;
 		}
 		if (lt < 0 || lt > 255)
 		{
 			wxMessageBox(_("Bad tolerance value! Require: 0 <= torlerance <= 255"));
-			evt.Skip();
 			return;
 		}
 		int x = int(lx), y = int(ly);
