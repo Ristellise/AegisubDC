@@ -401,6 +401,7 @@ void Advanced_Audio(wxTreebook *book, Preferences *parent) {
 	p->OptionChoice(ffms, _("Audio indexing error handling mode"), error_modes_choice, "Provider/Audio/FFmpegSource/Decode Error Handling");
 
 	p->OptionAdd(ffms, _("Always index all audio tracks"), "Provider/FFmpegSource/Index All Tracks");
+	p->OptionAdd(ffms, _("Downmix to 16bit mono audio"), "Provider/Audio/FFmpegSource/Downmix");
 #endif
 
 #ifdef WITH_PORTAUDIO
