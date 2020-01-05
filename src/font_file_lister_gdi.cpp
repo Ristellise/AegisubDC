@@ -154,7 +154,7 @@ CollectionResult GdiFontFileLister::GetFontPaths(std::string const& facename, in
 	// Gather all of the styles for the given family name
 	std::vector<LOGFONTW> matches;
 	using type = decltype(matches);
-	EnumFontFamiliesEx(dc, &lf, [](const LOGFONT *lf, const TEXTMETRIC *, DWORD, LPARAM lParam) -> int {
+	EnumFontFamiliesExW(dc, &lf, [](const LOGFONTW *lf, const TEXTMETRICW *, DWORD, LPARAM lParam) -> int {
 		reinterpret_cast<type*>(lParam)->push_back(*lf);
 		return 1;
 	}, (LPARAM)&matches, 0);
@@ -187,11 +187,8 @@ CollectionResult GdiFontFileLister::GetFontPaths(std::string const& facename, in
 		ret.fake_bold = (italic && has_italic ? !has_bold_italic : !has_bold);
 	}
 
-	// Use the family name supplied by EnumFontFamiliesEx as it may be a localized version
-	memcpy(lf.lfFaceName, matches[0].lfFaceName, LF_FACESIZE);
-
 	// Open the font and get the data for it to look up in the index
-	auto hfont = CreateFontIndirectW(&lf);
+	auto hfont = CreateFontIndirectW(&matches[0]);
 	SelectObject(dc, hfont);
 	BOOST_SCOPE_EXIT_ALL(=) {
 		SelectObject(dc, nullptr);
