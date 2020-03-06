@@ -40,10 +40,29 @@
 
 #include <mutex>
 
+#ifndef _WIN32
+#include <dlfcn.h>
+#endif
+
+#ifndef AVISYNTH_SO
+// Fallback definition
+#ifdef _WIN32
+#define AVISYNTH_SO "AviSynth.dll"
+#else
+#define AVISYNTH_SO "libavisynth.so"
+#endif
+#endif
+
+const AVS_Linkage* AVS_linkage;
+
 // Allocate storage for and initialise static members
 namespace {
 	int avs_refcount = 0;
+#ifdef _WIN32
 	HINSTANCE hLib = nullptr;
+#else
+	void* hLib = nullptr;
+#endif
 	IScriptEnvironment *env = nullptr;
 	std::mutex AviSynthMutex;
 }
@@ -52,12 +71,24 @@ typedef IScriptEnvironment* __stdcall FUNC(int);
 
 AviSynthWrapper::AviSynthWrapper() {
 	if (!avs_refcount++) {
-		hLib = LoadLibrary(L"avisynth.dll");
+#ifdef _WIN32
+#define CONCATENATE(x, y) x ## y
+#define _Lstr(x) CONCATENATE(L, x)
+		hLib = LoadLibraryW(_Lstr(AVISYNTH_SO));
+#undef _Lstr
+#undef CONCATENATE
+#else
+		hLib = dlopen(AVISYNTH_SO, RTLD_LAZY | RTLD_LOCAL | RTLD_DEEPBIND);
+#endif
 
 		if (!hLib)
 			throw AvisynthError("Could not load avisynth.dll");
 
-		FUNC *CreateScriptEnv = (FUNC*)GetProcAddress(hLib, "CreateScriptEnvironment");
+#ifdef _WIN32
+		FUNC* CreateScriptEnv = (FUNC*)GetProcAddress(hLib, "CreateScriptEnvironment");
+#else
+		FUNC* CreateScriptEnv = (FUNC*)dlsym(hLib, "CreateScriptEnvironment");
+#endif
 		if (!CreateScriptEnv)
 			throw AvisynthError("Failed to get address of CreateScriptEnv from avisynth.dll");
 
@@ -69,6 +100,7 @@ AviSynthWrapper::AviSynthWrapper() {
 
 		if (!env)
 			throw AvisynthError("Failed to create a new avisynth script environment. Avisynth is too old?");
+		AVS_linkage = env->GetAVSLinkage();
 
 		// Set memory limit
 		const int memoryMax = OPT_GET("Provider/Avisynth/Memory Max")->GetInt();
@@ -80,7 +112,11 @@ AviSynthWrapper::AviSynthWrapper() {
 AviSynthWrapper::~AviSynthWrapper() {
 	if (!--avs_refcount) {
 		delete env;
+#ifdef _WIN32
 		FreeLibrary(hLib);
+#else
+		dlclose(hLib);
+#endif
 	}
 }
 
