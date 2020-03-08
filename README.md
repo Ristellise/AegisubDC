@@ -10,31 +10,59 @@ Support is available on IRC ( irc://irc.rizon.net/aegisub ).
 
 ## Building Aegisub
 
-Prerequisites:
+### autoconf / make (for \*nix)
 
-1. CMake 3.14 or later (or you can use an older version by editing the first line in CMakeLists.txt, and download the missing `cmake/FindFontconfig.cmake` from [here](https://gitlab.kitware.com/cmake/cmake/blob/master/Modules/FindFontconfig.cmake)),
-2. Any compiling toolchain supported by CMake,
-3. All required dependencies, namely `libass`, `Boost`(with ICU support), `OpenGL`, `libicu`, `wxWidgets`, `zlib`. Additionally, `libiconv` is required on non-POSIX systems. `fontconfig` is required on non-Windows systems.
-4. Any optional dependencies, namely `ALSA`, `FFMS2`, `FFTW`, `Hunspell`, `OpenAL`, `uchardet`.
+This is the recommended way of building Aegisub on \*nix systems. Currently AviSynth+ support is not included in autoconf project. If you need AviSynth+ support, see CMake instructions below.
 
-Building:
+Aegisub has some required dependencies:
+* `libass`
+* `Boost`(with ICU support)
+* `OpenGL`
+* `libicu`
+* `wxWidgets`
+* `zlib`
+* `fontconfig` (not needed on Windows)
+* `luajit` (or `lua`)
 
-1. If you decided to build from source:
-```shell
-git clone https://github.com/wangqr/Aegisub.git  # No --recursive is needed
+and optional dependencies:
+* `ALSA`
+* `FFMS2`
+* `FFTW`
+* `Hunspell`
+* `OpenAL`
+* `uchardet`
+* `AviSynth+`
+
+You can use the package manager provided by your distro to install these dependencies. Package name varies by distro. For ArchLinux, refer to [AUR](https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=aegisub-git). For Ubuntu, refer to [Travis](https://github.com/wangqr/Aegisub/blob/dev/.travis.yml).
+
+After installing the dependencies, you can clone and build Aegisub with:
+```sh
+git clone https://github.com/wangqr/Aegisub.git
 cd Aegisub
-./build/version.sh .  # This will generate build/git_version.h
-```
-2. Make an empty directory to hold build outputs:
-```shell
-mkdir build-dir
-```
-3. Build the project using CMake. Use either cmake-gui, or the command line:
-```shell
-cd build-dir
-cmake ..
+./autogen.sh
+./configure
 make
 ```
+
+### CMake (for all systems including Windows)
+
+This fork also provides CMake build. The CMake project will only build Aegisub itself, without the translation.
+
+You still need to install the dependencies above. To enable AviSynth+ support, it is also needed. On ArchLinux this can be done by installing [avisynthplus-git](https://aur.archlinux.org/packages/avisynthplus-git). Installing dependencies on Windows can be tricky, as Windows doesn't have a good package manager. Refer to [the Wiki page](https://github.com/wangqr/Aegisub/wiki/Compile-guide-for-Windows-(CMake,-MSVC)) on how to get all dependencies on Windows.
+
+After installing the dependencies, you can clone and build Aegisub with:
+
+```sh
+git clone https://github.com/wangqr/Aegisub.git
+cd Aegisub
+./build/version.sh .  # This will generate build/git_version.h
+mkdir build-dir
+cd build-dir
+cmake ..  # Or use cmake-gui / ccmake
+make
+```
+
+Features can be turned on/off in CMake by toggling the `WITH_*` switches.
 
 ## Updating Moonscript
 
