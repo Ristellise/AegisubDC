@@ -10,9 +10,9 @@ Support is available on IRC ( irc://irc.rizon.net/aegisub ).
 
 ## Building Aegisub
 
-### autoconf / make (for \*nix)
+### autoconf / make (for linux and macOS)
 
-This is the recommended way of building Aegisub on \*nix systems. Currently AviSynth+ support is not included in autoconf project. If you need AviSynth+ support, see CMake instructions below.
+This is the recommended way of building Aegisub on linux and macOS. Currently AviSynth+ support is not included in autoconf project. If you need AviSynth+ support, see CMake instructions below.
 
 Aegisub has some required dependencies:
 * `libass`
@@ -33,7 +33,11 @@ and optional dependencies:
 * `uchardet`
 * `AviSynth+`
 
-You can use the package manager provided by your distro to install these dependencies. Package name varies by distro. For ArchLinux, refer to [AUR](https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=aegisub-git). For Ubuntu, refer to [Travis](https://github.com/wangqr/Aegisub/blob/dev/.travis.yml).
+You can use the package manager provided by your distro to install these dependencies. Package name varies by distro. Some useful references are:
+
+* For ArchLinux, refer to [AUR](https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=aegisub-git).
+* For Ubuntu, refer to [Travis](https://github.com/wangqr/Aegisub/blob/dev/.travis.yml#L14-L35).
+* For macOS, refer to [Travis](https://github.com/wangqr/Aegisub/blob/dev/.travis/install.sh#L6). In addition to the packages listed in the `brew install` line, you also need `automake` and `pkg-config`. They are not listed there because Travis preinstalled them. For some packages, you need to either [set environment variables during build](https://github.com/wangqr/Aegisub/blob/dev/.travis.yml#L54-L58) or [force link them](https://github.com/Aegisub/Aegisub/#os-x).
 
 After installing the dependencies, you can clone and build Aegisub with:
 ```sh
@@ -44,7 +48,7 @@ cd Aegisub
 make
 ```
 
-### CMake (for all systems including Windows)
+### CMake (for Windows and linux)
 
 This fork also provides CMake build. The CMake project will only build Aegisub itself, without the translation.
 
