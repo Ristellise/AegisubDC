@@ -87,8 +87,6 @@ SubsTextEditCtrl::SubsTextEditCtrl(wxWindow* parent, wxSize wsize, long style, a
 , thesaurus(agi::make_unique<Thesaurus>())
 , context(context)
 {
-	osx::ime::inject(this);
-
 	// Set properties
 	SetWrapMode(wxSTC_WRAP_WORD);
 	SetMarginWidth(1,0);
@@ -209,7 +207,6 @@ void SubsTextEditCtrl::OnLoseFocus(wxFocusEvent &event) {
 }
 
 void SubsTextEditCtrl::OnKeyDown(wxKeyEvent &event) {
-	if (osx::ime::process_key_event(this, event)) return;
 	event.Skip();
 
 	// Workaround for wxSTC eating tabs.
@@ -335,7 +332,6 @@ void SubsTextEditCtrl::UpdateCallTip() {
 }
 
 void SubsTextEditCtrl::SetTextTo(std::string const& text) {
-	osx::ime::invalidate(this);
 	SetEvtHandlerEnabled(false);
 	Freeze();
 
