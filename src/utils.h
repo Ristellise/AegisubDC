@@ -37,9 +37,7 @@
 #include <wx/bitmap.h>
 #include <wx/string.h>
 
-class wxKeyEvent;
 class wxMouseEvent;
-class wxStyledTextCtrl;
 class wxWindow;
 
 wxString PrettySize(int bytes);
@@ -99,6 +97,7 @@ agi::fs::path SaveFileSelector(wxString const& message, std::string const& optio
 
 wxString LocalizedLanguageName(wxString const& lang);
 
+#ifdef __WXOSX__
 namespace osx {
 	/// Make the given menu the OS X Window menu
 	void make_windows_menu(wxMenu *wxmenu);
@@ -106,13 +105,5 @@ namespace osx {
 	bool activate_top_window_other_than(wxFrame *wx);
 	// Bring all windows to the front, maintaining relative z-order
 	void bring_to_front();
-
-namespace ime {
-	/// Inject the IME helper into the given wxSTC
-	void inject(wxStyledTextCtrl *ctrl);
-	/// Invalidate any pending text from the IME
-	void invalidate(wxStyledTextCtrl *ctrl);
-	/// Give the IME a chance to process a key event and return whether it did
-	bool process_key_event(wxStyledTextCtrl *ctrl, wxKeyEvent &);
 }
-}
+#endif
