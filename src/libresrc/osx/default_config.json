@@ -331,7 +331,8 @@
 				"Sample Rate" : 0
 			},
 			"FFmpegSource" : {
-				"Decode Error Handling" : "ignore"
+				"Decode Error Handling" : "ignore",
+				"Downmix" : false
 			}
 		},
 		"Avisynth" : {
