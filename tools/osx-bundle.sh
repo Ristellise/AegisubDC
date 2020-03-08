@@ -98,7 +98,7 @@ done
 
 echo
 echo "---- Libraries ----"
-python tools/osx-fix-libs.py "${PKG_DIR}/Contents/MacOS/aegisub" || exit $?
+python3 tools/osx-fix-libs.py "${PKG_DIR}/Contents/MacOS/aegisub" || exit $?
 
 echo
 echo "Done Creating \"${PKG_DIR}\""
