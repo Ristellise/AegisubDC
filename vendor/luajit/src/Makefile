@@ -215,8 +215,7 @@ TARGET_STRIP= $(CROSS)strip
 #TARGET_LIBPATH= $(or $(PREFIX),/usr/local)/$(or $(MULTILIB),lib)
 TARGET_LIBPATH= $(CURDIR)
 TARGET_SONAME= libluajit-$(ABIVER).so.$(MAJVER)
-#TARGET_DYLIBNAME= libluajit-$(ABIVER).$(MAJVER).dylib
-TARGET_DYLIBNAME= libluajit-aegisub.so
+TARGET_DYLIBNAME= libluajit-$(ABIVER).$(MAJVER).dylib
 TARGET_DYLIBPATH= $(TARGET_LIBPATH)/$(TARGET_DYLIBNAME)
 TARGET_DLLNAME= lua$(NODOTABIVER).dll
 TARGET_XSHLDFLAGS= -shared -fPIC -Wl,-soname,$(TARGET_SONAME)
@@ -503,7 +502,7 @@ LIB_VMDEFP= $(LIB_VMDEF)
 
 LUAJIT_O= luajit.o
 LUAJIT_A= libluajit.a
-LUAJIT_SO= libluajit-aegisub.so
+LUAJIT_SO= libluajit.so
 LUAJIT_T= luajit
 
 ALL_T= $(LUAJIT_T) $(LUAJIT_A) $(LUAJIT_SO) $(HOST_T)
