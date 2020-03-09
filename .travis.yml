@@ -59,6 +59,7 @@ script:
     ./autogen.sh;
     ./configure --enable-debug || cat config.log;
     make -j2 || travis_terminate 1;
+    make test || travis_terminate 1;
   elif [ "$BUILD_SUIT" = "autotools" ]; then
     export CPPFLAGS="-fprofile-arcs -ftest-coverage";
     export LIBS="-lgcov";
