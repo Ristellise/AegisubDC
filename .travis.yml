@@ -76,9 +76,3 @@ script:
     make -j2 || travis_terminate 1;
     make test || travis_terminate 1;
   fi
-
-notifications:
-  email:
-  - on_success: change
-  - on_failure: change
-
