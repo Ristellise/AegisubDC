@@ -576,6 +576,10 @@
 		},
 		"Visual" : {
 			"Autohide": false
+		},
+		"Align to Video" : {
+			"Tolerance" : 20,
+			"Maximized" : true
 		}
 	},
 
