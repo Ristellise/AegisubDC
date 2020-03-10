@@ -33,6 +33,23 @@ addons:
     - libgtest-dev
     - gcc-9
     - g++-9
+  homebrew:
+    packages:
+    - autoconf
+    - boost
+    - ffmpeg
+    - ffms2
+    - fftw
+    - freetype
+    - fribidi
+    - gettext
+    - icu4c
+    - libass
+    - lua
+    - luarocks
+    - m4
+    - wxmac
+    update: true
 
 env:
 - ''
