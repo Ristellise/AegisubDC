@@ -159,9 +159,9 @@ SubsEditBox::SubsEditBox(wxWindow *parent, agi::Context *context)
 	//  http://gtk.10911.n7.nabble.com/gtk-widget-set-size-request-stopped-working-with-GTK3-td26274.html
 	//  https://trac.wxwidgets.org/ticket/18568
 #elif wxCHECK_VERSION(3, 1, 3)
-	layer->SetInitialSize(layer->GetSizeFromText(wxS("0")));
+	layer->SetInitialSize(layer->GetSizeFromText(wxS("00")));
 #else
-	layer->SetInitialSize(layer->GetSizeFromTextSize(GetTextExtent(wxS("0"))));
+	layer->SetInitialSize(layer->GetSizeFromTextSize(GetTextExtent(wxS("00"))));
 #endif
 	layer->SetToolTip(_("Layer number"));
 	middle_left_sizer->Add(layer, wxSizerFlags().Center());
