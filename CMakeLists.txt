@@ -470,6 +470,23 @@ add_executable(Aegisub WIN32
 target_link_libraries(Aegisub ${CMAKE_DL_LIBS} libaegisub luabins luajit resrc csri)
 target_compile_definitions(Aegisub PRIVATE CMAKE_BUILD)
 
+if(WIN32)
+    if(NOT EXISTS "${PROJECT_SOURCE_DIR}/build/git_version.h")
+        message(SEND_ERROR
+            "build/git_version.h not found.\n"
+            "Automatic generation of build/git_version.h is not supported on Windows. Please run\n"
+            "    build/version.sh .\n"
+            "at the source directory from an environment with bash and git. You may use WSL, msys (git bash), or Cygwin."
+        )
+    endif()
+else()
+    add_custom_target(git_version build/version.sh .
+        BYPRODUCTS "${PROJECT_SOURCE_DIR}/build/git_version.h" "${PROJECT_SOURCE_DIR}/build/git_version.xml"
+        WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}"
+    )
+    add_dependencies(Aegisub git_version)
+endif()
+
 set(WITH_BUILD_CREDIT OFF CACHE BOOL "Whether show build credit in about dialog")
 if(WITH_BUILD_CREDIT)
     set(BUILD_CREDIT "" CACHE STRING "Build credit shown in about dialog")
