@@ -37,7 +37,7 @@ You can use the package manager provided by your distro to install these depende
 
 * For ArchLinux, refer to [AUR](https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=aegisub-git).
 * For Ubuntu, refer to [Travis](https://github.com/wangqr/Aegisub/blob/dev/.travis.yml#L14-L35).
-* For macOS, refer to [Travis](https://github.com/wangqr/Aegisub/blob/dev/.travis/install.sh#L6). In addition to the packages listed in the `brew install` line, you also need `automake` and `pkg-config`. They are not listed there because Travis preinstalled them. For some packages, you need to either [set environment variables during build](https://github.com/wangqr/Aegisub/blob/dev/.travis.yml#L54-L58) or [force link them](https://github.com/Aegisub/Aegisub/#os-x).
+* For macOS, see [Special notice for macOS](https://github.com/wangqr/Aegisub/wiki/Special-notice-for-macOS) on project Wiki.
 
 After installing the dependencies, you can clone and build Aegisub with:
 ```sh
