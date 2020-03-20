@@ -332,7 +332,7 @@
 			},
 			"FFmpegSource" : {
 				"Decode Error Handling" : "ignore",
-				"Downmix" : false
+				"Downmix" : true
 			}
 		},
 		"Avisynth" : {
