@@ -33,12 +33,6 @@
 #define ICONV_POSIX
 #endif
 
-#ifdef AGI_ICONV_CONST
-#define ICONV_CONST_CAST(a) a
-#else
-#define ICONV_CONST_CAST(a) const_cast<char **>(a)
-#endif
-
 static const iconv_t iconv_invalid = (iconv_t)-1;
 static const size_t iconv_failed = (size_t)-1;
 
@@ -286,7 +280,13 @@ Iconv::~Iconv() {
 }
 
 size_t Iconv::operator()(const char **inbuf, size_t *inbytesleft, char **outbuf, size_t *outbytesleft) {
-	return iconv(cd, ICONV_CONST_CAST(inbuf), inbytesleft, outbuf, outbytesleft);
+	struct InbufConstCast{
+		const char** p;
+		InbufConstCast(const char** p) : p(p) {}
+		operator const char** () const { return p; }
+		operator char** () const { return const_cast<char**>(p); }
+	} inbuf_const_cast(inbuf);
+	return iconv(cd, inbuf_const_cast, inbytesleft, outbuf, outbytesleft);
 }
 
 IconvWrapper::IconvWrapper(const char* sourceEncoding, const char* destEncoding, bool enableSubst)

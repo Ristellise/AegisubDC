@@ -272,20 +272,6 @@ AC_SUBST(ICONV_CFLAGS)
 
 AS_IF([test x$agi_cv_with_iconv = xno], [AC_MSG_FAILURE([Please install a working iconv library.])])
 
-AC_AGI_COMPILE([iconv (const)], [iconv_const], [$ICONV_CFLAGS], [$ICONV_LIBS],[
-#include <iconv.h>
-int main(void) {
-  iconv_t cd = iconv_open("UTF-16", "UTF-8");
-  const char *in = "in";
-  char *out = new char();
-  size_t res, inbytesleft, outbytesleft;
-  res = iconv(cd, &in, &inbytesleft, &out, &outbytesleft);
-  return 0;
-} ])
-
-AS_IF([test x$agi_cv_with_iconv_const = xyes],
-      [AC_DEFINE(AGI_ICONV_CONST, 1, [Enable if iconv expects the in argument to be const])])
-
 ###############
 # Audio Players
 ###############

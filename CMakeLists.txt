@@ -520,12 +520,8 @@ target_include_directories(Aegisub PRIVATE ${OPENGL_INCLUDE_DIR})
 target_link_libraries(Aegisub ${OPENGL_LIBRARIES})
 
 find_package(Iconv REQUIRED)
-target_compile_definitions(libaegisub PRIVATE "HAVE_ICONV")
 target_include_directories(libaegisub PRIVATE ${Iconv_INCLUDE_DIRS})
 target_link_libraries(libaegisub ${Iconv_LIBRARIES})
-if(NOT Iconv_IS_BUILT_IN)
-    target_compile_definitions(libaegisub PRIVATE "AGI_ICONV_CONST")
-endif()
 
 find_package(ICU REQUIRED uc dt in)
 target_include_directories(libaegisub PRIVATE ${ICU_INCLUDE_DIRS})
