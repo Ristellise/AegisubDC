@@ -1,4 +1,4 @@
-sudo: required
+os: linux
 dist: bionic
 language: cpp
 
@@ -33,6 +33,23 @@ addons:
     - libgtest-dev
     - gcc-9
     - g++-9
+  homebrew:
+    packages:
+    - autoconf
+    - boost
+    - ffmpeg
+    - ffms2
+    - fftw
+    - freetype
+    - fribidi
+    - gettext
+    - icu4c
+    - libass
+    - lua
+    - luarocks
+    - m4
+    - wxmac
+    update: true
 
 env:
 - ''
@@ -69,16 +86,9 @@ script:
     make test || travis_terminate 1;
     coveralls --exclude vendor --exclude src --exclude build --exclude tools --exclude libaegisub/windows > /dev/null;
   else
-    ./build/version.sh .;
     mkdir build-dir;
     cd build-dir;
     cmake -DCMAKE_CXX_FLAGS='-Wall -Wextra -Wno-unused-parameter -pedantic' -DCMAKE_C_FLAGS='-Wall' -DWITH_STARTUPLOG=ON -DWITH_TEST=ON ..;
     make -j2 || travis_terminate 1;
     make test || travis_terminate 1;
   fi
-
-notifications:
-  email:
-  - on_success: change
-  - on_failure: change
-
