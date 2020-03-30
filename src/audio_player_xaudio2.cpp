@@ -218,17 +218,17 @@ public:
 	~XAudio2Thread();
 
 	// IXAudio2VoiceCallback
-	void OnVoiceProcessingPassStart(UINT32 BytesRequired) {}
-	void OnVoiceProcessingPassEnd() {}
-	void OnStreamEnd() {}
-	void OnBufferStart(void* pBufferContext) {}
-	void OnBufferEnd(void* pBufferContext) {
+	void STDMETHODCALLTYPE OnVoiceProcessingPassStart(UINT32 BytesRequired) override {}
+	void STDMETHODCALLTYPE OnVoiceProcessingPassEnd() override {}
+	void STDMETHODCALLTYPE OnStreamEnd() override {}
+	void STDMETHODCALLTYPE OnBufferStart(void* pBufferContext) override {}
+	void STDMETHODCALLTYPE OnBufferEnd(void* pBufferContext) override {
 		intptr_t i = reinterpret_cast<intptr_t>(pBufferContext);
 		buffer_occupied[i] = false;
 		SetEvent(event_buffer_end);
 	}
-	void OnLoopEnd(void* pBufferContext) {}
-	void OnVoiceError(void* pBufferContext, HRESULT Error) {}
+	void STDMETHODCALLTYPE OnLoopEnd(void* pBufferContext) override {}
+	void STDMETHODCALLTYPE OnVoiceError(void* pBufferContext, HRESULT Error) override {}
 
 	/// @brief Start audio playback
 	/// @param start Audio frame to start playback at
