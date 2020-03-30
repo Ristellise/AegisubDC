@@ -63,11 +63,6 @@
 #include <cstdint>
 #include <ctime>
 
-#ifdef _MSC_VER
-#pragma warning(push)
-#pragma warning(disable:4996)
-#endif
-
 // Common C++
 #include <algorithm>
 #include <array>
@@ -86,10 +81,6 @@
 #include <utility>
 #include <vector>
 
-#ifdef _MSC_VER
-#pragma warning(pop)
-#endif
-
 #ifdef _WIN32
 #include <objbase.h>
 #include <mmsystem.h>
@@ -106,9 +97,7 @@
 #include <boost/range/algorithm.hpp>
 #include <boost/range/irange.hpp>
 #include <boost/regex.hpp>
-#define BOOST_NO_SCOPED_ENUMS
 #include <boost/filesystem/path.hpp>
-#undef BOOST_NO_SCOPED_ENUMS
 #include <boost/interprocess/streams/bufferstream.hpp>
 #include <boost/interprocess/streams/vectorstream.hpp>
 

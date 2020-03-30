@@ -2,9 +2,7 @@ if(UNIX)
     add_executable(aegisub-lua EXCLUDE_FROM_ALL
         automation/tests/aegisub.cpp
     )
-    target_include_directories(aegisub-lua PRIVATE ${Boost_INCLUDE_DIRS})
-    target_link_directories(aegisub-lua PRIVATE ${Boost_LIBRARY_DIRS})
-    target_link_libraries(aegisub-lua libaegisub luabins luajit ${Boost_LIBRARIES} ${ICU_LIBRARIES})
+    target_link_libraries(aegisub-lua PRIVATE libaegisub luabins luajit "Boost::locale")
     add_custom_target(test-automation
         COMMAND sh -c "$(luarocks path); ${PROJECT_BINARY_DIR}/aegisub-lua tests/busted.lua -p moon tests/modules"
         VERBATIM
@@ -51,8 +49,8 @@ if(GTEST_FOUND)
         tests/support/util.cpp
     )
     target_compile_definitions(gtest-run PRIVATE CMAKE_BUILD)
-    target_include_directories(gtest-run PRIVATE tests/support ${Boost_INCLUDE_DIRS} ${Iconv_INCLUDE_DIRS} ${GTEST_INCLUDE_DIRS})
-    target_link_libraries(gtest-run libaegisub ${Boost_LIBRARIES} ${ICU_LIBRARIES} ${GTEST_LIBRARIES})
+    target_include_directories(gtest-run PRIVATE "${PROJECT_SOURCE_DIR}/tests/support")
+    target_link_libraries(gtest-run PRIVATE libaegisub "Boost::filesystem" "GTest::GTest" "Iconv::Iconv")
     if(MSVC)
         set_target_properties(gtest-run PROPERTIES COMPILE_FLAGS "/Yu${PROJECT_SOURCE_DIR}/tests/support/tests_pre.h" COMPILE_FLAGS "/FI${PROJECT_SOURCE_DIR}/tests/support/tests_pre.h")
     else()
