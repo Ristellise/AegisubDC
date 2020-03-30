@@ -40,21 +40,23 @@ FIND_LIBRARY(HUNSPELL_LIBRARIES NAMES hunspell-1.7 hunspell-1.6 hunspell-1.5 hun
 include(FindPackageHandleStandardArgs)
 FIND_PACKAGE_HANDLE_STANDARD_ARGS(Hunspell DEFAULT_MSG HUNSPELL_LIBRARIES HUNSPELL_INCLUDE_DIR )
 
-add_library(hunspell UNKNOWN IMPORTED)
-set_target_properties(hunspell PROPERTIES IMPORTED_LOCATION ${HUNSPELL_LIBRARIES} INTERFACE_INCLUDE_DIRECTORIES ${HUNSPELL_INCLUDE_DIR})
-if (NOT BUILD_SHARED_LIBS)
-  # At least statically compiled hunspell 1.7.0 requires HUNSPELL_STATIC
-  # For other versions, it should not hurt
-  set_target_properties(hunspell PROPERTIES INTERFACE_COMPILE_DEFINITIONS HUNSPELL_STATIC)
-endif ()
+if(NOT TARGET hunspell)
+    add_library(hunspell UNKNOWN IMPORTED)
+    set_target_properties(hunspell PROPERTIES IMPORTED_LOCATION ${HUNSPELL_LIBRARIES} INTERFACE_INCLUDE_DIRECTORIES ${HUNSPELL_INCLUDE_DIR})
+    if (NOT BUILD_SHARED_LIBS)
+      # At least statically compiled hunspell 1.7.0 requires HUNSPELL_STATIC
+      # For other versions, it should not hurt
+      set_target_properties(hunspell PROPERTIES INTERFACE_COMPILE_DEFINITIONS HUNSPELL_STATIC)
+    endif ()
+endif()
 
 if (HUNSPELL_FOUND)
   try_compile(HUNSPELL_HAS_STRING_API "${CMAKE_BINARY_DIR}/hunspell_string_api"
               "${CMAKE_CURRENT_LIST_DIR}/hunspell_string_api.cpp"
-              LINK_LIBRARIES ${HUNSPELL_LIBRARIES}
-              CMAKE_FLAGS "-DINCLUDE_DIRECTORIES=${HUNSPELL_INCLUDE_DIR}")
+              LINK_LIBRARIES hunspell)
   if (HUNSPELL_HAS_STRING_API)
     message(STATUS "Hunspell has string API")
+    set_target_properties(hunspell PROPERTIES INTERFACE_COMPILE_DEFINITIONS HUNSPELL_HAS_STRING_API)
   else(HUNSPELL_HAS_STRING_API)
     message(STATUS "Hunspell does not have string API")
   endif(HUNSPELL_HAS_STRING_API)
