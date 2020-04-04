@@ -24,7 +24,7 @@ New-Item -Path "data\mru_invalid.json" -ItemType "file" -Value '{"Video" : [1, 3
 
 New-Item -Path "data\ten_bytes" -ItemType "file" -Value "1234567890"
 New-Item -Path "data\touch_mod_time" -ItemType "file"
-(Get-ChildItem -Path "data\touch_mod_time").LastWriteTime.AddSeconds(-1)
+(Get-ChildItem -Path "data\touch_mod_time").LastWriteTime = (Get-ChildItem -Path "data\touch_mod_time").LastWriteTime.AddSeconds(-1)
 
 New-Item -Path "data\dir_iterator" -ItemType "directory"
 New-Item -Path "data\dir_iterator\1.a" -ItemType "file"
