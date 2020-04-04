@@ -22,8 +22,9 @@ namespace agi {
 line_iterator_base::line_iterator_base(std::istream &stream, std::string encoding)
 : stream(&stream)
 {
-	boost::to_lower(encoding);
-	if (encoding != "utf-8") {
+	std::string encoding_lower{ encoding };
+	boost::to_lower(encoding_lower);
+	if (encoding_lower != "utf-8") {
 		agi::charset::IconvWrapper c("utf-8", encoding.c_str());
 		c.Convert("\r", 1, reinterpret_cast<char *>(&cr), sizeof(int));
 		c.Convert("\n", 1, reinterpret_cast<char *>(&lf), sizeof(int));
