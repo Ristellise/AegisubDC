@@ -23,6 +23,7 @@
 #include <libaegisub/io.h>
 #include <libaegisub/log.h>
 
+#include <vector>
 #include <ShlObj.h>
 #include <boost/scope_exit.hpp>
 #include <unicode/utf16.h>
@@ -77,15 +78,21 @@ std::vector<agi::fs::path> get_installed_fonts() {
 		agi::fs::path font_dir(fdir);
 
 		for (DWORD i = 0;; ++i) {
-			wchar_t font_name[SHRT_MAX], font_filename[MAX_PATH];
+			WCHAR font_name[SHRT_MAX];
+			std::vector<WCHAR> font_filename(MAX_PATH);
 			DWORD name_len = sizeof(font_name);
-			DWORD data_len = sizeof(font_filename);
+			DWORD data_len = font_filename.size();
 
-			ret = RegEnumValueW(key, i, font_name, &name_len, NULL, NULL, reinterpret_cast<BYTE*>(font_filename), &data_len);
+			ret = RegEnumValueW(key, i, font_name, &name_len, NULL, NULL, reinterpret_cast<BYTE*>(font_filename.data()), &data_len);
+			if (ret == ERROR_MORE_DATA) {
+				name_len = sizeof(font_name);
+				font_filename.resize(data_len);
+				ret = RegEnumValueW(key, i, font_name, &name_len, NULL, NULL, reinterpret_cast<BYTE*>(font_filename.data()), &data_len);
+			}
 			if (ret == ERROR_NO_MORE_ITEMS) break;
 			if (ret != ERROR_SUCCESS) continue;
 
-			agi::fs::path font_path(font_filename);
+			agi::fs::path font_path(font_filename.data());
 			if (!agi::fs::FileExists(font_path) && agi::fs::FileExists(font_dir / font_path))
 				font_path = font_dir / font_path;
 			files.push_back(font_path);
