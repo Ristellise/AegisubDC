@@ -483,7 +483,7 @@ else()
 endif()
 
 if(MSVC)
-    add_definitions("/DNOMINMAX /MP /DINITGUID")
+    add_definitions("/DNOMINMAX /DINITGUID")
     set_target_properties(Aegisub PROPERTIES COMPILE_FLAGS "/Yu${PROJECT_SOURCE_DIR}/src/agi_pre.h" COMPILE_FLAGS "/FI${PROJECT_SOURCE_DIR}/src/agi_pre.h")
     target_link_libraries(Aegisub LINK_PRIVATE Usp10)
     #target_sources(Aegisub PRIVATE src/res/res.rc src/res/strings.rc src/crash_writer_minidump.cpp)
