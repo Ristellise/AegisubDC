@@ -24,6 +24,7 @@
 #include <wx/intl.h>
 #include <wx/string.h>
 
+#include "../libresrc/libresrc.h"
 #include <libaegisub/exception.h>
 
 namespace agi { struct Context; }
@@ -33,14 +34,7 @@ namespace agi { struct Context; }
 #define STR_DISP(a) wxString StrDisplay(const agi::Context *) const override { return _(a); }
 #define STR_HELP(a) wxString StrHelp() const override { return _(a); }
 #define CMD_TYPE(a) int Type() const override { using namespace cmd; return a; }
-
-#define CMD_ICON(icon) wxBitmap Icon(int size, wxLayoutDirection dir = wxLayout_LeftToRight) const override { \
-	if (size >= 64) return GETIMAGEDIR(icon##_64, dir); \
-	if (size >= 48) return GETIMAGEDIR(icon##_48, dir); \
-	if (size >= 32) return GETIMAGEDIR(icon##_32, dir); \
-	if (size >= 24) return GETIMAGEDIR(icon##_24, dir); \
-	return GETIMAGEDIR(icon##_16, dir); \
-}
+#define CMD_ICON(icon) wxBitmap Icon(int size, wxLayoutDirection dir = wxLayout_LeftToRight) const override { return CMD_ICON_GET(icon, dir, size); }
 
 #define COMMAND_GROUP(cname, cmdname, menu, disp, help) \
 struct cname final : public Command {                   \

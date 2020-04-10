@@ -20,11 +20,16 @@
 #include <wx/intl.h>
 #include <wx/mstream.h>
 
-wxBitmap libresrc_getimage(const unsigned char *buff, size_t size, int dir) {
+wxBitmap libresrc_getimage(const unsigned char *buff, size_t size) {
+	wxMemoryInputStream mem(buff, size);
+	return wxBitmap(wxImage(mem));
+}
+
+wxBitmap libresrc_getimage_resized(const unsigned char* buff, size_t size, int dir, int resize) {
 	wxMemoryInputStream mem(buff, size);
 	if (dir != wxLayout_RightToLeft)
-		return wxBitmap(wxImage(mem));
-	return wxBitmap(wxImage(mem).Mirror());
+		return wxBitmap(wxImage(mem).Scale(resize, resize));
+	return wxBitmap(wxImage(mem).Scale(resize, resize, wxIMAGE_QUALITY_HIGH).Mirror());
 }
 
 wxIcon libresrc_geticon(const unsigned char *buff, size_t size) {

@@ -585,7 +585,11 @@ DialogColorPicker::DialogColorPicker(wxWindow *parent, agi::Color initial_color,
 	preview_box = new wxStaticBitmap(this, -1, wxBitmap(40, 40, 24), wxDefaultPosition, wxSize(40, 40), STATIC_BORDER_FLAG);
 	recent_box = new ColorPickerRecent(this, 8, 4, 16);
 
+#if defined(__WXMSW__)
+	eyedropper_bitmap = CMD_ICON_GET(eyedropper_tool, wxLayout_Default, FromDIP(24));
+#else
 	eyedropper_bitmap = GETIMAGE(eyedropper_tool_24);
+#endif
 	eyedropper_bitmap.SetMask(new wxMask(eyedropper_bitmap, wxColour(255, 0, 255)));
 	screen_dropper_icon = new wxStaticBitmap(this, -1, eyedropper_bitmap, wxDefaultPosition, wxDefaultSize, wxRAISED_BORDER);
 	screen_dropper = new ColorPickerScreenDropper(this, 7, 7, 8);
@@ -1054,15 +1058,19 @@ void DialogColorPicker::OnRecentSelect(ValueEvent<agi::Color> &evt) {
 
 void DialogColorPicker::OnDropperMouse(wxMouseEvent &evt) {
 	if (evt.LeftDown() && !screen_dropper_icon->HasCapture()) {
+		Freeze();
 #ifdef WIN32
 		screen_dropper_icon->SetCursor(wxCursor("eyedropper_cursor"));
 #else
 		screen_dropper_icon->SetCursor(*wxCROSS_CURSOR);
 #endif
+		wxSize size = screen_dropper_icon->GetSize();
 		screen_dropper_icon->SetBitmap(wxNullBitmap);
+		screen_dropper_icon->SetSize(size);
 		screen_dropper_icon->CaptureMouse();
 		eyedropper_grab_point = evt.GetPosition();
 		eyedropper_is_grabbed = false;
+		Thaw();
 	}
 
 	if (evt.LeftUp()) {
