@@ -68,11 +68,16 @@ AudioKaraoke::AudioKaraoke(wxWindow *parent, agi::Context *c)
 {
 	using std::bind;
 
+#if defined(__WXMSW__)
+	cancel_button = new wxBitmapButton(this, -1, CMD_ICON_GET(kara_split_cancel, wxLayout_Default, FromDIP(16)));
+	accept_button = new wxBitmapButton(this, -1, CMD_ICON_GET(kara_split_accept, wxLayout_Default, FromDIP(16)));
+#else
 	cancel_button = new wxBitmapButton(this, -1, GETIMAGE(kara_split_cancel_16));
+	accept_button = new wxBitmapButton(this, -1, GETIMAGE(kara_split_accept_16));
+#endif
 	cancel_button->SetToolTip(_("Discard all uncommitted splits"));
 	cancel_button->Bind(wxEVT_BUTTON, bind(&AudioKaraoke::CancelSplit, this));
 
-	accept_button = new wxBitmapButton(this, -1, GETIMAGE(kara_split_accept_16));
 	accept_button->SetToolTip(_("Commit splits"));
 	accept_button->Bind(wxEVT_BUTTON, bind(&AudioKaraoke::AcceptSplit, this));
 

@@ -171,7 +171,11 @@ namespace {
 		, context(c)
 		, ht_context(std::move(ht_context))
 		, retina_helper(parent)
+#ifdef __WXMSW__
+		, icon_size(parent->FromDIP(16))
+#else
 		, icon_size(OPT_GET("App/Toolbar Icon Size")->GetInt())
+#endif
 		, icon_size_slot(OPT_SUB("App/Toolbar Icon Size", &Toolbar::OnIconSizeChange, this))
 		, hotkeys_changed_slot(hotkey::inst->AddHotkeyChangeListener(&Toolbar::RegenerateToolbar, this))
 		{
@@ -186,7 +190,11 @@ namespace {
 		, ht_context(std::move(ht_context))
 		, retina_helper(parent)
 #ifndef __WXMAC__
+#ifdef __WXMSW__
+		, icon_size(parent->FromDIP(16))
+#else
 		, icon_size(OPT_GET("App/Toolbar Icon Size")->GetInt())
+#endif
 		, icon_size_slot(OPT_SUB("App/Toolbar Icon Size", &Toolbar::OnIconSizeChange, this))
 #else
 		, icon_size(32 * retina_helper.GetScaleFactor())
