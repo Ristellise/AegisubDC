@@ -14,6 +14,11 @@
 //
 // Aegisub Project http://www.aegisub.org/
 
+#ifdef _WIN32
+// For Boost::asio
+#include <sdkddkver.h>
+#endif
+
 #include "libaegisub/dispatch.h"
 
 #include "libaegisub/util.h"
