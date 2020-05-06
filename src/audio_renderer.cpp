@@ -50,19 +50,22 @@ namespace {
 }
 
 AudioRendererBitmapCacheBitmapFactory::AudioRendererBitmapCacheBitmapFactory(AudioRenderer *renderer)
-: renderer(renderer)
+: renderer(renderer), block_size(0)
 {
 	assert(renderer);
 }
 
 std::unique_ptr<wxBitmap> AudioRendererBitmapCacheBitmapFactory::ProduceBlock(int /* i */)
 {
-	return agi::make_unique<wxBitmap>(renderer->cache_bitmap_width, renderer->pixel_height, 24);
+	std::unique_ptr<wxBitmap> ret = agi::make_unique<wxBitmap>(renderer->cache_bitmap_width, renderer->pixel_height);
+	block_size = sizeof(wxBitmap) + static_cast<size_t>(ret->GetWidth()) * ret->GetHeight() * ((ret->GetDepth() + 7) / 8);
+	return ret;
 }
 
 size_t AudioRendererBitmapCacheBitmapFactory::GetBlockSize() const
 {
-	return sizeof(wxBitmap) + renderer->cache_bitmap_width * renderer->pixel_height * 3;
+	assert(block_size);
+	return block_size;
 }
 
 AudioRenderer::AudioRenderer()
