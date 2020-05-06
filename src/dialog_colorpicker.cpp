@@ -62,6 +62,9 @@
 
 #ifdef __WXMAC__
 #include <ApplicationServices/ApplicationServices.h>
+#if wxCHECK_VERSION(3, 1, 0)
+#include <wx/generic/statbmpg.h>
+#endif
 #endif
 
 namespace {
@@ -241,7 +244,11 @@ wxDEFINE_EVENT(EVT_RECENT_SELECT, ValueEvent<agi::Color>);
 
 /// @class ColorPickerRecent
 /// @brief A grid of recently used colors which can be selected by clicking on them
+#if wxCHECK_VERSION(3, 1, 0) && defined(__WXMAC__)
+class ColorPickerRecent final : public wxGenericStaticBitmap {
+#else
 class ColorPickerRecent final : public wxStaticBitmap {
+#endif
 	int rows;     ///< Number of rows of colors
 	int cols;     ///< Number of cols of colors
 	int cellsize; ///< Width/Height of each cell
@@ -290,7 +297,11 @@ class ColorPickerRecent final : public wxStaticBitmap {
 
 public:
 	ColorPickerRecent(wxWindow *parent, int cols, int rows, int cellsize)
+#if wxCHECK_VERSION(3, 1, 0) && defined(__WXMAC__)
+	: wxGenericStaticBitmap(parent, -1, wxBitmap(), wxDefaultPosition, wxDefaultSize, STATIC_BORDER_FLAG)
+#else
 	: wxStaticBitmap(parent, -1, wxBitmap(), wxDefaultPosition, wxDefaultSize, STATIC_BORDER_FLAG)
+#endif
 	, rows(rows)
 	, cols(cols)
 	, cellsize(cellsize)
@@ -462,7 +473,11 @@ class DialogColorPicker final : public wxDialog {
 
 	ColorPickerScreenDropper *screen_dropper;
 
+#if wxCHECK_VERSION(3, 1, 0) && defined(__WXMAC__)
+	wxGenericStaticBitmap* screen_dropper_icon;
+#else
 	wxStaticBitmap *screen_dropper_icon;
+#endif
 
 	/// Update all other controls as a result of modifying an RGB control
 	void UpdateFromRGB(bool dirty = true);
@@ -591,7 +606,11 @@ DialogColorPicker::DialogColorPicker(wxWindow *parent, agi::Color initial_color,
 	eyedropper_bitmap = GETIMAGE(eyedropper_tool_24);
 #endif
 	eyedropper_bitmap.SetMask(new wxMask(eyedropper_bitmap, wxColour(255, 0, 255)));
+#if wxCHECK_VERSION(3, 1, 0) && defined(__WXMAC__)
+	screen_dropper_icon = new wxGenericStaticBitmap(this, -1, eyedropper_bitmap, wxDefaultPosition, wxDefaultSize, wxRAISED_BORDER);
+#else
 	screen_dropper_icon = new wxStaticBitmap(this, -1, eyedropper_bitmap, wxDefaultPosition, wxDefaultSize, wxRAISED_BORDER);
+#endif
 	screen_dropper = new ColorPickerScreenDropper(this, 7, 7, 8);
 
 	// Arrange the controls in a nice way
