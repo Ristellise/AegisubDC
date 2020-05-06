@@ -61,6 +61,7 @@ struct AudioRendererBitmapCacheBitmapFactory {
 	/// Produces a wxBitmap with dimensions pulled from our master AudioRenderer.
 	std::unique_ptr<wxBitmap> ProduceBlock(int i);
 
+	size_t block_size;
 	/// @brief Calculate the size of bitmaps
 	/// @return The size of bitmaps created
 	size_t GetBlockSize() const;

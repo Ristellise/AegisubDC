@@ -215,7 +215,6 @@ void AudioSpectrumRenderer::Render(wxBitmap &bmp, int start, AudioRenderingStyle
 		return;
 
 	assert(bmp.IsOk());
-	assert(bmp.GetDepth() == 24);
 
 	int end = start + bmp.GetWidth();
 
