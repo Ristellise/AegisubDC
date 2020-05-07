@@ -52,6 +52,7 @@ VisualToolVectorClip::VisualToolVectorClip(VideoDisplay *parent, agi::Context *c
 void VisualToolVectorClip::SetToolbar(wxToolBar *toolBar) {
 	this->toolBar = toolBar;
 
+	toolBar->AddSeparator();
 #ifdef __WXMSW__
 	int icon_size = toolBar->FromDIP(16);
 #else
