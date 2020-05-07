@@ -102,7 +102,7 @@ void VisualToolDrag::OnSubTool(wxCommandEvent &) {
 
 	Commit();
 	OnFileChanged();
-	UpdateToggleButtons();
+	//UpdateToggleButtons();
 }
 
 void VisualToolDrag::OnLineChanged() {
