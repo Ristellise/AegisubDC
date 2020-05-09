@@ -19,20 +19,6 @@
 #define luabins_min3(a, b, c) \
   ( ((a) < (b)) ? luabins_min((a), (c)) : luabins_min((b), (c)) )
 
-/* Preprocessor concatenation */
-#define LUABINS_CAT(a, b) a##b
-
-/* Static assert helper macro */
-#define luabins_static_assert_line(pred, line) \
-  typedef char LUABINS_CAT( \
-      static_assertion_failed_at_line_, \
-      line \
-    )[2 * !!(pred) - 1]
-
-/* Static (compile-time) assert */
-#define luabins_static_assert(pred) \
-  luabins_static_assert_line(pred, __LINE__)
-
 /* Internal error codes */
 #define LUABINS_ESUCCESS (0)
 #define LUABINS_EFAILURE (1)
