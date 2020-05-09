@@ -142,11 +142,9 @@ AC_ARG_ENABLE(compiler-flags, AS_HELP_STRING([--disable-compiler-flags],[Disable
 AS_IF([test x$enable_compiler_flags != xno], [
   CFLAGS="$CFLAGS -Wall -Wextra -Wno-unused-parameter"
   CXXFLAGS="$CXXFLAGS -Wall -Wextra -Wno-unused-parameter -fno-strict-aliasing"
-  AC_C_FLAG([-std=gnu99])
+
+  # For mac compiler which still stuck on c++98
   AC_CXX_FLAG([-std=c++11])
-  AC_CXX_FLAG([-Wno-narrowing])
-  AC_C_FLAG([-Wno-unused-local-typedefs])
-  AC_CXX_FLAG([-Wno-unused-local-typedefs])
 
   # -O* messes with debugging.
   AS_IF([test x$enable_debug = xyes], [
