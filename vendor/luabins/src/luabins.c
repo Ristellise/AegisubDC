@@ -4,6 +4,8 @@
 * See copyright notice in luabins.h
 */
 
+#include <assert.h>
+
 #include "luaheaders.h"
 
 #include "luabins.h"
@@ -72,12 +74,9 @@ LUALIB_API int luaopen_luabins(lua_State * L)
   * Consult PORTABILITY WARNING in saveload.h before changing constants.
   */
 
-  /* int is too small on your platform, fix LUABINS_LINT */
-  luabins_static_assert(sizeof(int) >= LUABINS_LINT);
-  /* size_t is too small on your platform, fix LUABINS_LSIZET */
-  luabins_static_assert(sizeof(size_t) >= LUABINS_LSIZET);
-  /* unexpected lua_Number size, fix LUABINS_LNUMBER */
-  luabins_static_assert(sizeof(lua_Number) == LUABINS_LNUMBER);
+  static_assert(sizeof(int) >= LUABINS_LINT, "int is too small on your platform, fix LUABINS_LINT");
+  static_assert(sizeof(size_t) >= LUABINS_LSIZET, "size_t is too small on your platform, fix LUABINS_LSIZET");
+  static_assert(sizeof(lua_Number) == LUABINS_LNUMBER, "unexpected lua_Number size, fix LUABINS_LNUMBER");
 
   /*
   * Register module
