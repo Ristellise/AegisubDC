@@ -31,6 +31,7 @@ namespace ec = boost::system::errc;
 // errors, which isn't really what we want, so do some crazy wrapper
 // shit to map error codes to more useful exceptions.
 #ifdef BOOST_WINDOWS_API
+#include <winerror.h>
 #define CHECKED_CALL(exp, src_path, dst_path) \
 	boost::system::error_code ec; \
 	exp; \
