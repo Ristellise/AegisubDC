@@ -387,7 +387,6 @@ void XAudio2Thread::Run() {
 		case WAIT_OBJECT_0 + 4:
 			// Buffer end
 		do_fill_buffer:
-		{
 			// Time to fill more into buffer
 			if (!playback_should_be_running)
 				break;
@@ -427,7 +426,6 @@ void XAudio2Thread::Run() {
 			ResetEvent(is_playing);
 			playback_should_be_running = false;
 			break;
-		}
 
 		default:
 			REPORT_ERROR("Something bad happened while waiting on events in playback loop, either the wait failed or an event object was abandoned.")
