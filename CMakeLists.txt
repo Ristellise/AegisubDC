@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.14)
+cmake_minimum_required(VERSION 3.16)
 cmake_policy(SET CMP0074 NEW)
 
 project(Aegisub)
@@ -258,14 +258,8 @@ endif()
 set_target_properties(libaegisub PROPERTIES PREFIX "")
 target_compile_definitions(libaegisub PRIVATE CMAKE_BUILD)
 target_include_directories(libaegisub PUBLIC "libaegisub/include")
-
+target_precompile_headers(libaegisub PRIVATE "libaegisub/lagi_pre.h")
 target_link_libraries(libaegisub PRIVATE luajit luabins)
-
-if(MSVC)
-    set_target_properties(libaegisub PROPERTIES COMPILE_FLAGS "/Yu${PROJECT_SOURCE_DIR}/libaegisub/lagi_pre.h" COMPILE_FLAGS "/FI${PROJECT_SOURCE_DIR}/libaegisub/lagi_pre.h")
-else()
-    target_compile_options(libaegisub PRIVATE -include "${PROJECT_SOURCE_DIR}/libaegisub/lagi_pre.h")
-endif()
 
 add_custom_command(
     OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/src/libresrc/default_config.cpp" "${CMAKE_CURRENT_BINARY_DIR}/src/libresrc/default_config.h"
@@ -453,6 +447,7 @@ add_executable(Aegisub WIN32
 target_link_libraries(Aegisub PRIVATE ${CMAKE_DL_LIBS} libaegisub luajit)
 target_compile_definitions(Aegisub PRIVATE CMAKE_BUILD)
 target_include_directories(Aegisub PRIVATE "src/libresrc" "${CMAKE_CURRENT_BINARY_DIR}/src/libresrc")
+target_precompile_headers(Aegisub PRIVATE "src/agi_pre.h")
 
 if(WIN32)
     if(NOT EXISTS "${PROJECT_SOURCE_DIR}/build/git_version.h")
@@ -484,14 +479,12 @@ endif()
 
 if(MSVC)
     add_definitions("/DNOMINMAX /DINITGUID")
-    set_target_properties(Aegisub PROPERTIES COMPILE_FLAGS "/Yu${PROJECT_SOURCE_DIR}/src/agi_pre.h" COMPILE_FLAGS "/FI${PROJECT_SOURCE_DIR}/src/agi_pre.h")
     target_link_libraries(Aegisub LINK_PRIVATE Usp10)
     #target_sources(Aegisub PRIVATE src/res/res.rc src/res/strings.rc src/crash_writer_minidump.cpp)
     target_sources(Aegisub PRIVATE src/res/res.rc src/res/strings.rc src/crash_writer.cpp src/dpi_aware.manifest)
     set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT Aegisub)
 else()
     target_sources(Aegisub PRIVATE src/crash_writer.cpp)
-    target_compile_options(Aegisub PRIVATE -include "${PROJECT_SOURCE_DIR}/src/agi_pre.h")
 endif()
 
 if(WIN32)
