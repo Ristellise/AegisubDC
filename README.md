@@ -52,7 +52,7 @@ make
 
 This fork also provides CMake build. The CMake project will only build Aegisub itself, without the translation.
 
-You still need to install the dependencies above. To enable AviSynth+ support, it is also needed. On ArchLinux this can be done by installing [avisynthplus](https://aur.archlinux.org/packages/avisynthplus). Installing dependencies on Windows can be tricky, as Windows doesn't have a good package manager. Refer to [the Wiki page](https://github.com/wangqr/Aegisub/wiki/Compile-guide-for-Windows-(CMake,-MSVC)) on how to get all dependencies on Windows.
+You still need to install the dependencies above. To enable AviSynth+ support, it is also needed. Installing dependencies on Windows can be tricky, as Windows doesn't have a good package manager. Refer to [the Wiki page](https://github.com/wangqr/Aegisub/wiki/Compile-guide-for-Windows-(CMake,-MSVC)) on how to get all dependencies on Windows.
 
 After installing the dependencies, you can clone and build Aegisub with:
 
