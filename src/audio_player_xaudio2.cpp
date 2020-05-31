@@ -423,7 +423,10 @@ void XAudio2Thread::Run() {
 		case WAIT_OBJECT_0 + 5:
 			// Perform suicide
 			running = false;
-			goto stop_playback;
+			pXAudio2->Release();
+			ResetEvent(is_playing);
+			playback_should_be_running = false;
+			break;
 		}
 
 		default:
