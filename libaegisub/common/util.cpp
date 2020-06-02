@@ -184,7 +184,6 @@ void tagless_find_helper::map_range(size_t &s, size_t &e) {
 			continue;
 		}
 
-		assert(block.first > s);
 		// Blocks after the match are irrelevant
 		if (block.first >= e) break;
 

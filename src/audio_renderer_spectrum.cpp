@@ -219,7 +219,6 @@ void AudioSpectrumRenderer::Render(wxBitmap &bmp, int start, AudioRenderingStyle
 	int end = start + bmp.GetWidth();
 
 	assert(start >= 0);
-	assert(end >= 0);
 	assert(end >= start);
 
 	// Prepare an image buffer to write

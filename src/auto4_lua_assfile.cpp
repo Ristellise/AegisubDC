@@ -376,7 +376,6 @@ namespace Automation4 {
 				return error(L, "Attempt to index a Subtitle File object with value of type '%s'.", lua_typename(L, lua_type(L, 2)));
 		}
 
-		assert(false);
 		return 0;
 	}
 
