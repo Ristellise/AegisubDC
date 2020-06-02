@@ -5,6 +5,13 @@ project(Aegisub)
 
 list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
+# Explicitly set the build type to Release if no other type is specified
+# on the command line.  Without this, cmake defaults to an unoptimized,
+# non-debug build, which almost nobody wants.
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
 add_executable(luajit-minilua vendor/luajit/src/host/minilua.c)
 if(NOT WIN32)
     target_link_libraries(luajit-minilua m)
