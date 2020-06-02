@@ -246,7 +246,8 @@ struct parsed_line {
 			shift += 2;
 			blocks = line->ParseTags();
 		}
-		else if (ovr) {
+		else {
+			// We've reached here, ovr cannot be null
 			std::string alt;
 			if (tag == "\\c") alt = "\\1c";
 			// Remove old of same
@@ -270,8 +271,6 @@ struct parsed_line {
 
 			line->UpdateText(blocks);
 		}
-		else
-			assert(false);
 
 		return shift;
 	}
