@@ -69,6 +69,8 @@ class DialogFontsCollector final : public wxDialog {
 	wxStaticText *dest_label;
 	wxTextCtrl *dest_ctrl;
 
+	bool goto_end_on_idle = false;
+
 	void OnStart(wxCommandEvent &);
 	void OnBrowse(wxCommandEvent &);
 	void OnRadio(wxCommandEvent &e);
@@ -77,6 +79,7 @@ class DialogFontsCollector final : public wxDialog {
 	void OnAddText(ValueEvent<std::pair<int, wxString>>& event);
 	/// Collection complete notification from the worker thread to reenable buttons
 	void OnCollectionComplete(wxThreadEvent &);
+	void OnIdle(wxIdleEvent&);
 
 	void UpdateControls();
 
@@ -287,6 +290,7 @@ DialogFontsCollector::DialogFontsCollector(agi::Context *c)
 	button_sizer->GetHelpButton()->Bind(wxEVT_BUTTON, std::bind(&HelpButton::OpenPage, "Fonts Collector"));
 	Bind(EVT_ADD_TEXT, &DialogFontsCollector::OnAddText, this);
 	Bind(EVT_COLLECTION_DONE, &DialogFontsCollector::OnCollectionComplete, this);
+	Bind(wxEVT_IDLE, &DialogFontsCollector::OnIdle, this);
 }
 
 void DialogFontsCollector::OnStart(wxCommandEvent &) {
@@ -407,8 +411,8 @@ void DialogFontsCollector::OnAddText(ValueEvent<color_str_pair> &event) {
 #endif
 		collection_log->SetStyling(utf8.length(), str.first);
 	}
-	collection_log->GotoPos(pos + utf8.length());
 	collection_log->SetReadOnly(true);
+	goto_end_on_idle = true;
 }
 
 void DialogFontsCollector::OnCollectionComplete(wxThreadEvent &) {
@@ -420,6 +424,13 @@ void DialogFontsCollector::OnCollectionComplete(wxThreadEvent &) {
 		collection_mode->Enable(2, false);
 
 	UpdateControls();
+}
+
+void DialogFontsCollector::OnIdle(wxIdleEvent&) {
+	if (goto_end_on_idle) {
+		goto_end_on_idle = false;
+		collection_log->GotoPos(collection_log->GetLength());
+	}
 }
 }
 
