@@ -55,10 +55,11 @@
 #endif
 
 namespace {
-/// Window ID of first menu item
-static const int MENU_ID_BASE = 10000;
 
 class MruMenu final : public wxMenu {
+	/// Window ID of first menu item
+	const int id_base;
+
 	std::string type;
 	std::vector<wxMenuItem *> items;
 	std::vector<std::string> *cmds;
@@ -70,7 +71,7 @@ class MruMenu final : public wxMenu {
 
 		for (size_t i = GetMenuItemCount(); i < new_size; ++i) {
 			if (i >= items.size()) {
-				items.push_back(new wxMenuItem(this, MENU_ID_BASE + cmds->size(), "_"));
+				items.push_back(new wxMenuItem(this, id_base + cmds->size(), "_"));
 				cmds->push_back(agi::format("recent/%s/%d", boost::to_lower_copy(type), i));
 			}
 			Append(items[i]);
@@ -78,8 +79,8 @@ class MruMenu final : public wxMenu {
 	}
 
 public:
-	MruMenu(std::string type, std::vector<std::string> *cmds)
-	: type(std::move(type))
+	MruMenu(int id_base, std::string type, std::vector<std::string> *cmds)
+	: id_base(id_base), type(std::move(type))
 	, cmds(cmds)
 	{
 	}
@@ -122,6 +123,8 @@ public:
 /// on submenus in many cases, and registering large numbers of wxEVT_UPDATE_UI
 /// handlers makes everything involves events unusably slow.
 class CommandManager {
+	/// Window ID of first menu item
+	const int id_base;
 	/// Menu items which need to do something on menu open
 	std::vector<std::pair<std::string, wxMenuItem*>> dynamic_items;
 	/// Menu items which need to be updated only when hotkeys change
@@ -169,8 +172,8 @@ class CommandManager {
 	}
 
 public:
-	CommandManager(agi::Context *context)
-	: context(context)
+	CommandManager(int id_base, agi::Context *context)
+	: id_base(id_base), context(context)
 	, hotkeys_changed(hotkey::inst->AddHotkeyChangeListener(&CommandManager::OnHotkeysChanged, this))
 	{
 	}
@@ -198,7 +201,7 @@ public:
 
 		menu_text += to_wx("\t" + hotkey::get_hotkey_str_first("Default", co->name()));
 
-		wxMenuItem *item = new wxMenuItem(parent, MENU_ID_BASE + items.size(), menu_text, co->StrHelp(), kind);
+		wxMenuItem *item = new wxMenuItem(parent, id_base + items.size(), menu_text, co->StrHelp(), kind);
 #if defined(__WXMSW__)
 #if wxCHECK_VERSION(3, 1, 3)
 		if (kind == wxITEM_NORMAL) {
@@ -243,7 +246,7 @@ public:
 	/// @param name MRU type
 	/// @param parent Menu to append the new MRU menu to
 	void AddRecent(std::string const& name, wxMenu *parent) {
-		mru.push_back(new MruMenu(name, &items));
+		mru.push_back(new MruMenu(id_base, name, &items));
 		parent->AppendSubMenu(mru.back(), _("&Recent"));
 	}
 
@@ -257,7 +260,7 @@ public:
 	void OnMenuClick(wxCommandEvent &evt) {
 		// This also gets clicks on unrelated things such as the toolbar, so
 		// the window ID ranges really need to be unique
-		size_t id = static_cast<size_t>(evt.GetId() - MENU_ID_BASE);
+		size_t id = static_cast<size_t>(evt.GetId() - id_base);
 		if (id < items.size() && context)
 			cmd::call(items[id], context);
 
@@ -290,13 +293,13 @@ public:
 /// Wrapper for wxMenu to add a command manager
 struct CommandMenu final : public wxMenu {
 	CommandManager cm;
-	CommandMenu(agi::Context *c) : cm(c) { }
+	CommandMenu(int id_base, agi::Context *c) : cm(id_base, c) { }
 };
 
 /// Wrapper for wxMenuBar to add a command manager
 struct CommandMenuBar final : public wxMenuBar {
 	CommandManager cm;
-	CommandMenuBar(agi::Context *c) : cm(c) { }
+	CommandMenuBar(int id_base, agi::Context *c) : cm(id_base, c) { }
 };
 
 /// Read a string from a json object
@@ -512,7 +515,7 @@ public:
 }
 
 namespace menu {
-	void GetMenuBar(std::string const& name, wxFrame *window, agi::Context *c) {
+	void GetMenuBar(std::string const& name, wxFrame *window, int id_base, agi::Context *c) {
 #ifdef __WXMAC__
 		auto bind_events = [&](CommandMenuBar *menu) {
 			window->Bind(wxEVT_ACTIVATE, [=](wxActivateEvent&) { menu->cm.SetContext(c); });
@@ -528,7 +531,7 @@ namespace menu {
 		}
 #endif
 
-		auto menu = agi::make_unique<CommandMenuBar>(c);
+		auto menu = agi::make_unique<CommandMenuBar>(id_base, c);
 		for (auto const& item : get_menu(name)) {
 			std::string submenu, disp;
 			read_entry(item, "submenu", &submenu);
@@ -561,8 +564,8 @@ namespace menu {
 		menu.release();
 	}
 
-	std::unique_ptr<wxMenu> GetMenu(std::string const& name, agi::Context *c) {
-		auto menu = agi::make_unique<CommandMenu>(c);
+	std::unique_ptr<wxMenu> GetMenu(std::string const& name, int id_base, agi::Context *c) {
+		auto menu = agi::make_unique<CommandMenu>(id_base, c);
 		build_menu(name, c, &menu->cm, menu.get());
 		menu->Bind(wxEVT_MENU_OPEN, &CommandManager::OnMenuOpen, &menu->cm);
 		menu->Bind(wxEVT_MENU, &CommandManager::OnMenuClick, &menu->cm);
