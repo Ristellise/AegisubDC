@@ -142,7 +142,7 @@ class VideoDisplay final : public wxGLCanvas {
 	/// @brief Recalculate video positioning and scaling when the available area or zoom changes
 	void OnSizeEvent(wxSizeEvent &event);
 	void OnContextMenu(wxContextMenuEvent&);
-	void OnUpdateUIEvent(wxUpdateUIEvent& event);
+	void OnIdle(wxIdleEvent&);
 	void DoRender();
 
 public:

@@ -105,7 +105,7 @@ VideoDisplay::VideoDisplay(wxToolBar *toolbar, bool freeSize, wxComboBox *zoomBo
 	});
 
 	Bind(wxEVT_PAINT, std::bind(&VideoDisplay::Render, this));
-	Bind(wxEVT_UPDATE_UI, &VideoDisplay::OnUpdateUIEvent, this);
+	Bind(wxEVT_IDLE, &VideoDisplay::OnIdle, this);
 	Bind(wxEVT_SIZE, &VideoDisplay::OnSizeEvent, this);
 	Bind(wxEVT_CONTEXT_MENU, &VideoDisplay::OnContextMenu, this);
 	Bind(wxEVT_ENTER_WINDOW, &VideoDisplay::OnMouseEvent, this);
@@ -158,7 +158,7 @@ void VideoDisplay::Render() {
 	render_requested = true;
 }
 
-void VideoDisplay::OnUpdateUIEvent(wxUpdateUIEvent&) {
+void VideoDisplay::OnIdle(wxIdleEvent&) {
 	if (render_requested)
 		DoRender();
 }

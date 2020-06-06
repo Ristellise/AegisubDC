@@ -125,6 +125,7 @@ BEGIN_EVENT_TABLE(BaseGrid,wxWindow)
 	EVT_KEY_DOWN(BaseGrid::OnKeyDown)
 	EVT_CHAR_HOOK(BaseGrid::OnCharHook)
 	EVT_MENU_RANGE(MENU_SHOW_COL,MENU_SHOW_COL+15,BaseGrid::OnShowColMenu)
+	EVT_IDLE(BaseGrid::OnIdle)
 END_EVENT_TABLE()
 
 void BaseGrid::OnSubtitlesCommit(int type) {
@@ -136,8 +137,12 @@ void BaseGrid::OnSubtitlesCommit(int type) {
 		Refresh(false);
 		return;
 	}
-	if (type & AssFile::COMMIT_DIAG_TIME)
-		Refresh(false);
+	if (type & AssFile::COMMIT_DIAG_TIME) {
+		// Dragging start / end time in audio display can generate lots of commit in a short period of time.
+		// On the other hand, GDI painting time depends on area, and BaseGrid typically is very large. Therefore repainting BaseGrid can be expensive.
+		// To prevent GUI lag / FPS drop caused by frequent repaint of BaseGrid, we do not call Refresh(false) here. Instead, we set the refresh_on_idle flag, and only repaint BaseGrid when idle.
+		refresh_on_idle = true;
+	}
 	else if (type & AssFile::COMMIT_DIAG_TEXT) {
 		for (auto const& rect : text_refresh_rects)
 			RefreshRect(rect, false);
@@ -261,6 +266,13 @@ void BaseGrid::OnSeek() {
 	}
 	if (it != end(visible_rows))
 		Refresh(false);
+}
+
+void BaseGrid::OnIdle(wxIdleEvent&) {
+	if (refresh_on_idle) {
+		refresh_on_idle = false;
+		Refresh(false);
+	}
 }
 
 void BaseGrid::OnPaint(wxPaintEvent &) {
