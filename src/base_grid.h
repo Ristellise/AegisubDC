@@ -71,6 +71,8 @@ class BaseGrid final : public wxWindow {
 
 	std::vector<wxRect> text_refresh_rects;
 
+	bool refresh_on_idle = false;
+
 	/// Cached brushes used for row backgrounds
 	struct {
 		wxBrush Default;
@@ -93,6 +95,7 @@ class BaseGrid final : public wxWindow {
 
 	void OnContextMenu(wxContextMenuEvent &evt);
 	void OnHighlightVisibleChange(agi::OptionValue const& opt);
+	void OnIdle(wxIdleEvent&);
 	void OnKeyDown(wxKeyEvent &event);
 	void OnCharHook(wxKeyEvent &event);
 	void OnMouseEvent(wxMouseEvent &event);
