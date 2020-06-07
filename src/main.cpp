@@ -147,8 +147,12 @@ bool AegisubApp::OnInit() {
 
 	boost::filesystem::path::imbue(std::locale());
 
+#if defined(__GNUC__) && (__GNUC__ < 4 || (__GNUC__ == 4 && __GNUC_MINOR__ < 8))
 	// Pointless `this` capture required due to http://gcc.gnu.org/bugzilla/show_bug.cgi?id=51494
 	agi::dispatch::Init([this](agi::dispatch::Thunk f) {
+#else
+	agi::dispatch::Init([](agi::dispatch::Thunk f) {
+#endif
 		auto evt = new ValueEvent<agi::dispatch::Thunk>(EVT_CALL_THUNK, -1, std::move(f));
 		wxTheApp->QueueEvent(evt);
 	});
