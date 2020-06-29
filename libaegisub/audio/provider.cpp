@@ -241,7 +241,7 @@ void SaveAudioClip(AudioProvider const& provider, fs::path const& path, int star
 
 	out.write("WAVEfmt ");
 	out.write<int32_t>(16); // Size of chunk
-	out.write<int16_t>(1);  // compression format (PCM)
+	out.write<int16_t>(provider.AreSamplesFloat() ? 3 : 1);  // compression format (1: WAVE_FORMAT_PCM, 3: WAVE_FORMAT_IEEE_FLOAT)
 	out.write<int16_t>(provider.GetChannels());
 	out.write<int32_t>(provider.GetSampleRate());
 	out.write<int32_t>(provider.GetSampleRate() * provider.GetChannels() * provider.GetBytesPerSample());
