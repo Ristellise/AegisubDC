@@ -66,7 +66,12 @@
 #endif
 
 /// Attribute list for gl canvases; set the canvases to doublebuffered rgba with an 8 bit stencil buffer
+#if wxCHECK_VERSION (3, 1, 1)
+// Explicitly set buffer to 24-bit color + 8-bit alpha. See https://github.com/wangqr/Aegisub/issues/55
+int attribList[] = { WX_GL_RGBA , WX_GL_DOUBLEBUFFER, WX_GL_STENCIL_SIZE, 8, WX_GL_BUFFER_SIZE, 24, WX_GL_MIN_ALPHA, 8, 0 };
+#else
 int attribList[] = { WX_GL_RGBA , WX_GL_DOUBLEBUFFER, WX_GL_STENCIL_SIZE, 8, 0 };
+#endif
 
 /// An OpenGL error occurred while uploading or displaying a frame
 class OpenGlException final : public agi::Exception {
