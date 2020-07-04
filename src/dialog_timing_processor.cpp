@@ -407,9 +407,12 @@ void DialogTimingProcessor::Process() {
 			AssDialogue *prev = sorted[i - 1];
 			AssDialogue *cur = sorted[i];
 
-			int dist = cur->Start - prev->End;
+			// Raw millisecond values are used in this step instead of the typical centisecond.
+			// In this step, we need to distinguish between gap and overlap, as they have different thresholds.
+			// A small gap / overlap less than 1 centisecond may not be distinguishable using rounded centisecond values.
+			int dist = cur->Start.GetMillisecond() - prev->End.GetMillisecond();
 			if ((dist < 0 && -dist <= adjOverlap) || (dist > 0 && dist <= adjGap)) {
-				int setPos = prev->End + int(dist * bias);
+				int setPos = prev->End.GetMillisecond() + int(dist * bias + 0.5);
 				cur->Start = setPos;
 				prev->End = setPos;
 			}
