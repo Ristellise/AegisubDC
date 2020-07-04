@@ -31,6 +31,9 @@ public:
 	// Always round up for 5ms because the range is [start, stop)
 	operator int() const { return (time + 5) - (time + 5) % 10; }
 
+	/// Get millisecond, without centisecond round
+	int GetMillisecond() const noexcept { return time; }
+
 	/// Return the time as a string
 	/// @param ms Use milliseconds precision, for non-ASS formats
 	std::string GetAssFormatted(bool ms=false) const;
