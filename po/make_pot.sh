@@ -12,13 +12,13 @@ maybe_append() {
   done
 }
 
-find ../src ../src/command -name \*.cpp -o -name \*.h \
+find ../src -name \*.cpp -o -name \*.h | LC_ALL=C sort \
   | xgettext --files-from=- -o - --c++ -k_ -kSTR_MENU -kSTR_DISP -kSTR_HELP -kfmt_tl -kfmt_plural:2,3 -kwxT -kwxPLURAL:1,2 \
-  | sed 's/SOME DESCRIPTIVE TITLE./Aegisub 3.2/' \
-  | sed 's/YEAR/2005-2014/' \
+  | sed 's/SOME DESCRIPTIVE TITLE./Aegisub 3.3+/' \
+  | sed 's/YEAR/2005-2020/' \
   | sed "s/THE PACKAGE'S COPYRIGHT HOLDER/Rodrigo Braz Monteiro, Niels Martin Hansen, Thomas Goyne et. al./" \
   | sed 's/PACKAGE/Aegisub/' \
-  | sed 's/VERSION/3.2.0/' \
+  | sed 's/VERSION/3.3+/' \
   | sed 's/FIRST AUTHOR <EMAIL@ADDRESS>/Niels Martin Hansen <nielsm@aegisub.org>/' \
   | sed 's/CHARSET/UTF-8/' \
   > aegisub.pot
@@ -39,7 +39,7 @@ find ../automation -name '*.lua' \
   | sed 's/\\/\\\\\\\\/g' \
   | maybe_append
 
-xgettext ../packages/desktop/aegisub.desktop.template --language=Desktop --join-existing -o aegisub.pot
+xgettext ../packages/desktop/aegisub.desktop.template.in --language=Desktop --join-existing --omit-header -o aegisub.pot
 
 if which xmlstarlet >/dev/null 2>&1 && which jq >/dev/null 2>&1; then
   for i in 'name' 'summary' 'p' 'li' 'caption'; do
@@ -52,4 +52,9 @@ do
   echo "$line" \
     | sed 's/[^=]*=\(.*\)/packages\/win_installer\/fragment_strings.iss|1|"\1"/' \
     | maybe_append
+done
+
+for i in $(cat LINGUAS)
+do
+  msgmerge --update --backup=none --sort-by-file $i.po aegisub.pot
 done
