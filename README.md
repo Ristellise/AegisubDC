@@ -2,11 +2,13 @@
 
 # Aegisub
 
-For binaries and general information [see the homepage](http://www.aegisub.org).
+For binaries and general information see [the homepage](http://www.aegisub.org) and [release page](https://github.com/wangqr/Aegisub/releases).
 
-The bug tracker can be found at https://github.com/Aegisub/Aegisub/issues .
+The bug tracker can be found at https://github.com/wagqr/Aegisub/issues .
 
-Support is available on IRC ( irc://irc.rizon.net/aegisub ).
+If you want to test the upstream version, r8942 [can be downloaded here](http://www.plorkyeran.com/aegisub/). If both r8942 and this fork have some common issue, report at [upstream](https://github.com/Aegisub/Aegisub/issues) may let more people see your issue, and I am also watching the upstream for issues. If it is a wangqr fork specific issue, report it here.
+
+Support is available on IRC ( irc://irc.rizon.net/aegisub , for upstream version) or via issues.
 
 ## Building Aegisub
 
@@ -67,6 +69,8 @@ make
 ```
 
 Features can be turned on/off in CMake by toggling the `WITH_*` switches.
+
+For Archlinux users, you can also try the [PKGBUILD in project wiki](https://github.com/wangqr/Aegisub/wiki/PKGBUILD-for-Arch).
 
 ## Updating Moonscript
 
