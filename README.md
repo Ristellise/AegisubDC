@@ -4,7 +4,7 @@
 
 For binaries and general information see [the homepage](http://www.aegisub.org) and [release page](https://github.com/wangqr/Aegisub/releases).
 
-The bug tracker can be found at https://github.com/wagqr/Aegisub/issues .
+The bug tracker can be found at https://github.com/wangqr/Aegisub/issues .
 
 If you want to test the upstream version, r8942 [can be downloaded here](http://www.plorkyeran.com/aegisub/). If both r8942 and this fork have some common issue, report at [upstream](https://github.com/Aegisub/Aegisub/issues) may let more people see your issue, and I am also watching the upstream for issues. If it is a wangqr fork specific issue, report it here.
 
