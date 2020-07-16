@@ -195,7 +195,7 @@ namespace {
 		// in pixel: B,G,R
 		rgb2lab(pixel[2], pixel[1], pixel[0], lab);
 		auto diff = sqrt(pow(lab[0] - orig[0], 2) + pow(lab[1] - orig[1], 2) + pow(lab[2] - orig[2], 2));
-		return diff < tolerance;
+		return diff <= tolerance;
 	}
 
 	template<typename T>
@@ -290,28 +290,30 @@ namespace {
 		auto view = interleaved_view(frame->width, frame->height, reinterpret_cast<boost::gil::bgra8_pixel_t*>(frame->data.data()), frame->pitch);
 		if (frame->flipped)
 			y = frame->height - y;
+
+		// Ensure selected color and position match
+		if(!check_point(*view.at(x,y), lab, tolerance))
+		{
+			wxMessageBox(_("Selected position and color are not within tolerance!"));
+			return;
+		}
+
 		int lrud[4];
 		calculate_point(view, x, y, lab, tolerance, lrud);
 
 		// find forward
 #define CHECK_EXISTS_POS check_exists(pos, x, y, lrud, lab, tolerance)
-		while (pos >= 0)
-		{
-			if (CHECK_EXISTS_POS)
-				pos -= 2;
-			else break;
-		}
+		do {
+			pos -= 2;
+		} while (pos >= 0 && !CHECK_EXISTS_POS)
 		pos++;
 		pos = std::max(0, pos);
 		auto left = CHECK_EXISTS_POS ? pos : pos + 1;
 
 		pos = current_n_frame;
-		while (pos < n_frames)
-		{
-			if (CHECK_EXISTS_POS)
-				pos += 2;
-			else break;
-		}
+		do {
+			pos += 2;
+		} while (pos < n_frames && !CHECK_EXISTS_POS)
 		pos--;
 		pos = std::min(pos, n_frames - 1);
 		auto right = CHECK_EXISTS_POS ? pos : pos - 1;
