@@ -105,13 +105,13 @@ namespace {
 			selected_color->SetColor(agi::Color(r, g, b));
 			});
 		selected_color = new ColourButton(this, wxSize(55, 16), true, agi::Color("FFFFFF"));
-		selected_color->SetToolTip(_("The key color to be followed."));
+		selected_color->SetToolTip(_("The key color to be followed"));
 		selected_x = new wxTextCtrl(this, -1, "0");
-		selected_x->SetToolTip(_("The x coord of the key point."));
+		selected_x->SetToolTip(_("The x coord of the key point"));
 		selected_y = new wxTextCtrl(this, -1, "0");
-		selected_y->SetToolTip(_("The y coord of the key point."));
+		selected_y->SetToolTip(_("The y coord of the key point"));
 		selected_tolerance = new wxTextCtrl(this, -1, wxString::Format(wxT("%i"), int(tolerance)));
-		selected_tolerance->SetToolTip(_("Max tolerance of the color."));
+		selected_tolerance->SetToolTip(_("Max tolerance of the color"));
 
 		selected_x->Bind(wxEVT_TEXT, &DialogAlignToVideo::update_from_textbox, this);
 		selected_y->Bind(wxEVT_TEXT, &DialogAlignToVideo::update_from_textbox, this);

@@ -2,7 +2,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Aegisub Hungarian translation\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-07-05 15:11-0400\n"
+"POT-Creation-Date: 2020-07-17 16:04+0200\n"
 "PO-Revision-Date: 2014-11-08 13:56+0100\n"
 "Last-Translator: Yuri <yurielvtars@gmail.com>\n"
 "Language-Team: Yuri <yurielvtars@gmail.com>\n"
@@ -2749,19 +2749,19 @@ msgid "%i"
 msgstr "%i"
 
 #: ../src/dialog_align.cpp:108
-msgid "The key color to be followed."
+msgid "The key color to be followed"
 msgstr ""
 
 #: ../src/dialog_align.cpp:110
-msgid "The x coord of the key point."
+msgid "The x coord of the key point"
 msgstr ""
 
 #: ../src/dialog_align.cpp:112
-msgid "The y coord of the key point."
+msgid "The y coord of the key point"
 msgstr ""
 
 #: ../src/dialog_align.cpp:114
-msgid "Max tolerance of the color."
+msgid "Max tolerance of the color"
 msgstr ""
 
 #: ../src/dialog_align.cpp:121

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Aegisub 3\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2020-07-05 15:11-0400\n"
+"POT-Creation-Date: 2020-07-17 16:04+0200\n"
 "PO-Revision-Date: 2013-07-17 22:15+0100\n"
 "Last-Translator: Shimapan <erokawaii@yandex.ru>\n"
 "Language-Team: Pantsu ga daisuki <erokawaii@yandex.ru>\n"
@@ -2835,19 +2835,19 @@ msgid "%i"
 msgstr ""
 
 #: ../src/dialog_align.cpp:108
-msgid "The key color to be followed."
+msgid "The key color to be followed"
 msgstr ""
 
 #: ../src/dialog_align.cpp:110
-msgid "The x coord of the key point."
+msgid "The x coord of the key point"
 msgstr ""
 
 #: ../src/dialog_align.cpp:112
-msgid "The y coord of the key point."
+msgid "The y coord of the key point"
 msgstr ""
 
 #: ../src/dialog_align.cpp:114
-msgid "Max tolerance of the color."
+msgid "Max tolerance of the color"
 msgstr ""
 
 #: ../src/dialog_align.cpp:121
