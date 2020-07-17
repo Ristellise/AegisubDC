@@ -305,7 +305,7 @@ namespace {
 #define CHECK_EXISTS_POS check_exists(pos, x, y, lrud, lab, tolerance)
 		do {
 			pos -= 2;
-		} while (pos >= 0 && !CHECK_EXISTS_POS)
+		} while (pos >= 0 && CHECK_EXISTS_POS);
 		pos++;
 		pos = std::max(0, pos);
 		auto left = CHECK_EXISTS_POS ? pos : pos + 1;
@@ -313,7 +313,7 @@ namespace {
 		pos = current_n_frame;
 		do {
 			pos += 2;
-		} while (pos < n_frames && !CHECK_EXISTS_POS)
+		} while (pos < n_frames && CHECK_EXISTS_POS);
 		pos--;
 		pos = std::min(pos, n_frames - 1);
 		auto right = CHECK_EXISTS_POS ? pos : pos - 1;
