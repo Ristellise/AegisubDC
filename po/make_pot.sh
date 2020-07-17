@@ -43,16 +43,14 @@ find ../automation -name '*.lua' \
   | LC_ALL=C sort \
   | xargs grep 'tr"[^"]*"' -o -n \
   | sed 's/\(.*\):\([0-9]\+\):tr\(".*"\)/\1|\2|\3/' \
-  | sed 's/\\/\\\\\\\\/g' \
+  | sed 's/\\/\\\\/g' \
   | maybe_append
 
 xgettext ../packages/desktop/aegisub.desktop.template.in --language=Desktop --join-existing --omit-header -o aegisub.pot
 
-if which xmlstarlet >/dev/null 2>&1 && which jq >/dev/null 2>&1; then
-  for i in 'name' 'summary' 'p' 'li' 'caption'; do
-    xmlstarlet sel -t -v "//_$i" ../packages/desktop/aegisub.appdata.xml.template.in | jq -R .
-  done | nl -v0 -w1 -s'|' | sed -re 's/^/aegisub.appdata.xml|/' | maybe_append
-fi
+for i in 'name' 'summary' 'p' 'li' 'caption'; do
+  xmlstarlet sel -t -v "//_$i" ../packages/desktop/aegisub.appdata.xml.template.in | jq -R .
+done | nl -v0 -w1 -s'|' | sed -re 's/^/aegisub.appdata.xml|/' | maybe_append
 
 grep '^_[A-Za-z0-9]*=.*' ../packages/win_installer/fragment_strings.iss.in | while read line
 do
@@ -63,5 +61,7 @@ done
 
 for i in $(cat LINGUAS)
 do
-  msgmerge --update --backup=none --sort-by-file $i.po aegisub.pot
+  # Run msgmerge twice to workaround https://savannah.gnu.org/bugs/?58778
+  msgmerge --update --backup=none --no-fuzzy-matching --sort-by-file $i.po aegisub.pot
+  msgmerge --update --backup=none --no-fuzzy-matching --sort-by-file $i.po aegisub.pot
 done
