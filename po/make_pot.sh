@@ -1,5 +1,8 @@
 #!/bin/sh
 
+#Abort on error
+set -e
+
 maybe_append() {
   while read -r msg; do
     msgfile=$(echo $msg | cut -d'|' -f1)
@@ -7,13 +10,16 @@ maybe_append() {
     msgid=$(echo $msg | cut -d'|' -f3-)
 
     if ! grep -Fq "msgid $msgid" aegisub.pot; then
-      echo -e "\n#: $msgfile:$msgline\nmsgid $msgid\nmsgstr \"\"\n" >> aegisub.pot
+      printf "\n#: %s:%s\nmsgid %s\nmsgstr \"\"\n\n" \
+             "$msgfile" "$msgline" "$msgid" >> aegisub.pot
     fi
   done
 }
 
-find ../src -name \*.cpp -o -name \*.h | LC_ALL=C sort \
-  | xgettext --files-from=- -o - --c++ -k_ -kSTR_MENU -kSTR_DISP -kSTR_HELP -kfmt_tl -kfmt_plural:2,3 -kwxT -kwxPLURAL:1,2 \
+find ../src -name \*.cpp -o -name \*.h \
+  | LC_ALL=C sort \
+  | xgettext --files-from=- -o - --c++ \
+             -k_ -kSTR_MENU -kSTR_DISP -kSTR_HELP -kfmt_tl -kfmt_plural:2,3 -kwxT -kwxPLURAL:1,2 \
   | sed 's/SOME DESCRIPTIVE TITLE./Aegisub 3.3+/' \
   | sed 's/YEAR/2005-2020/' \
   | sed "s/THE PACKAGE'S COPYRIGHT HOLDER/Rodrigo Braz Monteiro, Niels Martin Hansen, Thomas Goyne et. al./" \
@@ -34,6 +40,7 @@ grep '"[A-Za-z ]\+" : {' -n ../src/libresrc/default_hotkey.json \
   | maybe_append
 
 find ../automation -name '*.lua' \
+  | LC_ALL=C sort \
   | xargs grep 'tr"[^"]*"' -o -n \
   | sed 's/\(.*\):\([0-9]\+\):tr\(".*"\)/\1|\2|\3/' \
   | sed 's/\\/\\\\\\\\/g' \
