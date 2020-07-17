@@ -156,12 +156,9 @@ namespace {
 
 	void rgb2lab(unsigned char r, unsigned char g, unsigned char b, double* lab)
 	{
-		double R = static_cast<double>(r) / 255.0;
-		double G = static_cast<double>(g) / 255.0;
-		double B = static_cast<double>(b) / 255.0;
-		double X = 0.412453 * R + 0.357580 * G + 0.180423 * B;
-		double Y = 0.212671 * R + 0.715160 * G + 0.072169 * B;
-		double Z = 0.019334 * R + 0.119193 * G + 0.950227 * B;
+		double X = (0.412453 * r + 0.357580 * g + 0.180423 * b) / 255.0;
+		double Y = (0.212671 * r + 0.715160 * g + 0.072169 * b) / 255.0;
+		double Z = (0.019334 * r + 0.119193 * g + 0.950227 * b) / 255.0;
 		double xr = X / 0.950456, yr = Y / 1.000, zr = Z / 1.088854;
 
 		if (yr > 0.008856) {
