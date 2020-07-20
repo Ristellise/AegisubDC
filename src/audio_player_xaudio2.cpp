@@ -37,7 +37,11 @@
 #include <libaegisub/log.h>
 #include <libaegisub/make_unique.h>
 
+#ifndef XAUDIO2_REDIST
 #include <xaudio2.h>
+#else
+#include <xaudio2redist.h>
+#endif
 
 namespace {
 class XAudio2Thread;
