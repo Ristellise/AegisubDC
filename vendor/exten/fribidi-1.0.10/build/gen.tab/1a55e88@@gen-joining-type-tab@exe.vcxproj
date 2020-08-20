@@ -1,0 +1,92 @@
+<?xml version="1.0" ?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003" DefaultTargets="Build" ToolsVersion="4.0">
+	<ItemGroup Label="ProjectConfigurations">
+		<ProjectConfiguration Include="release|x64">
+			<Configuration>release</Configuration>
+			<Platform>x64</Platform>
+		</ProjectConfiguration>
+	</ItemGroup>
+	<PropertyGroup Label="Globals">
+		<ProjectGuid>{9B794BC7-11BE-487C-AA8F-5D969BB15A09}</ProjectGuid>
+		<Keyword>x64Proj</Keyword>
+		<RootNamespace>gen-joining-type-tab</RootNamespace>
+		<Platform>x64</Platform>
+		<ProjectName>gen-joining-type-tab</ProjectName>
+		<WindowsTargetPlatformVersion>10.0.18362.0</WindowsTargetPlatformVersion>
+	</PropertyGroup>
+	<Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props"/>
+	<PropertyGroup Label="Configuration">
+		<ConfigurationType>Application</ConfigurationType>
+		<CharacterSet>MultiByte</CharacterSet>
+		<PlatformToolset>v142</PlatformToolset>
+		<WholeProgramOptimization>false</WholeProgramOptimization>
+		<BasicRuntimeChecks>Default</BasicRuntimeChecks>
+		<UseDebugLibraries>false</UseDebugLibraries>
+	</PropertyGroup>
+	<ItemDefinitionGroup>
+		<ClCompile>
+			<RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+			<AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+			<PreprocessorDefinitions>%(PreprocessorDefinitions)</PreprocessorDefinitions>
+			<FunctionLevelLinking>true</FunctionLevelLinking>
+			<WarningLevel>Level2</WarningLevel>
+			<InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+			<FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+			<PrecompiledHeader/>
+		</ClCompile>
+		<ResourceCompile>
+			<PreprocessorDefinitions/>
+		</ResourceCompile>
+		<Link>
+			<AdditionalOptions>/OPT:REF %(AdditionalOptions)</AdditionalOptions>
+			<AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;comdlg32.lib;advapi32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+			<OutputFile>$(OutDir)gen-joining-type-tab.exe</OutputFile>
+			<SubSystem>Console</SubSystem>
+			<EntryPointSymbol>mainCRTStartup</EntryPointSymbol>
+			<TargetMachine>MachineX64</TargetMachine>
+			<SuppressStartupBanner>true</SuppressStartupBanner>
+			<SetChecksum>true</SetChecksum>
+		</Link>
+	</ItemDefinitionGroup>
+	<Import Project="$(VCTargetsPath)\Microsoft.Cpp.props"/>
+	<PropertyGroup>
+		<_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+		<OutDir>.\</OutDir>
+		<IntDir>1a55e88@@gen-joining-type-tab@exe\</IntDir>
+		<TargetName>gen-joining-type-tab</TargetName>
+		<TargetExt>.exe</TargetExt>
+	</PropertyGroup>
+	<ItemGroup>
+		<None Include="..\..\gen.tab\meson.build"/>
+	</ItemGroup>
+	<ItemGroup>
+		<CLInclude Include="..\gen.tab\fribidi-unicode-version.h"/>
+	</ItemGroup>
+	<ItemGroup>
+		<CLCompile Include="..\..\gen.tab\gen-joining-type-tab.c">
+			<AdditionalOptions>%(AdditionalOptions) &quot;-UHAVE_CONFIG_H&quot;</AdditionalOptions>
+			<PreprocessorDefinitions>%(PreprocessorDefinitions);HAVE_STRINGIZE;DONT_HAVE_FRIBIDI_CONFIG_H;HAVE_STDLIB_H;HAVE_STRING_H</PreprocessorDefinitions>
+			<AdditionalIncludeDirectories>1a55e88@@gen-joining-type-tab@exe;.;..\..\gen.tab;..\..\.;..;..\..\lib;..\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+			<ObjectFileName>$(IntDir)gen-joining-type-tab.c.obj</ObjectFileName>
+		</CLCompile>
+		<CLCompile Include="..\..\gen.tab\packtab.c">
+			<AdditionalOptions>%(AdditionalOptions) &quot;-UHAVE_CONFIG_H&quot;</AdditionalOptions>
+			<PreprocessorDefinitions>%(PreprocessorDefinitions);HAVE_STRINGIZE;DONT_HAVE_FRIBIDI_CONFIG_H;HAVE_STDLIB_H;HAVE_STRING_H</PreprocessorDefinitions>
+			<AdditionalIncludeDirectories>1a55e88@@gen-joining-type-tab@exe;.;..\..\gen.tab;..\..\.;..;..\..\lib;..\lib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+			<ObjectFileName>$(IntDir)packtab.c.obj</ObjectFileName>
+		</CLCompile>
+	</ItemGroup>
+	<Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets"/>
+	<ItemGroup>
+		<ProjectReference Include="D:\TestSub\vendor\exten\fribidi-1.0.10\build\REGEN.vcxproj">
+			<Project>{7C7A2A8F-AB4D-4E74-B103-5CF23A86A22D}</Project>
+			<LinkLibraryDependencies>false</LinkLibraryDependencies>
+		</ProjectReference>
+	</ItemGroup>
+	<ItemGroup>
+		<ProjectReference Include=".\1a55e88@@fribidi-unicode-version.h@cus.vcxproj">
+			<Project>{71E9DBE9-A4A7-4351-A10A-26321959D728}</Project>
+			<LinkLibraryDependencies>false</LinkLibraryDependencies>
+		</ProjectReference>
+	</ItemGroup>
+</Project>

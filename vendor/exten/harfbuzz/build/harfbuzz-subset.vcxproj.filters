@@ -1,0 +1,72 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="D:\TestSub\vendor\exten\harfbuzz\src\hb-number.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\TestSub\vendor\exten\harfbuzz\src\hb-ot-cff1-table.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\TestSub\vendor\exten\harfbuzz\src\hb-ot-cff2-table.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\TestSub\vendor\exten\harfbuzz\src\hb-static.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\TestSub\vendor\exten\harfbuzz\src\hb-subset-cff-common.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\TestSub\vendor\exten\harfbuzz\src\hb-subset-cff1.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\TestSub\vendor\exten\harfbuzz\src\hb-subset-cff2.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\TestSub\vendor\exten\harfbuzz\src\hb-subset-input.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\TestSub\vendor\exten\harfbuzz\src\hb-subset-plan.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="D:\TestSub\vendor\exten\harfbuzz\src\hb-subset.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="D:\TestSub\vendor\exten\harfbuzz\src\hb-number.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\TestSub\vendor\exten\harfbuzz\src\hb-subset-cff-common.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\TestSub\vendor\exten\harfbuzz\src\hb-subset-cff1.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\TestSub\vendor\exten\harfbuzz\src\hb-subset-cff2.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\TestSub\vendor\exten\harfbuzz\src\hb-subset-input.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\TestSub\vendor\exten\harfbuzz\src\hb-subset-plan.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\TestSub\vendor\exten\harfbuzz\src\hb-subset.hh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="D:\TestSub\vendor\exten\harfbuzz\src\hb-subset.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\TestSub\vendor\exten\harfbuzz\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{FB61B398-15AB-3840-968D-FD160EF4982B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{0B3448FD-ADAD-382F-9E2A-0B2024796F24}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

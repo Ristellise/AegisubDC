@@ -101,11 +101,7 @@ ERRDEF(STRGSRV,	"invalid replacement value (a %s)")
 ERRDEF(BADMODN,	"name conflict for module " LUA_QS)
 #if LJ_HASJIT
 ERRDEF(JITPROT,	"runtime code generation failed, restricted kernel?")
-#if LJ_TARGET_X86ORX64
-ERRDEF(NOJIT,	"JIT compiler disabled, CPU does not support SSE2")
-#else
 ERRDEF(NOJIT,	"JIT compiler disabled")
-#endif
 #elif defined(LJ_ARCH_NOJIT)
 ERRDEF(NOJIT,	"no JIT compiler for this architecture (yet)")
 #else
@@ -181,6 +177,7 @@ ERRDEF(FFI_CBACKOV,	"too many callbacks")
 #endif
 ERRDEF(FFI_NYIPACKBIT,	"NYI: packed bit fields")
 ERRDEF(FFI_NYICALL,	"NYI: cannot call this C function (yet)")
+ERRDEF(FFI_NOTLOAD,	"ffi module not loaded (yet)")
 #endif
 
 #undef ERRDEF

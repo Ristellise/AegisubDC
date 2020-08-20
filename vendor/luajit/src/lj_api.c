@@ -9,6 +9,8 @@
 #define lj_api_c
 #define LUA_CORE
 
+#include "lauxlib.h"
+
 #include "lj_obj.h"
 #include "lj_gc.h"
 #include "lj_err.h"
@@ -26,10 +28,12 @@
 #include "lj_strscan.h"
 #include "lj_strfmt.h"
 
+int luaJIT_compat52 = LJ_52;
+
 /* -- Common helper functions --------------------------------------------- */
 
-#define api_checknelems(L, n)		api_check(L, (n) <= (L->top - L->base))
-#define api_checkvalidindex(L, i)	api_check(L, (i) != niltv(L))
+#define lj_checkapi_slot(idx) \
+  lj_checkapi((idx) <= (L->top - L->base), "stack slot %d out of range", (idx))
 
 static TValue *index2adr(lua_State *L, int idx)
 {
@@ -37,7 +41,8 @@ static TValue *index2adr(lua_State *L, int idx)
     TValue *o = L->base + (idx - 1);
     return o < L->top ? o : niltv(L);
   } else if (idx > LUA_REGISTRYINDEX) {
-    api_check(L, idx != 0 && -idx <= L->top - L->base);
+    lj_checkapi(idx != 0 && -idx <= L->top - L->base,
+		"bad stack slot %d", idx);
     return L->top + idx;
   } else if (idx == LUA_GLOBALSINDEX) {
     TValue *o = &G(L)->tmptv;
@@ -47,7 +52,8 @@ static TValue *index2adr(lua_State *L, int idx)
     return registry(L);
   } else {
     GCfunc *fn = curr_func(L);
-    api_check(L, fn->c.gct == ~LJ_TFUNC && !isluafunc(fn));
+    lj_checkapi(fn->c.gct == ~LJ_TFUNC && !isluafunc(fn),
+		"calling frame is not a C function");
     if (idx == LUA_ENVIRONINDEX) {
       TValue *o = &G(L)->tmptv;
       settabV(L, o, tabref(fn->c.env));
@@ -59,13 +65,27 @@ static TValue *index2adr(lua_State *L, int idx)
   }
 }
 
-static TValue *stkindex2adr(lua_State *L, int idx)
+static LJ_AINLINE TValue *index2adr_check(lua_State *L, int idx)
+{
+  TValue *o = index2adr(L, idx);
+  lj_checkapi(o != niltv(L), "invalid stack slot %d", idx);
+  return o;
+}
+
+static TValue *index2adr_stack(lua_State *L, int idx)
 {
   if (idx > 0) {
     TValue *o = L->base + (idx - 1);
+    if (o < L->top) {
+      return o;
+    } else {
+      lj_checkapi(0, "invalid stack slot %d", idx);
+      return niltv(L);
+    }
     return o < L->top ? o : niltv(L);
   } else {
-    api_check(L, idx != 0 && -idx <= L->top - L->base);
+    lj_checkapi(idx != 0 && -idx <= L->top - L->base,
+		"invalid stack slot %d", idx);
     return L->top + idx;
   }
 }
@@ -99,17 +119,17 @@ LUALIB_API void luaL_checkstack(lua_State *L, int size, const char *msg)
     lj_err_callerv(L, LJ_ERR_STKOVM, msg);
 }
 
-LUA_API void lua_xmove(lua_State *from, lua_State *to, int n)
+LUA_API void lua_xmove(lua_State *L, lua_State *to, int n)
 {
   TValue *f, *t;
-  if (from == to) return;
-  api_checknelems(from, n);
-  api_check(from, G(from) == G(to));
+  if (L == to) return;
+  lj_checkapi_slot(n);
+  lj_checkapi(G(L) == G(to), "move across global states");
   lj_state_checkstack(to, (MSize)n);
-  f = from->top;
+  f = L->top;
   t = to->top = to->top + n;
   while (--n >= 0) copyTV(to, --t, --f);
-  from->top = f;
+  L->top = f;
 }
 
 LUA_API const lua_Number *lua_version(lua_State *L)
@@ -121,6 +141,13 @@ LUA_API const lua_Number *lua_version(lua_State *L)
 
 /* -- Stack manipulation -------------------------------------------------- */
 
+LUA_API int lua_absindex (lua_State *L, int idx)
+{
+  return (idx > 0 || idx <= LUA_REGISTRYINDEX)
+         ? idx
+         : (int)(L->top - L->base) + idx + 1;
+}
+
 LUA_API int lua_gettop(lua_State *L)
 {
   return (int)(L->top - L->base);
@@ -129,7 +156,7 @@ LUA_API int lua_gettop(lua_State *L)
 LUA_API void lua_settop(lua_State *L, int idx)
 {
   if (idx >= 0) {
-    api_check(L, idx <= tvref(L->maxstack) - L->base);
+    lj_checkapi(idx <= tvref(L->maxstack) - L->base, "bad stack slot %d", idx);
     if (L->base + idx > L->top) {
       if (L->base + idx >= tvref(L->maxstack))
 	lj_state_growstack(L, (MSize)idx - (MSize)(L->top - L->base));
@@ -138,23 +165,21 @@ LUA_API void lua_settop(lua_State *L, int idx)
       L->top = L->base + idx;
     }
   } else {
-    api_check(L, -(idx+1) <= (L->top - L->base));
+    lj_checkapi(-(idx+1) <= (L->top - L->base), "bad stack slot %d", idx);
     L->top += idx+1;  /* Shrinks top (idx < 0). */
   }
 }
 
 LUA_API void lua_remove(lua_State *L, int idx)
 {
-  TValue *p = stkindex2adr(L, idx);
-  api_checkvalidindex(L, p);
+  TValue *p = index2adr_stack(L, idx);
   while (++p < L->top) copyTV(L, p-1, p);
   L->top--;
 }
 
 LUA_API void lua_insert(lua_State *L, int idx)
 {
-  TValue *q, *p = stkindex2adr(L, idx);
-  api_checkvalidindex(L, p);
+  TValue *q, *p = index2adr_stack(L, idx);
   for (q = L->top; q > p; q--) copyTV(L, q, q-1);
   copyTV(L, p, L->top);
 }
@@ -162,19 +187,18 @@ LUA_API void lua_insert(lua_State *L, int idx)
 static void copy_slot(lua_State *L, TValue *f, int idx)
 {
   if (idx == LUA_GLOBALSINDEX) {
-    api_check(L, tvistab(f));
+    lj_checkapi(tvistab(f), "stack slot %d is not a table", idx);
     /* NOBARRIER: A thread (i.e. L) is never black. */
     setgcref(L->env, obj2gco(tabV(f)));
   } else if (idx == LUA_ENVIRONINDEX) {
     GCfunc *fn = curr_func(L);
     if (fn->c.gct != ~LJ_TFUNC)
       lj_err_msg(L, LJ_ERR_NOENV);
-    api_check(L, tvistab(f));
+    lj_checkapi(tvistab(f), "stack slot %d is not a table", idx);
     setgcref(fn->c.env, obj2gco(tabV(f)));
     lj_gc_barrier(L, fn, f);
   } else {
-    TValue *o = index2adr(L, idx);
-    api_checkvalidindex(L, o);
+    TValue *o = index2adr_check(L, idx);
     copyTV(L, o, f);
     if (idx < LUA_GLOBALSINDEX)  /* Need a barrier for upvalues. */
       lj_gc_barrier(L, curr_func(L), f);
@@ -183,7 +207,7 @@ static void copy_slot(lua_State *L, TValue *f, int idx)
 
 LUA_API void lua_replace(lua_State *L, int idx)
 {
-  api_checknelems(L, 1);
+  lj_checkapi_slot(1);
   copy_slot(L, L->top - 1, idx);
   L->top--;
 }
@@ -219,7 +243,7 @@ LUA_API int lua_type(lua_State *L, int idx)
 #else
     int tt = (int)(((t < 8 ? 0x98042110u : 0x75a06u) >> 4*(t&7)) & 15u);
 #endif
-    lua_assert(tt != LUA_TNIL || tvisnil(o));
+    lj_assertL(tt != LUA_TNIL || tvisnil(o), "bad tag conversion");
     return tt;
   }
 }
@@ -507,6 +531,29 @@ LUA_API const char *lua_tolstring(lua_State *L, int idx, size_t *len)
   return strdata(s);
 }
 
+LUALIB_API const char *luaL_tolstring(lua_State *L, int idx, size_t *len)
+{
+  if (!luaL_callmeta(L, idx, "__tostring")) {  /* no metafield? */
+    switch (lua_type(L, idx)) {
+      case LUA_TNUMBER:
+      case LUA_TSTRING:
+        lua_pushvalue(L, idx);
+        break;
+      case LUA_TBOOLEAN:
+        lua_pushstring(L, (lua_toboolean(L, idx) ? "true" : "false"));
+        break;
+      case LUA_TNIL:
+        lua_pushliteral(L, "nil");
+        break;
+      default:
+        lua_pushfstring(L, "%s: %p", lua_typename(L, lua_type(L, idx)),
+                                            lua_topointer(L, idx));
+        break;
+    }
+  }
+  return lua_tolstring(L, -1, len);
+}
+
 LUALIB_API const char *luaL_checklstring(lua_State *L, int idx, size_t *len)
 {
   TValue *o = index2adr(L, idx);
@@ -573,6 +620,20 @@ LUA_API size_t lua_objlen(lua_State *L, int idx)
     GCstr *s = lj_strfmt_number(L, o);
     setstrV(L, o, s);
     return s->len;
+  } else {
+    return 0;
+  }
+}
+
+LUA_API size_t lua_rawlen(lua_State *L, int idx)
+{
+  TValue *o = index2adr(L, idx);
+  if (tvisstr(o)) {
+    return strV(o)->len;
+  } else if (tvistab(o)) {
+    return (size_t)lj_tab_len(tabV(o));
+  } else if (tvisudata(o)) {
+    return udataV(o)->len;
   } else {
     return 0;
   }
@@ -677,14 +738,14 @@ LUA_API void lua_pushcclosure(lua_State *L, lua_CFunction f, int n)
 {
   GCfunc *fn;
   lj_gc_check(L);
-  api_checknelems(L, n);
+  lj_checkapi_slot(n);
   fn = lj_func_newC(L, (MSize)n, getcurrenv(L));
   fn->c.f = f;
   L->top -= n;
   while (n--)
     copyTV(L, &fn->c.upvalue[n], L->top+n);
   setfuncV(L, L->top, fn);
-  lua_assert(iswhite(obj2gco(fn)));
+  lj_assertL(iswhite(obj2gco(fn)), "new GC object is not white");
   incr_top(L);
 }
 
@@ -754,7 +815,7 @@ LUA_API void *lua_newuserdata(lua_State *L, size_t size)
 
 LUA_API void lua_concat(lua_State *L, int n)
 {
-  api_checknelems(L, n);
+  lj_checkapi_slot(n);
   if (n >= 2) {
     n--;
     do {
@@ -776,13 +837,31 @@ LUA_API void lua_concat(lua_State *L, int n)
   /* else n == 1: nothing to do. */
 }
 
+LUA_API void lua_len (lua_State *L, int idx)
+{
+  TValue *o = index2adr_check(L, idx);
+  if (tvisstr(o)) {
+    setnumV(L->top, strV(o)->len);
+  } else if (tvistab(o) && (!LJ_52 || tvisnil(lj_meta_lookup(L, o, MM_len)))) {
+    setnumV(L->top, lj_tab_len(tabV(o)));
+  } else {
+    TValue *v;
+    L->top = lj_meta_len(L, o);
+    L->top += 2;
+    lj_vm_call(L, L->top-2, 1+1);
+    L->top -= 2+LJ_FR2;
+    v = L->top+1+LJ_FR2;
+    copyTV(L, L->top, v);
+  }
+  incr_top(L);
+}
+
 /* -- Object getters ------------------------------------------------------ */
 
 LUA_API void lua_gettable(lua_State *L, int idx)
 {
-  cTValue *v, *t = index2adr(L, idx);
-  api_checkvalidindex(L, t);
-  v = lj_meta_tget(L, t, L->top-1);
+  cTValue *t = index2adr_check(L, idx);
+  cTValue *v = lj_meta_tget(L, t, L->top-1);
   if (v == NULL) {
     L->top += 2;
     lj_vm_call(L, L->top-2, 1+1);
@@ -794,9 +873,8 @@ LUA_API void lua_gettable(lua_State *L, int idx)
 
 LUA_API void lua_getfield(lua_State *L, int idx, const char *k)
 {
-  cTValue *v, *t = index2adr(L, idx);
+  cTValue *v, *t = index2adr_check(L, idx);
   TValue key;
-  api_checkvalidindex(L, t);
   setstrV(L, &key, lj_str_newz(L, k));
   v = lj_meta_tget(L, t, &key);
   if (v == NULL) {
@@ -812,14 +890,14 @@ LUA_API void lua_getfield(lua_State *L, int idx, const char *k)
 LUA_API void lua_rawget(lua_State *L, int idx)
 {
   cTValue *t = index2adr(L, idx);
-  api_check(L, tvistab(t));
+  lj_checkapi(tvistab(t), "stack slot %d is not a table", idx);
   copyTV(L, L->top-1, lj_tab_get(L, tabV(t), L->top-1));
 }
 
 LUA_API void lua_rawgeti(lua_State *L, int idx, int n)
 {
   cTValue *v, *t = index2adr(L, idx);
-  api_check(L, tvistab(t));
+  lj_checkapi(tvistab(t), "stack slot %d is not a table", idx);
   v = lj_tab_getint(tabV(t), n);
   if (v) {
     copyTV(L, L->top, v);
@@ -861,8 +939,7 @@ LUALIB_API int luaL_getmetafield(lua_State *L, int idx, const char *field)
 
 LUA_API void lua_getfenv(lua_State *L, int idx)
 {
-  cTValue *o = index2adr(L, idx);
-  api_checkvalidindex(L, o);
+  cTValue *o = index2adr_check(L, idx);
   if (tvisfunc(o)) {
     settabV(L, L->top, tabref(funcV(o)->c.env));
   } else if (tvisudata(o)) {
@@ -879,7 +956,7 @@ LUA_API int lua_next(lua_State *L, int idx)
 {
   cTValue *t = index2adr(L, idx);
   int more;
-  api_check(L, tvistab(t));
+  lj_checkapi(tvistab(t), "stack slot %d is not a table", idx);
   more = lj_tab_next(L, tabV(t), L->top-1);
   if (more) {
     incr_top(L);  /* Return new key and value slot. */
@@ -892,7 +969,8 @@ LUA_API int lua_next(lua_State *L, int idx)
 LUA_API const char *lua_getupvalue(lua_State *L, int idx, int n)
 {
   TValue *val;
-  const char *name = lj_debug_uvnamev(index2adr(L, idx), (uint32_t)(n-1), &val);
+  GCobj *o;
+  const char *name = lj_debug_uvnamev(index2adr(L, idx), (uint32_t)(n-1), &val, &o);
   if (name) {
     copyTV(L, L->top, val);
     incr_top(L);
@@ -904,7 +982,7 @@ LUA_API void *lua_upvalueid(lua_State *L, int idx, int n)
 {
   GCfunc *fn = funcV(index2adr(L, idx));
   n--;
-  api_check(L, (uint32_t)n < fn->l.nupvalues);
+  lj_checkapi((uint32_t)n < fn->l.nupvalues, "bad upvalue %d", n);
   return isluafunc(fn) ? (void *)gcref(fn->l.uvptr[n]) :
 			 (void *)&fn->c.upvalue[n];
 }
@@ -914,8 +992,10 @@ LUA_API void lua_upvaluejoin(lua_State *L, int idx1, int n1, int idx2, int n2)
   GCfunc *fn1 = funcV(index2adr(L, idx1));
   GCfunc *fn2 = funcV(index2adr(L, idx2));
   n1--; n2--;
-  api_check(L, isluafunc(fn1) && (uint32_t)n1 < fn1->l.nupvalues);
-  api_check(L, isluafunc(fn2) && (uint32_t)n2 < fn2->l.nupvalues);
+  lj_checkapi(isluafunc(fn1), "stack slot %d is not a Lua function", idx1);
+  lj_checkapi(isluafunc(fn2), "stack slot %d is not a Lua function", idx2);
+  lj_checkapi((uint32_t)n1 < fn1->l.nupvalues, "bad upvalue %d", n1+1);
+  lj_checkapi((uint32_t)n2 < fn2->l.nupvalues, "bad upvalue %d", n2+1);
   setgcrefr(fn1->l.uvptr[n1], fn2->l.uvptr[n2]);
   lj_gc_objbarrier(L, fn1, gcref(fn1->l.uvptr[n1]));
 }
@@ -944,9 +1024,8 @@ LUALIB_API void *luaL_checkudata(lua_State *L, int idx, const char *tname)
 LUA_API void lua_settable(lua_State *L, int idx)
 {
   TValue *o;
-  cTValue *t = index2adr(L, idx);
-  api_checknelems(L, 2);
-  api_checkvalidindex(L, t);
+  cTValue *t = index2adr_check(L, idx);
+  lj_checkapi_slot(2);
   o = lj_meta_tset(L, t, L->top-2);
   if (o) {
     /* NOBARRIER: lj_meta_tset ensures the table is not black. */
@@ -965,9 +1044,8 @@ LUA_API void lua_setfield(lua_State *L, int idx, const char *k)
 {
   TValue *o;
   TValue key;
-  cTValue *t = index2adr(L, idx);
-  api_checknelems(L, 1);
-  api_checkvalidindex(L, t);
+  cTValue *t = index2adr_check(L, idx);
+  lj_checkapi_slot(1);
   setstrV(L, &key, lj_str_newz(L, k));
   o = lj_meta_tset(L, t, &key);
   if (o) {
@@ -986,7 +1064,7 @@ LUA_API void lua_rawset(lua_State *L, int idx)
 {
   GCtab *t = tabV(index2adr(L, idx));
   TValue *dst, *key;
-  api_checknelems(L, 2);
+  lj_checkapi_slot(2);
   key = L->top-2;
   dst = lj_tab_set(L, t, key);
   copyTV(L, dst, key+1);
@@ -998,7 +1076,7 @@ LUA_API void lua_rawseti(lua_State *L, int idx, int n)
 {
   GCtab *t = tabV(index2adr(L, idx));
   TValue *dst, *src;
-  api_checknelems(L, 1);
+  lj_checkapi_slot(1);
   dst = lj_tab_setint(L, t, n);
   src = L->top-1;
   copyTV(L, dst, src);
@@ -1010,13 +1088,12 @@ LUA_API int lua_setmetatable(lua_State *L, int idx)
 {
   global_State *g;
   GCtab *mt;
-  cTValue *o = index2adr(L, idx);
-  api_checknelems(L, 1);
-  api_checkvalidindex(L, o);
+  cTValue *o = index2adr_check(L, idx);
+  lj_checkapi_slot(1);
   if (tvisnil(L->top-1)) {
     mt = NULL;
   } else {
-    api_check(L, tvistab(L->top-1));
+    lj_checkapi(tvistab(L->top-1), "top stack slot is not a table");
     mt = tabV(L->top-1);
   }
   g = G(L);
@@ -1053,11 +1130,10 @@ LUALIB_API void luaL_setmetatable(lua_State *L, const char *tname)
 
 LUA_API int lua_setfenv(lua_State *L, int idx)
 {
-  cTValue *o = index2adr(L, idx);
+  cTValue *o = index2adr_check(L, idx);
   GCtab *t;
-  api_checknelems(L, 1);
-  api_checkvalidindex(L, o);
-  api_check(L, tvistab(L->top-1));
+  lj_checkapi_slot(1);
+  lj_checkapi(tvistab(L->top-1), "top stack slot is not a table");
   t = tabV(L->top-1);
   if (tvisfunc(o)) {
     setgcref(funcV(o)->c.env, obj2gco(t));
@@ -1078,15 +1154,38 @@ LUA_API const char *lua_setupvalue(lua_State *L, int idx, int n)
 {
   cTValue *f = index2adr(L, idx);
   TValue *val;
+  GCobj *o;
   const char *name;
-  api_checknelems(L, 1);
-  name = lj_debug_uvnamev(f, (uint32_t)(n-1), &val);
+  lj_checkapi_slot(1);
+  name = lj_debug_uvnamev(f, (uint32_t)(n-1), &val, &o);
   if (name) {
     L->top--;
     copyTV(L, val, L->top);
-    lj_gc_barrier(L, funcV(f), L->top);
+    lj_gc_barrier(L, o, L->top);
   }
   return name;
+}
+
+LUALIB_API void luaL_requiref(lua_State *L, char const* modname,
+                    lua_CFunction openf, int glb) {
+  luaL_checkstack(L, 3, "not enough stack slots");
+  lua_getglobal(L, "package");
+  lua_getfield(L, -1, "loaded");
+  lua_pop(L, 1);
+  lua_getfield(L, -1, modname);
+  if (lua_isnil(L, -1) == 1) {
+    lua_pop(L, 1);
+    lua_pushcfunction(L, openf);
+    lua_pushstring(L, modname);
+    lua_call(L, 1, 1);
+    lua_pushvalue(L, -1);
+    lua_setfield(L, -3, modname);
+  }
+  lua_remove(L, -2);
+  if (glb) {
+    lua_pushvalue(L, -1);
+    lua_setglobal(L, modname);
+  }
 }
 
 /* -- Calls --------------------------------------------------------------- */
@@ -1106,8 +1205,9 @@ static TValue *api_call_base(lua_State *L, int nargs)
 
 LUA_API void lua_call(lua_State *L, int nargs, int nresults)
 {
-  api_check(L, L->status == LUA_OK || L->status == LUA_ERRERR);
-  api_checknelems(L, nargs+1);
+  lj_checkapi(L->status == LUA_OK || L->status == LUA_ERRERR,
+	      "thread called in wrong state %d", L->status);
+  lj_checkapi_slot(nargs+1);
   lj_vm_call(L, api_call_base(L, nargs), nresults+1);
 }
 
@@ -1117,13 +1217,13 @@ LUA_API int lua_pcall(lua_State *L, int nargs, int nresults, int errfunc)
   uint8_t oldh = hook_save(g);
   ptrdiff_t ef;
   int status;
-  api_check(L, L->status == LUA_OK || L->status == LUA_ERRERR);
-  api_checknelems(L, nargs+1);
+  lj_checkapi(L->status == LUA_OK || L->status == LUA_ERRERR,
+	      "thread called in wrong state %d", L->status);
+  lj_checkapi_slot(nargs+1);
   if (errfunc == 0) {
     ef = 0;
   } else {
-    cTValue *o = stkindex2adr(L, errfunc);
-    api_checkvalidindex(L, o);
+    cTValue *o = index2adr_stack(L, errfunc);
     ef = savestack(L, o);
   }
   status = lj_vm_pcall(L, api_call_base(L, nargs), nresults+1, ef);
@@ -1149,7 +1249,8 @@ LUA_API int lua_cpcall(lua_State *L, lua_CFunction func, void *ud)
   global_State *g = G(L);
   uint8_t oldh = hook_save(g);
   int status;
-  api_check(L, L->status == LUA_OK || L->status == LUA_ERRERR);
+  lj_checkapi(L->status == LUA_OK || L->status == LUA_ERRERR,
+	      "thread called in wrong state %d", L->status);
   status = lj_vm_cpcall(L, func, ud, cpcall);
   if (status) hook_restore(g, oldh);
   return status;
@@ -1166,6 +1267,18 @@ LUALIB_API int luaL_callmeta(lua_State *L, int idx, const char *field)
     return 1;
   }
   return 0;
+}
+
+LUALIB_API lua_Integer luaL_len(lua_State *L, int idx)
+{
+  lua_Integer l;
+  int isnum;
+  lua_len(L, idx);
+  l = lua_tointegerx(L, -1, &isnum);
+  if (!isnum)
+    luaL_error(L, "object length is not a number");
+  lua_pop(L, 1);  /* remove object */
+  return l;
 }
 
 /* -- Coroutine yield and resume ------------------------------------------ */
@@ -1290,3 +1403,12 @@ LUA_API void lua_setallocf(lua_State *L, lua_Alloc f, void *ud)
   g->allocf = f;
 }
 
+LUA_API void lua_setexdata(lua_State *L, void *exdata)
+{
+  L->exdata = exdata;
+}
+
+LUA_API void *lua_getexdata(lua_State *L)
+{
+  return L->exdata;
+}

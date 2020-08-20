@@ -54,11 +54,11 @@ CCOPT_arm64=
 CCOPT_ppc=
 CCOPT_mips=
 #
-#CCDEBUG=
+CCDEBUG=
 # Uncomment the next line to generate debug information:
-CCDEBUG= -g
+#CCDEBUG= -g
 #
-CCWARN= -Wall -Wno-unused-function
+CCWARN= -Wall
 # Uncomment the next line to enable more warnings:
 #CCWARN+= -Wextra -Wdeclaration-after-statement -Wredundant-decls -Wshadow -Wpointer-arith
 #
@@ -71,10 +71,10 @@ CCWARN= -Wall -Wno-unused-function
 # as dynamic mode.
 #
 # Mixed mode creates a static + dynamic library and a statically linked luajit.
-#BUILDMODE= mixed
+BUILDMODE= mixed
 #
 # Static mode creates a static library and a statically linked luajit.
-BUILDMODE= static
+#BUILDMODE= static
 #
 # Dynamic mode creates a dynamic library and a dynamically linked luajit.
 # Note: this executable will only run when the library is installed!
@@ -99,7 +99,7 @@ XCFLAGS=
 # enabled by default. Some other features that *might* break some existing
 # code (e.g. __pairs or os.execute() return values) can be enabled here.
 # Note: this does not provide full compatibility with Lua 5.2 at this time.
-XCFLAGS+= -DLUAJIT_ENABLE_LUA52COMPAT
+#XCFLAGS+= -DLUAJIT_ENABLE_LUA52COMPAT
 #
 # Disable the JIT compiler, i.e. turn LuaJIT into a pure interpreter.
 #XCFLAGS+= -DLUAJIT_DISABLE_JIT
@@ -113,6 +113,21 @@ XCFLAGS+= -DLUAJIT_ENABLE_LUA52COMPAT
 # Enable GC64 mode for x64.
 #XCFLAGS+= -DLUAJIT_ENABLE_GC64
 #
+# Reproducible builds.  Enable this option if you need output to be the same
+# across CPUs.
+#LUAJIT_ENABLE_REPRODUCIBLE_BUILDS=1
+#
+ifdef SOURCE_DATE_EPOCH
+  LUAJIT_ENABLE_REPRODUCIBLE_BUILDS=1
+endif
+#
+# Enable hardware optimised hashing for string interning.  This uses runtime
+# detection of CPU features and if supported, selects a hash routine best
+# suited for that microarchitecture.  This is disabled for reproducible builds
+# to allow for consistent string across CPUs.
+ifneq (1,$(LUAJIT_ENABLE_REPRODUCIBLE_BUILDS))
+XCFLAGS += -DLUAJIT_ENABLE_OPTIMISED_HASH=1
+endif
 ##############################################################################
 
 ##############################################################################
@@ -158,10 +173,13 @@ XCFLAGS+= -DLUAJIT_ENABLE_LUA52COMPAT
 
 ifeq (Windows,$(findstring Windows,$(OS))$(MSYSTEM)$(TERM))
   HOST_SYS= Windows
-  HOST_RM= del
 else
   HOST_SYS:= $(shell uname -s)
   ifneq (,$(findstring MINGW,$(HOST_SYS)))
+    HOST_SYS= Windows
+    HOST_MSYS= mingw
+  endif
+  ifneq (,$(findstring MSYS,$(HOST_SYS)))
     HOST_SYS= Windows
     HOST_MSYS= mingw
   endif
@@ -191,7 +209,7 @@ CCOPTIONS= $(CCDEBUG) $(ASOPTIONS)
 LDOPTIONS= $(CCDEBUG) $(LDFLAGS)
 
 HOST_CC= $(CC)
-HOST_RM= rm -f
+HOST_RM?= rm -f
 # If left blank, minilua is built and used. You can supply an installed
 # copy of (plain) Lua 5.1 or 5.2, plus Lua BitOp. E.g. with: HOST_LUA=lua
 HOST_LUA=
@@ -212,12 +230,12 @@ TARGET_LD= $(CROSS)$(CC)
 TARGET_AR= $(CROSS)ar rcus 2>/dev/null
 TARGET_STRIP= $(CROSS)strip
 
-#TARGET_LIBPATH= $(or $(PREFIX),/usr/local)/$(or $(MULTILIB),lib)
-TARGET_LIBPATH= $(CURDIR)
+TARGET_LIBPATH= $(or $(PREFIX),/usr/local)/$(or $(MULTILIB),lib)
 TARGET_SONAME= libluajit-$(ABIVER).so.$(MAJVER)
 TARGET_DYLIBNAME= libluajit-$(ABIVER).$(MAJVER).dylib
 TARGET_DYLIBPATH= $(TARGET_LIBPATH)/$(TARGET_DYLIBNAME)
 TARGET_DLLNAME= lua$(NODOTABIVER).dll
+TARGET_DLLDOTANAME= libluajit-$(ABIVER).dll.a
 TARGET_XSHLDFLAGS= -shared -fPIC -Wl,-soname,$(TARGET_SONAME)
 TARGET_DYNXLDOPTS=
 
@@ -241,6 +259,9 @@ ifneq (,$(findstring LJ_TARGET_X86 ,$(TARGET_TESTARCH)))
 else
 ifneq (,$(findstring LJ_TARGET_ARM ,$(TARGET_TESTARCH)))
   TARGET_LJARCH= arm
+else
+ifneq (,$(findstring LJ_TARGET_S390X ,$(TARGET_TESTARCH)))
+  TARGET_LJARCH= s390x
 else
 ifneq (,$(findstring LJ_TARGET_ARM64 ,$(TARGET_TESTARCH)))
   ifneq (,$(findstring __AARCH64EB__ ,$(TARGET_TESTARCH)))
@@ -267,6 +288,7 @@ ifneq (,$(findstring LJ_TARGET_MIPS ,$(TARGET_TESTARCH)))
   endif
 else
   $(error Unsupported target architecture)
+endif
 endif
 endif
 endif
@@ -306,7 +328,7 @@ endif
 TARGET_SYS?= $(HOST_SYS)
 ifeq (Windows,$(TARGET_SYS))
   TARGET_STRIP+= --strip-unneeded
-  TARGET_XSHLDFLAGS= -shared
+  TARGET_XSHLDFLAGS= -shared -Wl,--out-implib,$(TARGET_DLLDOTANAME)
   TARGET_DYNXLDOPTS=
 else
 ifeq (,$(shell $(TARGET_CC) -o /dev/null -c -x c /dev/null -fno-stack-protector 2>/dev/null || echo 1))
@@ -314,14 +336,14 @@ ifeq (,$(shell $(TARGET_CC) -o /dev/null -c -x c /dev/null -fno-stack-protector 
 endif
 ifeq (Darwin,$(TARGET_SYS))
   ifeq (,$(MACOSX_DEPLOYMENT_TARGET))
-    export MACOSX_DEPLOYMENT_TARGET=10.4
+    $(error missing: export MACOSX_DEPLOYMENT_TARGET=XX.YY)
   endif
   TARGET_STRIP+= -x
   TARGET_XSHLDFLAGS= -dynamiclib -single_module -undefined dynamic_lookup -fPIC
   TARGET_DYNXLDOPTS=
   TARGET_XSHLDFLAGS+= -install_name $(TARGET_DYLIBPATH) -compatibility_version $(MAJVER).$(MINVER) -current_version $(MAJVER).$(MINVER).$(RELVER)
   ifeq (x64,$(TARGET_LJARCH))
-    XCFLAGS+= -DLUAJIT_ENABLE_GC64
+    TARGET_XLDFLAGS+= -pagezero_size 10000 -image_base 100000000
     TARGET_XSHLDFLAGS+= -image_base 7fff04c4a000
   endif
 else
@@ -360,7 +382,7 @@ ifneq ($(HOST_SYS),$(TARGET_SYS))
     HOST_XCFLAGS+= -DLUAJIT_OS=LUAJIT_OS_OSX
   else
   ifeq (iOS,$(TARGET_SYS))
-    HOST_XCFLAGS+= -DLUAJIT_OS=LUAJIT_OS_OSX
+    HOST_XCFLAGS+= -DLUAJIT_OS=LUAJIT_OS_OSX -DTARGET_OS_IPHONE=1
   else
     HOST_XCFLAGS+= -DLUAJIT_OS=LUAJIT_OS_OTHER
   endif
@@ -440,6 +462,9 @@ ifeq (arm,$(TARGET_LJARCH))
     DASM_AFLAGS+= -D IOS
   endif
 else
+ifneq (,$(findstring LJ_TARGET_MIPSR6 ,$(TARGET_TESTARCH)))
+  DASM_AFLAGS+= -D MIPSR6
+endif
 ifeq (ppc,$(TARGET_LJARCH))
   ifneq (,$(findstring LJ_ARCH_SQRT 1,$(TARGET_TESTARCH)))
     DASM_AFLAGS+= -D SQRT
@@ -451,7 +476,16 @@ ifeq (ppc,$(TARGET_LJARCH))
     DASM_AFLAGS+= -D GPR64
   endif
   ifeq (PS3,$(TARGET_SYS))
-    DASM_AFLAGS+= -D PPE -D TOC
+    DASM_AFLAGS+= -D PPE
+  endif
+  ifneq (,$(findstring LJ_ARCH_PPC_OPD 1,$(TARGET_TESTARCH)))
+    DASM_AFLAGS+= -D OPD
+  endif
+  ifneq (,$(findstring LJ_ARCH_PPC_OPDENV 1,$(TARGET_TESTARCH)))
+    DASM_AFLAGS+= -D OPDENV
+  endif
+  ifneq (,$(findstring LJ_ARCH_PPC_ELFV2 1,$(TARGET_TESTARCH)))
+    DASM_AFLAGS+= -D ELFV2
   endif
   ifneq (,$(findstring LJ_ARCH_PPC64 ,$(TARGET_TESTARCH)))
     DASM_ARCH= ppc64
@@ -476,11 +510,11 @@ LJVM_O= lj_vm.o
 LJVM_BOUT= $(LJVM_S)
 LJVM_MODE= elfasm
 
-LJLIB_O= lib_base.o lib_math.o lib_bit.o lib_string.o lib_table.o \
+LJLIB_O= lib_base.o lib_math.o lib_bit.o lib_string.o lib_table.o lib_utf8.o \
 	 lib_io.o lib_os.o lib_package.o lib_debug.o lib_jit.o lib_ffi.o
 LJLIB_C= $(LJLIB_O:.o=.c)
 
-LJCORE_O= lj_gc.o lj_err.o lj_char.o lj_bc.o lj_obj.o lj_buf.o \
+LJCORE_O= lj_assert.o lj_gc.o lj_err.o lj_char.o lj_bc.o lj_obj.o lj_buf.o \
 	  lj_str.o lj_tab.o lj_func.o lj_udata.o lj_meta.o lj_debug.o \
 	  lj_state.o lj_dispatch.o lj_vmevent.o lj_vmmath.o lj_strscan.o \
 	  lj_strfmt.o lj_strfmt_num.o lj_api.o lj_profile.o \
@@ -492,7 +526,13 @@ LJCORE_O= lj_gc.o lj_err.o lj_char.o lj_bc.o lj_obj.o lj_buf.o \
 	  lj_ctype.o lj_cdata.o lj_cconv.o lj_ccall.o lj_ccallback.o \
 	  lj_carith.o lj_clib.o lj_cparse.o \
 	  lj_lib.o lj_alloc.o lib_aux.o \
-	  $(LJLIB_O) lib_init.o
+	  $(LJLIB_O) lib_init.o lj_init.o lj_str_hash.o
+
+ifeq (x64,$(TARGET_LJARCH))
+  lj_str_hash-CFLAGS = -msse4.2
+endif
+
+F_CFLAGS = $($(patsubst %.c,%-CFLAGS,$<))
 
 LJVMCORE_O= $(LJVM_O) $(LJCORE_O)
 LJVMCORE_DYNO= $(LJVMCORE_O:.o=_dyn.o)
@@ -558,6 +598,7 @@ ifeq (Windows,$(HOST_SYS))
     MINILUA_X= host\minilua
     BUILDVM_X= host\buildvm
     ALL_RM:= $(subst /,\,$(ALL_RM))
+    HOST_RM= del
   endif
 endif
 
@@ -598,14 +639,17 @@ E= @echo
 default all:	$(TARGET_T)
 
 amalg:
-	@grep "^[+|]" ljamalg.c
-	$(MAKE) all "LJCORE_O=ljamalg.o"
+	$(MAKE) all "LJCORE_O=ljamalg.o lj_str_hash.o"
 
 clean:
 	$(HOST_RM) $(ALL_RM)
 
 libbc:
 	./$(LUAJIT_T) host/genlibbc.lua -o host/buildvm_libbc.h $(LJLIB_C)
+	$(MAKE) all
+
+utf8bc:
+	./$(LUAJIT_T) -b utf8.lua utf8.h
 	$(MAKE) all
 
 depend:
@@ -621,6 +665,9 @@ depend:
 	@for file in $(ALL_HDRGEN); do \
 	  test -s $$file || $(HOST_RM) $$file; \
 	  done
+
+luacheck:
+	luacheck host/*.lua jit/*.lua
 
 .PHONY: default all amalg clean libbc depend
 
@@ -676,8 +723,8 @@ lj_folddef.h: $(BUILDVM_T) lj_opt_fold.c
 
 %.o: %.c
 	$(E) "CC        $@"
-	$(Q)$(TARGET_DYNCC) $(TARGET_ACFLAGS) -c -o $(@:.o=_dyn.o) $<
-	$(Q)$(TARGET_CC) $(TARGET_ACFLAGS) -c -o $@ $<
+	$(Q)$(TARGET_DYNCC) $(TARGET_ACFLAGS) $(F_CFLAGS) -c -o $(@:.o=_dyn.o) $<
+	$(Q)$(TARGET_CC) $(TARGET_ACFLAGS) $(F_CFLAGS) -c -o $@ $<
 
 %.o: %.S
 	$(E) "ASM       $@"
@@ -712,6 +759,6 @@ $(LUAJIT_T): $(TARGET_O) $(LUAJIT_O) $(TARGET_DEP)
 	$(E) "LINK      $@"
 	$(Q)$(TARGET_LD) $(TARGET_ALDFLAGS) -o $@ $(LUAJIT_O) $(TARGET_O) $(TARGET_ALIBS)
 	$(Q)$(TARGET_STRIP) $@
-	$(E) "OK        Successfully built LuaJIT"
+	$(E) "OK        Successfully built moonjit"
 
 ##############################################################################

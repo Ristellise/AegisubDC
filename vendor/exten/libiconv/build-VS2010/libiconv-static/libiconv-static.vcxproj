@@ -1,0 +1,369 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{46CAFE4A-B5BD-4422-ACC6-117D4AD041E2}</ProjectGuid>
+    <RootNamespace>libiconv-static</RootNamespace>
+    <ProjectName>libiconv-static</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <StringPooling>true</StringPooling>
+      <PreprocessorDefinitions>BUILDING_LIBICONV;LIBICONV_STATIC;_CRT_SECURE_NO_WARNINGS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\include;..\..\lib;..\..\srclib</AdditionalIncludeDirectories>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <OmitDefaultLibName>true</OmitDefaultLibName>
+      <ProgramDataBaseFileName>$(IntDir)$(ProjectName).pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <StringPooling>true</StringPooling>
+      <PreprocessorDefinitions>BUILDING_LIBICONV;LIBICONV_STATIC;_CRT_SECURE_NO_WARNINGS;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\include;..\..\lib;..\..\srclib</AdditionalIncludeDirectories>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <OmitDefaultLibName>true</OmitDefaultLibName>
+      <ProgramDataBaseFileName>$(IntDir)$(ProjectName).pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <StringPooling>true</StringPooling>
+      <PreprocessorDefinitions>BUILDING_LIBICONV;LIBICONV_STATIC;_CRT_SECURE_NO_WARNINGS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\include;..\..\lib;..\..\srclib</AdditionalIncludeDirectories>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <OmitDefaultLibName>true</OmitDefaultLibName>
+      <ProgramDataBaseFileName>$(IntDir)$(ProjectName).pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <StringPooling>true</StringPooling>
+      <PreprocessorDefinitions>BUILDING_LIBICONV;LIBICONV_STATIC;_CRT_SECURE_NO_WARNINGS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>..\..\include;..\..\lib;..\..\srclib</AdditionalIncludeDirectories>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <OmitDefaultLibName>true</OmitDefaultLibName>
+      <ProgramDataBaseFileName>$(IntDir)$(ProjectName).pdb</ProgramDataBaseFileName>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\iconv.h" />
+    <ClInclude Include="..\..\lib\aliases.h" />
+    <ClInclude Include="..\..\lib\aliases2.h" />
+    <ClInclude Include="..\..\lib\aliases_aix.h" />
+    <ClInclude Include="..\..\lib\aliases_aix_sysaix.h" />
+    <ClInclude Include="..\..\lib\aliases_dos.h" />
+    <ClInclude Include="..\..\lib\aliases_extra.h" />
+    <ClInclude Include="..\..\lib\aliases_osf1.h" />
+    <ClInclude Include="..\..\lib\aliases_osf1_sysosf1.h" />
+    <ClInclude Include="..\..\lib\aliases_sysaix.h" />
+    <ClInclude Include="..\..\lib\aliases_syshpux.h" />
+    <ClInclude Include="..\..\lib\aliases_sysosf1.h" />
+    <ClInclude Include="..\..\lib\aliases_syssolaris.h" />
+    <ClInclude Include="..\..\lib\armscii_8.h" />
+    <ClInclude Include="..\..\lib\ascii.h" />
+    <ClInclude Include="..\..\lib\atarist.h" />
+    <ClInclude Include="..\..\lib\big5.h" />
+    <ClInclude Include="..\..\lib\big5hkscs1999.h" />
+    <ClInclude Include="..\..\lib\big5hkscs2001.h" />
+    <ClInclude Include="..\..\lib\big5hkscs2004.h" />
+    <ClInclude Include="..\..\lib\big5hkscs2008.h" />
+    <ClInclude Include="..\..\lib\big5_2003.h" />
+    <ClInclude Include="..\..\lib\c99.h" />
+    <ClInclude Include="..\..\lib\canonical.h" />
+    <ClInclude Include="..\..\lib\canonical_aix.h" />
+    <ClInclude Include="..\..\lib\canonical_aix_sysaix.h" />
+    <ClInclude Include="..\..\lib\canonical_dos.h" />
+    <ClInclude Include="..\..\lib\canonical_extra.h" />
+    <ClInclude Include="..\..\lib\canonical_local.h" />
+    <ClInclude Include="..\..\lib\canonical_local_sysaix.h" />
+    <ClInclude Include="..\..\lib\canonical_local_syshpux.h" />
+    <ClInclude Include="..\..\lib\canonical_local_sysosf1.h" />
+    <ClInclude Include="..\..\lib\canonical_local_syssolaris.h" />
+    <ClInclude Include="..\..\lib\canonical_osf1.h" />
+    <ClInclude Include="..\..\lib\canonical_osf1_sysosf1.h" />
+    <ClInclude Include="..\..\lib\canonical_sysaix.h" />
+    <ClInclude Include="..\..\lib\canonical_syshpux.h" />
+    <ClInclude Include="..\..\lib\canonical_sysosf1.h" />
+    <ClInclude Include="..\..\lib\canonical_syssolaris.h" />
+    <ClInclude Include="..\..\lib\ces_big5.h" />
+    <ClInclude Include="..\..\lib\ces_gbk.h" />
+    <ClInclude Include="..\..\lib\cjk_variants.h" />
+    <ClInclude Include="..\..\lib\cns11643.h" />
+    <ClInclude Include="..\..\lib\cns11643_1.h" />
+    <ClInclude Include="..\..\lib\cns11643_15.h" />
+    <ClInclude Include="..\..\lib\cns11643_2.h" />
+    <ClInclude Include="..\..\lib\cns11643_3.h" />
+    <ClInclude Include="..\..\lib\cns11643_4.h" />
+    <ClInclude Include="..\..\lib\cns11643_4a.h" />
+    <ClInclude Include="..\..\lib\cns11643_4b.h" />
+    <ClInclude Include="..\..\lib\cns11643_5.h" />
+    <ClInclude Include="..\..\lib\cns11643_6.h" />
+    <ClInclude Include="..\..\lib\cns11643_7.h" />
+    <ClInclude Include="..\..\lib\cns11643_inv.h" />
+    <ClInclude Include="..\..\lib\config.h" />
+    <ClInclude Include="..\..\lib\converters.h" />
+    <ClInclude Include="..\..\lib\cp1046.h" />
+    <ClInclude Include="..\..\lib\cp1124.h" />
+    <ClInclude Include="..\..\lib\cp1125.h" />
+    <ClInclude Include="..\..\lib\cp1129.h" />
+    <ClInclude Include="..\..\lib\cp1131.h" />
+    <ClInclude Include="..\..\lib\cp1133.h" />
+    <ClInclude Include="..\..\lib\cp1161.h" />
+    <ClInclude Include="..\..\lib\cp1162.h" />
+    <ClInclude Include="..\..\lib\cp1163.h" />
+    <ClInclude Include="..\..\lib\cp1250.h" />
+    <ClInclude Include="..\..\lib\cp1251.h" />
+    <ClInclude Include="..\..\lib\cp1252.h" />
+    <ClInclude Include="..\..\lib\cp1253.h" />
+    <ClInclude Include="..\..\lib\cp1254.h" />
+    <ClInclude Include="..\..\lib\cp1255.h" />
+    <ClInclude Include="..\..\lib\cp1256.h" />
+    <ClInclude Include="..\..\lib\cp1257.h" />
+    <ClInclude Include="..\..\lib\cp1258.h" />
+    <ClInclude Include="..\..\lib\cp437.h" />
+    <ClInclude Include="..\..\lib\cp737.h" />
+    <ClInclude Include="..\..\lib\cp775.h" />
+    <ClInclude Include="..\..\lib\cp850.h" />
+    <ClInclude Include="..\..\lib\cp852.h" />
+    <ClInclude Include="..\..\lib\cp853.h" />
+    <ClInclude Include="..\..\lib\cp855.h" />
+    <ClInclude Include="..\..\lib\cp856.h" />
+    <ClInclude Include="..\..\lib\cp857.h" />
+    <ClInclude Include="..\..\lib\cp858.h" />
+    <ClInclude Include="..\..\lib\cp860.h" />
+    <ClInclude Include="..\..\lib\cp861.h" />
+    <ClInclude Include="..\..\lib\cp862.h" />
+    <ClInclude Include="..\..\lib\cp863.h" />
+    <ClInclude Include="..\..\lib\cp864.h" />
+    <ClInclude Include="..\..\lib\cp865.h" />
+    <ClInclude Include="..\..\lib\cp866.h" />
+    <ClInclude Include="..\..\lib\cp869.h" />
+    <ClInclude Include="..\..\lib\cp874.h" />
+    <ClInclude Include="..\..\lib\cp922.h" />
+    <ClInclude Include="..\..\lib\cp932.h" />
+    <ClInclude Include="..\..\lib\cp932ext.h" />
+    <ClInclude Include="..\..\lib\cp936.h" />
+    <ClInclude Include="..\..\lib\cp936ext.h" />
+    <ClInclude Include="..\..\lib\cp943.h" />
+    <ClInclude Include="..\..\lib\cp949.h" />
+    <ClInclude Include="..\..\lib\cp950.h" />
+    <ClInclude Include="..\..\lib\cp950ext.h" />
+    <ClInclude Include="..\..\lib\dec_hanyu.h" />
+    <ClInclude Include="..\..\lib\dec_kanji.h" />
+    <ClInclude Include="..\..\lib\euc_cn.h" />
+    <ClInclude Include="..\..\lib\euc_jisx0213.h" />
+    <ClInclude Include="..\..\lib\euc_jp.h" />
+    <ClInclude Include="..\..\lib\euc_kr.h" />
+    <ClInclude Include="..\..\lib\euc_tw.h" />
+    <ClInclude Include="..\..\lib\flags.h" />
+    <ClInclude Include="..\..\lib\flushwc.h" />
+    <ClInclude Include="..\..\lib\gb18030.h" />
+    <ClInclude Include="..\..\lib\gb18030ext.h" />
+    <ClInclude Include="..\..\lib\gb18030uni.h" />
+    <ClInclude Include="..\..\lib\gb2312.h" />
+    <ClInclude Include="..\..\lib\gbk.h" />
+    <ClInclude Include="..\..\lib\gbkext1.h" />
+    <ClInclude Include="..\..\lib\gbkext2.h" />
+    <ClInclude Include="..\..\lib\gbkext_inv.h" />
+    <ClInclude Include="..\..\lib\georgian_academy.h" />
+    <ClInclude Include="..\..\lib\georgian_ps.h" />
+    <ClInclude Include="..\..\lib\hkscs1999.h" />
+    <ClInclude Include="..\..\lib\hkscs2001.h" />
+    <ClInclude Include="..\..\lib\hkscs2004.h" />
+    <ClInclude Include="..\..\lib\hkscs2008.h" />
+    <ClInclude Include="..\..\lib\hp_roman8.h" />
+    <ClInclude Include="..\..\lib\hz.h" />
+    <ClInclude Include="..\..\lib\iconv_open1.h" />
+    <ClInclude Include="..\..\lib\iconv_open2.h" />
+    <ClInclude Include="..\..\lib\iso2022_cn.h" />
+    <ClInclude Include="..\..\lib\iso2022_cnext.h" />
+    <ClInclude Include="..\..\lib\iso2022_jp.h" />
+    <ClInclude Include="..\..\lib\iso2022_jp1.h" />
+    <ClInclude Include="..\..\lib\iso2022_jp2.h" />
+    <ClInclude Include="..\..\lib\iso2022_jp3.h" />
+    <ClInclude Include="..\..\lib\iso2022_kr.h" />
+    <ClInclude Include="..\..\lib\iso646_cn.h" />
+    <ClInclude Include="..\..\lib\iso646_jp.h" />
+    <ClInclude Include="..\..\lib\iso8859_1.h" />
+    <ClInclude Include="..\..\lib\iso8859_10.h" />
+    <ClInclude Include="..\..\lib\iso8859_11.h" />
+    <ClInclude Include="..\..\lib\iso8859_13.h" />
+    <ClInclude Include="..\..\lib\iso8859_14.h" />
+    <ClInclude Include="..\..\lib\iso8859_15.h" />
+    <ClInclude Include="..\..\lib\iso8859_16.h" />
+    <ClInclude Include="..\..\lib\iso8859_2.h" />
+    <ClInclude Include="..\..\lib\iso8859_3.h" />
+    <ClInclude Include="..\..\lib\iso8859_4.h" />
+    <ClInclude Include="..\..\lib\iso8859_5.h" />
+    <ClInclude Include="..\..\lib\iso8859_6.h" />
+    <ClInclude Include="..\..\lib\iso8859_7.h" />
+    <ClInclude Include="..\..\lib\iso8859_8.h" />
+    <ClInclude Include="..\..\lib\iso8859_9.h" />
+    <ClInclude Include="..\..\lib\isoir165.h" />
+    <ClInclude Include="..\..\lib\isoir165ext.h" />
+    <ClInclude Include="..\..\lib\java.h" />
+    <ClInclude Include="..\..\lib\jisx0201.h" />
+    <ClInclude Include="..\..\lib\jisx0208.h" />
+    <ClInclude Include="..\..\lib\jisx0212.h" />
+    <ClInclude Include="..\..\lib\jisx0213.h" />
+    <ClInclude Include="..\..\lib\johab.h" />
+    <ClInclude Include="..\..\lib\johab_hangul.h" />
+    <ClInclude Include="..\..\lib\koi8_r.h" />
+    <ClInclude Include="..\..\lib\koi8_ru.h" />
+    <ClInclude Include="..\..\lib\koi8_t.h" />
+    <ClInclude Include="..\..\lib\koi8_u.h" />
+    <ClInclude Include="..\..\lib\ksc5601.h" />
+    <ClInclude Include="..\..\lib\loops.h" />
+    <ClInclude Include="..\..\lib\loop_unicode.h" />
+    <ClInclude Include="..\..\lib\loop_wchar.h" />
+    <ClInclude Include="..\..\lib\mac_arabic.h" />
+    <ClInclude Include="..\..\lib\mac_centraleurope.h" />
+    <ClInclude Include="..\..\lib\mac_croatian.h" />
+    <ClInclude Include="..\..\lib\mac_cyrillic.h" />
+    <ClInclude Include="..\..\lib\mac_greek.h" />
+    <ClInclude Include="..\..\lib\mac_hebrew.h" />
+    <ClInclude Include="..\..\lib\mac_iceland.h" />
+    <ClInclude Include="..\..\lib\mac_roman.h" />
+    <ClInclude Include="..\..\lib\mac_romania.h" />
+    <ClInclude Include="..\..\lib\mac_thai.h" />
+    <ClInclude Include="..\..\lib\mac_turkish.h" />
+    <ClInclude Include="..\..\lib\mac_ukraine.h" />
+    <ClInclude Include="..\..\lib\mulelao.h" />
+    <ClInclude Include="..\..\lib\nextstep.h" />
+    <ClInclude Include="..\..\lib\pt154.h" />
+    <ClInclude Include="..\..\lib\riscos1.h" />
+    <ClInclude Include="..\..\lib\rk1048.h" />
+    <ClInclude Include="..\..\lib\shift_jisx0213.h" />
+    <ClInclude Include="..\..\lib\sjis.h" />
+    <ClInclude Include="..\..\lib\tcvn.h" />
+    <ClInclude Include="..\..\lib\tds565.h" />
+    <ClInclude Include="..\..\lib\tis620.h" />
+    <ClInclude Include="..\..\lib\translit.h" />
+    <ClInclude Include="..\..\lib\ucs2.h" />
+    <ClInclude Include="..\..\lib\ucs2be.h" />
+    <ClInclude Include="..\..\lib\ucs2internal.h" />
+    <ClInclude Include="..\..\lib\ucs2le.h" />
+    <ClInclude Include="..\..\lib\ucs2swapped.h" />
+    <ClInclude Include="..\..\lib\ucs4.h" />
+    <ClInclude Include="..\..\lib\ucs4be.h" />
+    <ClInclude Include="..\..\lib\ucs4internal.h" />
+    <ClInclude Include="..\..\lib\ucs4le.h" />
+    <ClInclude Include="..\..\lib\ucs4swapped.h" />
+    <ClInclude Include="..\..\lib\uhc_1.h" />
+    <ClInclude Include="..\..\lib\uhc_2.h" />
+    <ClInclude Include="..\..\lib\utf16.h" />
+    <ClInclude Include="..\..\lib\utf16be.h" />
+    <ClInclude Include="..\..\lib\utf16le.h" />
+    <ClInclude Include="..\..\lib\utf32.h" />
+    <ClInclude Include="..\..\lib\utf32be.h" />
+    <ClInclude Include="..\..\lib\utf32le.h" />
+    <ClInclude Include="..\..\lib\utf7.h" />
+    <ClInclude Include="..\..\lib\utf8.h" />
+    <ClInclude Include="..\..\lib\vietcomb.h" />
+    <ClInclude Include="..\..\lib\viscii.h" />
+    <ClInclude Include="..\..\srclib\localcharset.h" />
+    <ClInclude Include="..\..\srclib\unitypes.h" />
+    <ClInclude Include="..\..\srclib\uniwidth.h" />
+    <ClInclude Include="..\..\srclib\xalloc.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\libcharset\lib\localcharset.c" />
+    <ClCompile Include="..\..\lib\iconv.c" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\lib\encodings.def" />
+    <None Include="..\..\lib\encodings_aix.def" />
+    <None Include="..\..\lib\encodings_dos.def" />
+    <None Include="..\..\lib\encodings_extra.def" />
+    <None Include="..\..\lib\encodings_local.def" />
+    <None Include="..\..\lib\encodings_osf1.def" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

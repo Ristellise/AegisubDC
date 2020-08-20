@@ -90,6 +90,9 @@ LUALIB_API void (luaL_pushmodule) (lua_State *L, const char *modname,
 				   int sizehint);
 LUALIB_API void *(luaL_testudata) (lua_State *L, int ud, const char *tname);
 LUALIB_API void (luaL_setmetatable) (lua_State *L, const char *tname);
+LUALIB_API lua_Integer (luaL_len) (lua_State *L, int idx);
+LUALIB_API int (luaL_getsubtable) (lua_State *L, int idx, const char *fname);
+LUALIB_API const char *(luaL_tolstring) (lua_State *L, int idx, size_t *len);
 
 
 /*
@@ -155,6 +158,8 @@ LUALIB_API void (luaL_addstring) (luaL_Buffer *B, const char *s);
 LUALIB_API void (luaL_addvalue) (luaL_Buffer *B);
 LUALIB_API void (luaL_pushresult) (luaL_Buffer *B);
 
+/* From Lua 5.2. */
+LUALIB_API void (luaL_pushresultsize) (luaL_Buffer *B, size_t sz);
 
 /* }====================================================== */
 

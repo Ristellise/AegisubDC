@@ -374,7 +374,7 @@ void Advanced_Audio(wxTreebook *book, Preferences *parent) {
 	p->OptionChoice(expert, _("Audio player"), apl_choice, "Audio/Player");
 
 	auto cache = p->PageSizer(_("Cache"));
-	const wxString ct_arr[3] = { _("None (Not recommended with Avisynth)"), _("RAM"), _("Hard Disk") };
+	const wxString ct_arr[3] = { _("None (NOT RECOMMENDED)"), _("RAM"), _("Hard Disk") };
 	wxArrayString ct_choice(3, ct_arr);
 	p->OptionChoice(cache, _("Cache type"), ct_choice, "Audio/Cache/Type");
 	p->OptionBrowse(cache, _("Path"), "Audio/Cache/HD/Location");

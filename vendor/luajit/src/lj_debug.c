@@ -55,7 +55,8 @@ static BCPos debug_framepc(lua_State *L, GCfunc *fn, cTValue *nextframe)
   const BCIns *ins;
   GCproto *pt;
   BCPos pos;
-  lua_assert(fn->c.gct == ~LJ_TFUNC || fn->c.gct == ~LJ_TTHREAD);
+  lj_assertL(fn->c.gct == ~LJ_TFUNC || fn->c.gct == ~LJ_TTHREAD,
+	     "function or frame expected");
   if (!isluafunc(fn)) {  /* Cannot derive a PC for non-Lua functions. */
     return NO_BCPOS;
   } else if (nextframe == NULL) {  /* Lua function on top. */
@@ -100,7 +101,7 @@ static BCPos debug_framepc(lua_State *L, GCfunc *fn, cTValue *nextframe)
 #if LJ_HASJIT
   if (pos > pt->sizebc) {  /* Undo the effects of lj_trace_exit for JLOOP. */
     GCtrace *T = (GCtrace *)((char *)(ins-1) - offsetof(GCtrace, startins));
-    lua_assert(bc_isret(bc_op(ins[-1])));
+    lj_assertL(bc_isret(bc_op(ins[-1])), "return bytecode expected");
     pos = proto_bcpos(pt, mref(T->startpc, const BCIns));
   }
 #endif
@@ -133,7 +134,7 @@ static BCLine debug_frameline(lua_State *L, GCfunc *fn, cTValue *nextframe)
   BCPos pc = debug_framepc(L, fn, nextframe);
   if (pc != NO_BCPOS) {
     GCproto *pt = funcproto(fn);
-    lua_assert(pc <= pt->sizebc);
+    lj_assertL(pc <= pt->sizebc, "PC out of range");
     return lj_debug_line(pt, pc);
   }
   return -1;
@@ -214,26 +215,29 @@ static TValue *debug_localname(lua_State *L, const lua_Debug *ar,
 const char *lj_debug_uvname(GCproto *pt, uint32_t idx)
 {
   const uint8_t *p = proto_uvinfo(pt);
-  lua_assert(idx < pt->sizeuv);
+  lj_assertX(idx < pt->sizeuv, "bad upvalue index");
   if (!p) return "";
   if (idx) while (*p++ || --idx) ;
   return (const char *)p;
 }
 
 /* Get name and value of upvalue. */
-const char *lj_debug_uvnamev(cTValue *o, uint32_t idx, TValue **tvp)
+const char *lj_debug_uvnamev(cTValue *o, uint32_t idx, TValue **tvp, GCobj **op)
 {
   if (tvisfunc(o)) {
     GCfunc *fn = funcV(o);
     if (isluafunc(fn)) {
       GCproto *pt = funcproto(fn);
       if (idx < pt->sizeuv) {
-	*tvp = uvval(&gcref(fn->l.uvptr[idx])->uv);
+	GCobj *uvo = gcref(fn->l.uvptr[idx]);
+	*tvp = uvval(&uvo->uv);
+	*op = uvo;
 	return lj_debug_uvname(pt, idx);
       }
     } else {
       if (idx < fn->c.nupvalues) {
 	*tvp = &fn->c.upvalue[idx];
+	*op = obj2gco(fn);
 	return "";
       }
     }
@@ -429,20 +433,22 @@ int lj_debug_getinfo(lua_State *L, const char *what, lj_Debug *ar, int ext)
   GCfunc *fn;
   if (*what == '>') {
     TValue *func = L->top - 1;
-    api_check(L, tvisfunc(func));
+    if (!tvisfunc(func))
+	  return 0;
     fn = funcV(func);
     L->top--;
     what++;
   } else {
     uint32_t offset = (uint32_t)ar->i_ci & 0xffff;
     uint32_t size = (uint32_t)ar->i_ci >> 16;
-    lua_assert(offset != 0);
+    lj_assertL(offset != 0, "bad frame offset");
     frame = tvref(L->stack) + offset;
     if (size) nextframe = frame + size;
-    lua_assert(frame <= tvref(L->maxstack) &&
-	       (!nextframe || nextframe <= tvref(L->maxstack)));
+    lj_assertL(frame <= tvref(L->maxstack) &&
+	       (!nextframe || nextframe <= tvref(L->maxstack)),
+	       "broken frame chain");
     fn = frame_func(frame);
-    lua_assert(fn->c.gct == ~LJ_TFUNC);
+    lj_assertL(fn->c.gct == ~LJ_TFUNC, "bad frame function");
   }
   for (; *what; what++) {
     if (*what == 'S') {
@@ -697,3 +703,128 @@ LUALIB_API void luaL_traceback (lua_State *L, lua_State *L1, const char *msg,
   lua_concat(L, (int)(L->top - L->base) - top);
 }
 
+#ifdef LUA_USE_TRACE_LOGS
+
+#include "lj_dispatch.h"
+
+#define MAX_TRACE_EVENTS  64
+
+enum {
+    LJ_TRACE_EVENT_ENTER,
+    LJ_TRACE_EVENT_EXIT,
+    LJ_TRACE_EVENT_START
+};
+
+typedef struct {
+    int              event;
+    unsigned         traceno;
+    unsigned         exitno;
+    int              directexit;
+    const BCIns     *ins;
+    lua_State       *thread;
+    GCfunc          *fn;
+} lj_trace_event_record_t;
+
+static lj_trace_event_record_t lj_trace_events[MAX_TRACE_EVENTS];
+
+static int  rb_start = 0;
+static int  rb_end = 0;
+static int  rb_full = 0;
+
+static void
+lj_trace_log_event(lj_trace_event_record_t *rec)
+{
+  lj_trace_events[rb_end] = *rec;
+
+  if (rb_full) {
+    rb_end++;
+    if (rb_end == MAX_TRACE_EVENTS) {
+      rb_end = 0;
+    }
+    rb_start = rb_end;
+
+  } else {
+    rb_end++;
+    if (rb_end == MAX_TRACE_EVENTS) {
+      rb_end = 0;
+      rb_full = MAX_TRACE_EVENTS;
+    }
+  }
+}
+
+static GCfunc*
+lj_debug_top_frame_fn(lua_State *L, const BCIns *pc)
+{
+  int size;
+  cTValue *frame;
+
+  frame = lj_debug_frame(L, 0, &size);
+  if (frame == NULL) {
+    return NULL;
+  }
+
+  return frame_func(frame);
+}
+
+LJ_FUNC void LJ_FASTCALL
+lj_log_trace_start_record(lua_State *L, unsigned traceno, const BCIns *pc,
+  GCfunc *fn)
+{
+  lj_trace_event_record_t  r;
+
+  r.event = LJ_TRACE_EVENT_START;
+  r.thread = L;
+  r.ins = pc;
+  r.traceno = traceno;
+  r.fn = fn;
+
+  lj_trace_log_event(&r);
+}
+
+LJ_FUNC void LJ_FASTCALL
+lj_log_trace_entry(lua_State *L, unsigned traceno, const BCIns *pc)
+{
+  lj_trace_event_record_t  r;
+
+  r.event = LJ_TRACE_EVENT_ENTER;
+  r.thread = L;
+  r.ins = pc;
+  r.traceno = traceno;
+  r.fn = lj_debug_top_frame_fn(L, pc);
+
+  lj_trace_log_event(&r);
+}
+
+static void
+lj_log_trace_exit_helper(lua_State *L, int vmstate, const BCIns *pc, int direct)
+{
+  if (vmstate >= 0) {
+    lj_trace_event_record_t  r;
+
+    jit_State *J = L2J(L);
+
+    r.event = LJ_TRACE_EVENT_EXIT;
+    r.thread = L;
+    r.ins = pc;
+    r.traceno = vmstate;
+    r.exitno = J->exitno;
+    r.directexit = direct;
+    r.fn = lj_debug_top_frame_fn(L, pc);
+
+    lj_trace_log_event(&r);
+  }
+}
+
+LJ_FUNC void LJ_FASTCALL
+lj_log_trace_normal_exit(lua_State *L, int vmstate, const BCIns *pc)
+{
+  lj_log_trace_exit_helper(L, vmstate, pc, 0);
+}
+
+LJ_FUNC void LJ_FASTCALL
+lj_log_trace_direct_exit(lua_State *L, int vmstate, const BCIns *pc)
+{
+  lj_log_trace_exit_helper(L, vmstate, pc, 1);
+}
+
+#endif  /* LUA_USE_TRACE_LOGS */

@@ -1,0 +1,98 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{93995380-89BD-4b04-88EB-625FBE52EBFB}</UniqueIdentifier>
+      <Extensions>h;hh;hpp;hxx;hm;inl;inc;xsd</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\src">
+      <UniqueIdentifier>{e65846f8-422c-4132-99ff-2b742319be77}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\srclib">
+      <UniqueIdentifier>{27d0289e-3d46-4e1c-b034-7d8a6cf13f64}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\srclib\uniwidth">
+      <UniqueIdentifier>{6a456714-48a0-4a18-a2ff-52a0f07ff825}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\src">
+      <UniqueIdentifier>{2b6b7222-c260-485b-9262-3b348bf962ed}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\srclib">
+      <UniqueIdentifier>{a5266bd6-38fe-460e-852a-abb124473036}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\srclib\uniwidth">
+      <UniqueIdentifier>{cace9abe-ef1f-44ac-97b2-d3ef7214e61d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\include">
+      <UniqueIdentifier>{e3662637-2e08-4b03-8ae2-0d28dff5b720}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\src\iconv_no_i18n.c">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\srclib\progname.c">
+      <Filter>Source Files\srclib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\srclib\safe-read.c">
+      <Filter>Source Files\srclib</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\srclib\uniwidth\width.c">
+      <Filter>Source Files\srclib\uniwidth</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\iconv.c">
+      <Filter>Source Files\src</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\src\config.h">
+      <Filter>Header Files\src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\srclib\binary-io.h">
+      <Filter>Header Files\srclib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\srclib\uniwidth\cjk.h">
+      <Filter>Header Files\srclib\uniwidth</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\srclib\gettext.h">
+      <Filter>Header Files\srclib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\iconv.h">
+      <Filter>Header Files\include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\srclib\localcharset.h">
+      <Filter>Header Files\srclib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\srclib\progname.h">
+      <Filter>Header Files\srclib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\srclib\safe-read.h">
+      <Filter>Header Files\srclib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\srclib\streq.h">
+      <Filter>Header Files\srclib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\srclib\unitypes.h">
+      <Filter>Header Files\srclib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\srclib\uniwidth.h">
+      <Filter>Header Files\srclib</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\srclib\xalloc.h">
+      <Filter>Header Files\srclib</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\win32\iconv.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>

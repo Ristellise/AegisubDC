@@ -22,7 +22,7 @@
 #include "libaegisub/scoped_ptr.h"
 
 #ifdef WITH_UCHARDET
-#include <uchardet/uchardet.h>
+#include <uchardet.h>
 #include <boost/algorithm/string/case_conv.hpp>
 #endif
 

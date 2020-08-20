@@ -638,7 +638,8 @@ typedef struct global_State {
 #define HOOK_PROFILE		0x80
 #define hook_active(g)		((g)->hookmask & HOOK_ACTIVE)
 #define hook_enter(g)		((g)->hookmask |= HOOK_ACTIVE)
-#define hook_entergc(g)		((g)->hookmask |= (HOOK_ACTIVE|HOOK_GC))
+#define hook_entergc(g)	\
+  ((g)->hookmask = ((g)->hookmask | (HOOK_ACTIVE|HOOK_GC)) & ~HOOK_PROFILE)
 #define hook_vmevent(g)		((g)->hookmask |= (HOOK_ACTIVE|HOOK_VMEVENT))
 #define hook_leave(g)		((g)->hookmask &= ~HOOK_ACTIVE)
 #define hook_save(g)		((g)->hookmask & ~HOOK_EVENTMASK)
@@ -660,6 +661,11 @@ struct lua_State {
   GCRef env;		/* Thread environment (table of globals). */
   void *cframe;		/* End of C stack frame chain. */
   MSize stacksize;	/* True stack size (incl. LJ_STACK_EXTRA). */
+  void *exdata;	        /* user extra data pointer. added by OpenResty */
+#if LJ_TARGET_ARM
+  uint32_t unused1;
+  uint32_t unused2;
+#endif
 };
 
 #define G(L)			(mref(L->glref, global_State))
@@ -677,6 +683,11 @@ struct lua_State {
 #define curr_proto(L)		(funcproto(curr_func(L)))
 #define curr_topL(L)		(L->base + curr_proto(L)->framesize)
 #define curr_top(L)		(curr_funcisL(L) ? curr_topL(L) : L->top)
+
+#if defined(LUA_USE_ASSERT) || defined(LUA_USE_APICHECK)
+LJ_FUNC_NORET void lj_assert_fail(global_State *g, const char *file, int line,
+				  const char *func, const char *fmt, ...);
+#endif
 
 /* -- GC object definition and conversions -------------------------------- */
 
@@ -730,10 +741,6 @@ typedef union GCobj {
 #define obj2gco(v)	((GCobj *)(v))
 
 /* -- TValue getters/setters ---------------------------------------------- */
-
-#ifdef LUA_USE_ASSERT
-#include "lj_gc.h"
-#endif
 
 /* Macros to test types. */
 #if LJ_GC64
@@ -855,9 +862,19 @@ static LJ_AINLINE void setlightudV(TValue *o, void *p)
 #define setcont(o, f)		setlightudV((o), contptr(f))
 #endif
 
-#define tvchecklive(L, o) \
-  UNUSED(L), lua_assert(!tvisgcv(o) || \
-  ((~itype(o) == gcval(o)->gch.gct) && !isdead(G(L), gcval(o))))
+static LJ_AINLINE void checklivetv(lua_State *L, TValue *o, const char *msg)
+{
+  UNUSED(L); UNUSED(o); UNUSED(msg);
+#if LUA_USE_ASSERT
+  if (tvisgcv(o)) {
+    lj_assertL(~itype(o) == gcval(o)->gch.gct,
+	       "mismatch of TValue type %d vs GC type %d",
+	       ~itype(o), gcval(o)->gch.gct);
+    /* Copy of isdead check from lj_gc.h to avoid circular include. */
+    lj_assertL(!(gcval(o)->gch.marked & (G(L)->gc.currentwhite ^ 3) & 3), msg);
+  }
+#endif
+}
 
 static LJ_AINLINE void setgcVraw(TValue *o, GCobj *v, uint32_t itype)
 {
@@ -870,7 +887,8 @@ static LJ_AINLINE void setgcVraw(TValue *o, GCobj *v, uint32_t itype)
 
 static LJ_AINLINE void setgcV(lua_State *L, TValue *o, GCobj *v, uint32_t it)
 {
-  setgcVraw(o, v, it); tvchecklive(L, o);
+  setgcVraw(o, v, it);
+  checklivetv(L, o, "store to dead GC object");
 }
 
 #define define_setV(name, type, tag) \
@@ -917,13 +935,17 @@ static LJ_AINLINE void setint64V(TValue *o, int64_t i)
 /* Copy tagged values. */
 static LJ_AINLINE void copyTV(lua_State *L, TValue *o1, const TValue *o2)
 {
-  *o1 = *o2; tvchecklive(L, o1);
+  *o1 = *o2;
+  checklivetv(L, o1, "copy of dead GC object");
 }
 
 /* -- Number to integer conversion ---------------------------------------- */
 
 #if LJ_SOFTFP
 LJ_ASMF int32_t lj_vm_tobit(double x);
+#if LJ_TARGET_MIPS64
+LJ_ASMF int32_t lj_vm_tointg(double x);
+#endif
 #endif
 
 static LJ_AINLINE int32_t lj_num2bit(lua_Number n)
@@ -941,12 +963,18 @@ static LJ_AINLINE int32_t lj_num2bit(lua_Number n)
 
 static LJ_AINLINE uint64_t lj_num2u64(lua_Number n)
 {
+  /* Undefined behaviour. This is deliberately not a full check because we
+     don't want to slow down compliant code. */
+  lj_assertX(n >= -9223372036854775809.0, "num2u64 input too large");
 #ifdef _MSC_VER
   if (n >= 9223372036854775808.0)  /* They think it's a feature. */
     return (uint64_t)(int64_t)(n - 18446744073709551616.0);
   else
 #endif
-    return (uint64_t)n;
+    if (n > -1.0)
+      return (uint64_t)n;
+    else
+      return (uint64_t)(int64_t)n;
 }
 
 static LJ_AINLINE int32_t numberVint(cTValue *o)

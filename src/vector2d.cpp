@@ -88,5 +88,5 @@ std::string Vector2D::DStr(char sep) const {
 }
 
 std::string Vector2D::Str(char sep) const {
-	return float_to_string(x) + sep + float_to_string(y);
+	return float_to_string(x,2) + sep + float_to_string(y,2);
 }

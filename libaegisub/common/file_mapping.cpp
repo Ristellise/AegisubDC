@@ -78,10 +78,10 @@ file_mapping::file_mapping(fs::path const& filename, bool temporary)
 #ifdef _WIN32
 : handle(CreateFileW(filename.wstring().c_str(),
 	temporary ? read_write : read_only,
-	temporary ? FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE : FILE_SHARE_READ,
+	temporary ? FILE_SHARE_READ | FILE_SHARE_WRITE : FILE_SHARE_READ,
 	nullptr,
 	temporary ? OPEN_ALWAYS : OPEN_EXISTING,
-	temporary ? FILE_ATTRIBUTE_TEMPORARY | FILE_FLAG_DELETE_ON_CLOSE : 0, 0))
+	0, 0))
 {
 	if (handle == ipcdetail::invalid_file()) {
 		switch (GetLastError()) {

@@ -97,17 +97,18 @@ void lj_str_resize(lua_State *L, MSize newmask)
   g->strhash = newhash;
 }
 
-/* Intern a string and return string object. */
-GCstr *lj_str_new(lua_State *L, const char *str, size_t lenx)
+#if LJ_HAS_OPTIMISED_HASH == 1
+lj_str_hashfn lj_str_hash = lj_str_hash_default;
+#else
+#define lj_str_hash lj_str_hash_default
+#endif
+
+MSize
+lj_str_hash_default(const char *str, MSize lenx)
 {
-  global_State *g;
-  GCstr *s;
-  GCobj *o;
   MSize len = (MSize)lenx;
   MSize a, b, h = len;
-  if (lenx >= LJ_MAX_STR)
-    lj_err_msg(L, LJ_ERR_STROV);
-  g = G(L);
+
   /* Compute string hash. Constants taken from lookup3 hash by Bob Jenkins. */
   if (len >= 4) {  /* Caveat: unaligned access! */
     a = lj_getu32(str);
@@ -121,16 +122,39 @@ GCstr *lj_str_new(lua_State *L, const char *str, size_t lenx)
     b = *(const uint8_t *)(str+(len>>1));
     h ^= b; h -= lj_rol(b, 14);
   } else {
-    return &g->strempty;
+    return 0;
   }
+
   a ^= h; a -= lj_rol(h, 11);
   b ^= a; b -= lj_rol(a, 25);
   h ^= b; h -= lj_rol(b, 16);
+
+  return h;
+}
+
+/* Intern a string and return string object. */
+GCstr *lj_str_new(lua_State *L, const char *str, size_t lenx)
+{
+  global_State *g;
+  GCstr *s;
+  GCobj *o;
+  MSize len = (MSize)lenx;
+  MSize h;
+
+  if (lenx >= LJ_MAX_STR)
+    lj_err_msg(L, LJ_ERR_STROV);
+  g = G(L);
+  if (LJ_UNLIKELY(lenx == 0)) {
+    return &g->strempty;
+  }
+
+  h = lj_str_hash(str, len);
+
   /* Check if the string has already been interned. */
   o = gcref(g->strhash[h & g->strmask]);
   while (o != NULL) {
     GCstr *sx = gco2str(o);
-    if (sx->len == len && memcmp(str, strdata(sx), len) == 0) {
+    if (sx->len == len && sx->hash == h && memcmp(str, strdata(sx), len) == 0) {
       /* Resurrect if dead. Can only happen with fixstring() (keywords). */
       if (isdead(g, o)) flipwhite(o);
       return sx;  /* Return existing string. */
@@ -161,4 +185,3 @@ void LJ_FASTCALL lj_str_free(global_State *g, GCstr *s)
   g->strnum--;
   lj_mem_free(g, s, sizestring(s));
 }
-

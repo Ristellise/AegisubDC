@@ -38,7 +38,7 @@ and optional dependencies:
 You can use the package manager provided by your distro to install these dependencies. Package name varies by distro. Some useful references are:
 
 * For ArchLinux, refer to [AUR](https://aur.archlinux.org/cgit/aur.git/tree/PKGBUILD?h=aegisub-git).
-* For Ubuntu, refer to [Travis](.travis.yml#L14-L32).
+* For Ubuntu, refer to [Travis](.travis.yml#L14-L35).
 * For macOS, see [Special notice for macOS](https://github.com/wangqr/Aegisub/wiki/Special-notice-for-macOS) on project Wiki.
 
 After installing the dependencies, you can clone and build Aegisub with:
