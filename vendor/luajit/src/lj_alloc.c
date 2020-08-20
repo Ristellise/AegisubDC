@@ -123,7 +123,7 @@
 
 #if LJ_ALLOC_NTAVM
 /* Undocumented, but hey, that's what we all love so much about Windows. */
-typedef long (*PNTAVM)(HANDLE handle, void **addr, ULONG zbits,
+typedef long (*PNTAVM)(HANDLE handle, void **addr, ULONG_PTR zbits,
 		       size_t *size, ULONG alloctype, ULONG prot);
 static PNTAVM ntavm;
 
@@ -151,7 +151,7 @@ static void *CALL_MMAP(size_t size)
 }
 
 /* For direct MMAP, use MEM_TOP_DOWN to minimize interference */
-static void *DIRECT_MMAP(size_t size)
+static void *direct_mmap(size_t size)
 {
   DWORD olderr = GetLastError();
   void *ptr = NULL;
@@ -167,22 +167,24 @@ static void *DIRECT_MMAP(size_t size)
 static void *CALL_MMAP(size_t size)
 {
   DWORD olderr = GetLastError();
-  void *ptr = VirtualAlloc(0, size, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
+  void *ptr = LJ_WIN_VALLOC(0, size, MEM_RESERVE|MEM_COMMIT, PAGE_READWRITE);
   SetLastError(olderr);
   return ptr ? ptr : MFAIL;
 }
 
 /* For direct MMAP, use MEM_TOP_DOWN to minimize interference */
-static void *DIRECT_MMAP(size_t size)
+static void *direct_mmap(size_t size)
 {
   DWORD olderr = GetLastError();
-  void *ptr = VirtualAlloc(0, size, MEM_RESERVE|MEM_COMMIT|MEM_TOP_DOWN,
-			   PAGE_READWRITE);
+  void *ptr = LJ_WIN_VALLOC(0, size, MEM_RESERVE|MEM_COMMIT|MEM_TOP_DOWN,
+			    PAGE_READWRITE);
   SetLastError(olderr);
   return ptr ? ptr : MFAIL;
 }
 
 #endif
+
+#define DIRECT_MMAP(size)	direct_mmap(size)
 
 /* This function supports releasing coalesed segments */
 static int CALL_MUNMAP(void *ptr, size_t size)
@@ -255,7 +257,8 @@ static void *mmap_probe(size_t size)
   for (retry = 0; retry < LJ_ALLOC_MMAP_PROBE_MAX; retry++) {
     void *p = mmap((void *)hint_addr, size, MMAP_PROT, MMAP_FLAGS_PROBE, -1, 0);
     uintptr_t addr = (uintptr_t)p;
-    if ((addr >> LJ_ALLOC_MBITS) == 0 && addr >= LJ_ALLOC_MMAP_PROBE_LOWER) {
+    if ((addr >> LJ_ALLOC_MBITS) == 0 && addr >= LJ_ALLOC_MMAP_PROBE_LOWER &&
+	((addr + size) >> LJ_ALLOC_MBITS) == 0) {
       /* We got a suitable address. Bump the hint address. */
       hint_addr = addr + size;
       errno = olderr;
@@ -299,7 +302,7 @@ static void *mmap_probe(size_t size)
 
 #if LJ_ALLOC_MMAP32
 
-#if defined(__sun__)
+#if LJ_TARGET_SOLARIS
 #define LJ_ALLOC_MMAP32_START	((uintptr_t)0x1000)
 #else
 #define LJ_ALLOC_MMAP32_START	((uintptr_t)0)
@@ -341,20 +344,6 @@ static void *CALL_MMAP(size_t size)
   errno = olderr;
   return ptr;
 }
-#endif
-
-#if (defined(__FreeBSD__) || defined(__FreeBSD_kernel__)) && !LJ_TARGET_PS4
-
-#include <sys/resource.h>
-
-static void init_mmap(void)
-{
-  struct rlimit rlim;
-  rlim.rlim_cur = rlim.rlim_max = 0x10000;
-  setrlimit(RLIMIT_DATA, &rlim);  /* Ignore result. May fail later. */
-}
-#define INIT_MMAP()	init_mmap()
-
 #endif
 
 static int CALL_MUNMAP(void *ptr, size_t size)
@@ -609,7 +598,7 @@ static int has_segment_link(mstate m, msegmentptr ss)
   noncontiguous segments are added.
 */
 #define TOP_FOOT_SIZE\
-  (align_offset(chunk2mem(0))+pad_request(sizeof(struct malloc_segment))+MIN_CHUNK_SIZE)
+  (align_offset(TWO_SIZE_T_SIZES)+pad_request(sizeof(struct malloc_segment))+MIN_CHUNK_SIZE)
 
 /* ---------------------------- Indexing Bins ---------------------------- */
 

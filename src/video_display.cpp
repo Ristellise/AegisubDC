@@ -84,7 +84,7 @@ public:
 #define E(cmd) cmd; if (GLenum err = glGetError()) throw OpenGlException(#cmd, err)
 
 VideoDisplay::VideoDisplay(wxToolBar *toolbar, bool freeSize, wxComboBox *zoomBox, wxWindow *parent, agi::Context *c)
-: wxGLCanvas(parent, -1, attribList)
+: wxGLCanvas(parent, -1, attribList,wxDefaultPosition,wxDefaultSize)
 , autohideTools(OPT_GET("Tool/Visual/Autohide"))
 , con(c)
 , zoomValue(OPT_GET("Video/Default Zoom")->GetInt() * .125 + .125)
@@ -211,7 +211,6 @@ void VideoDisplay::DoRender() try {
 
 	videoOut->Render(viewport_left, viewport_bottom, viewport_width, viewport_height);
 	E(glViewport(0, std::min(viewport_bottom, 0), videoSize.GetWidth(), videoSize.GetHeight()));
-
 	E(glMatrixMode(GL_PROJECTION));
 	E(glLoadIdentity());
 	E(glOrtho(0.0f, videoSize.GetWidth() / scale_factor, videoSize.GetHeight() / scale_factor, 0.0f, -1000.0f, 1000.0f));

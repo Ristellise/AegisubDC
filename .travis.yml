@@ -33,8 +33,6 @@ addons:
     - libgtest-dev
     - gcc-10
     - g++-10
-    - python3-pip
-    - python3-setuptools
   homebrew:
     packages:
     - autoconf
@@ -57,7 +55,7 @@ addons:
 
 env:
 - ''
-- BUILD_SUIT=autotools WITH_COVERALLS=y
+- BUILD_SUIT=autotools
 - CC=gcc-10 CXX=g++-10
 - BUILD_SUIT=autotools CC=gcc-10 CXX=g++-10
 
@@ -71,7 +69,7 @@ install:
 - ./.travis/install.sh
 
 script:
-- if [ "$TRAVIS_OS_NAME" = 'osx' ]; then
+- if [ $TRAVIS_OS_NAME = 'osx' ]; then
     export PATH="/usr/local/opt/gettext/bin:/usr/local/opt/icu4c/sbin:/usr/local/opt/icu4c/bin:$PATH";
     export CPPFLAGS="-I/usr/local/opt/gettext/include -I/usr/local/opt/icu4c/include";
     export LDFLAGS="-L/usr/local/opt/gettext/lib -L/usr/local/opt/icu4c/lib";
@@ -81,24 +79,18 @@ script:
     ./configure --enable-debug || cat config.log;
     make -j2 || travis_terminate 1;
     make test || travis_terminate 1;
-  elif [ "$BUILD_SUIT" = 'autotools' ]; then
-    if [ ! -z "$WITH_COVERALLS" ]; then
-      export CPPFLAGS="--coverage";
-      export LIBS="-lgcov";
-    fi;
+  elif [ "$BUILD_SUIT" = "autotools" ]; then
+    export CPPFLAGS="-fprofile-arcs -ftest-coverage";
+    export LIBS="-lgcov";
     ./autogen.sh;
     ./configure --enable-debug || cat config.log;
     make -j2 || travis_terminate 1;
     make test || travis_terminate 1;
+    coveralls --exclude vendor --exclude src --exclude build --exclude tools --exclude libaegisub/windows > /dev/null;
   else
     mkdir build-dir;
     cd build-dir;
     cmake -DCMAKE_CXX_FLAGS='-Wall -Wextra -Wno-unused-parameter -pedantic' -DCMAKE_C_FLAGS='-Wall -Wextra -Wno-unused-parameter' -DWITH_STARTUPLOG=ON -DWITH_TEST=ON ..;
     make -j2 || travis_terminate 1;
     make test || travis_terminate 1;
-  fi
-
-after_success:
-- if [ ! -z "$WITH_COVERALLS" ]; then
-    coveralls --exclude vendor --exclude src --exclude build --exclude tools --exclude libaegisub/windows > /dev/null;
   fi

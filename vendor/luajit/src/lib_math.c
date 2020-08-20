@@ -33,19 +33,19 @@ LJLIB_ASM(math_sqrt)		LJLIB_REC(math_unary IRFPM_SQRT)
   lj_lib_checknum(L, 1);
   return FFH_RETRY;
 }
-LJLIB_ASM_(math_log10)		LJLIB_REC(math_unary IRFPM_LOG10)
-LJLIB_ASM_(math_exp)		LJLIB_REC(math_unary IRFPM_EXP)
-LJLIB_ASM_(math_sin)		LJLIB_REC(math_unary IRFPM_SIN)
-LJLIB_ASM_(math_cos)		LJLIB_REC(math_unary IRFPM_COS)
-LJLIB_ASM_(math_tan)		LJLIB_REC(math_unary IRFPM_TAN)
-LJLIB_ASM_(math_asin)		LJLIB_REC(math_atrig FF_math_asin)
-LJLIB_ASM_(math_acos)		LJLIB_REC(math_atrig FF_math_acos)
-LJLIB_ASM_(math_atan)		LJLIB_REC(math_atrig FF_math_atan)
-LJLIB_ASM_(math_sinh)		LJLIB_REC(math_htrig IRCALL_sinh)
-LJLIB_ASM_(math_cosh)		LJLIB_REC(math_htrig IRCALL_cosh)
-LJLIB_ASM_(math_tanh)		LJLIB_REC(math_htrig IRCALL_tanh)
+LJLIB_ASM_(math_log10)		LJLIB_REC(math_call IRCALL_log10)
+LJLIB_ASM_(math_exp)		LJLIB_REC(math_call IRCALL_exp)
+LJLIB_ASM_(math_sin)		LJLIB_REC(math_call IRCALL_sin)
+LJLIB_ASM_(math_cos)		LJLIB_REC(math_call IRCALL_cos)
+LJLIB_ASM_(math_tan)		LJLIB_REC(math_call IRCALL_tan)
+LJLIB_ASM_(math_asin)		LJLIB_REC(math_call IRCALL_asin)
+LJLIB_ASM_(math_acos)		LJLIB_REC(math_call IRCALL_acos)
+LJLIB_ASM_(math_atan)		LJLIB_REC(math_call IRCALL_atan)
+LJLIB_ASM_(math_sinh)		LJLIB_REC(math_call IRCALL_sinh)
+LJLIB_ASM_(math_cosh)		LJLIB_REC(math_call IRCALL_cosh)
+LJLIB_ASM_(math_tanh)		LJLIB_REC(math_call IRCALL_tanh)
 LJLIB_ASM_(math_frexp)
-LJLIB_ASM_(math_modf)		LJLIB_REC(.)
+LJLIB_ASM_(math_modf)
 
 LJLIB_ASM(math_log)		LJLIB_REC(math_log)
 {
@@ -96,6 +96,51 @@ LJLIB_ASM_(math_max)		LJLIB_REC(math_minmax IR_MAX)
 
 LJLIB_PUSH(3.14159265358979323846) LJLIB_SET(pi)
 LJLIB_PUSH(1e310) LJLIB_SET(huge)
+LJLIB_PUSH(9007199254740992) LJLIB_SET(maxinteger)	/* 2^53 */
+LJLIB_PUSH(-9007199254740992) LJLIB_SET(mininteger)
+
+LJLIB_LUA(math_tointeger) /*
+  function(n)
+    if type(n) == 'number' and n <= 9007199254740992 and n >= -9007199254740992 and n % 1 == 0 then
+      return n
+    end
+    return nil
+  end
+*/
+
+LJLIB_LUA(math_type) /*
+  function(n)
+    if type(n) == 'number' then
+      if n <= 9007199254740992 and n >= -9007199254740992 and n % 1 == 0 then
+        return 'integer'
+      else
+        return 'float'
+      end
+    else
+      return nil
+    end
+  end
+*/
+
+LJLIB_LUA(math_ult) /*
+  function(m, n)
+    CHECK_num(m)
+    if m > 9007199254740992 or m < -9007199254740992 or m % 1 ~= 0 then
+        error("bad argument #1 to 'ult' (number has no integer representation)")
+    end
+    CHECK_num(n)
+    if n > 9007199254740992 or n < -9007199254740992 or n % 1 ~= 0 then
+        error("bad argument #2 to 'ult' (number has no integer representation)")
+    end
+    if m >= 0 and n < 0 then
+      return true
+    elseif m < 0 and n >= 0 then
+      return false
+    else
+      return m < n
+    end
+  end
+*/
 
 /* ------------------------------------------------------------------------ */
 

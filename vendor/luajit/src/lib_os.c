@@ -35,23 +35,6 @@
 
 /* ------------------------------------------------------------------------ */
 
-#if LJ_TARGET_WINDOWS
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-
-static wchar_t *widen_static(const char *narrow, int idx)
-{
-  __declspec(thread) static wchar_t buffer[2][MAX_PATH];
-  return MultiByteToWideChar(CP_UTF8, 0, narrow, -1, buffer[idx], MAX_PATH) ? buffer[idx] : L"";
-}
-
-#define remove(x) _wremove(widen_static(x, 0))
-#define system(x) _wsystem(widen_static(x, 0))
-#define rename(x, y) _wrename(widen_static(x, 0), widen_static(y, 1))
-#endif
-
-/* ------------------------------------------------------------------------ */
-
 #define LJLIB_MODULE_os
 
 LJLIB_CF(os_execute)
@@ -202,6 +185,7 @@ LJLIB_CF(os_date)
 #endif
   } else {
 #if LJ_TARGET_POSIX
+    tzset();
     stm = localtime_r(&t, &rtm);
 #else
     stm = localtime(&t);
@@ -222,12 +206,12 @@ LJLIB_CF(os_date)
     setboolfield(L, "isdst", stm->tm_isdst);
   } else if (*s) {
     SBuf *sb = &G(L)->tmpbuf;
-    MSize sz = 0;
+    MSize sz = 0, retry = 4;
     const char *q;
     for (q = s; *q; q++)
       sz += (*q == '%') ? 30 : 1;  /* Overflow doesn't matter. */
     setsbufL(sb, L);
-    for (;;) {
+    while (retry--) {  /* Limit growth for invalid format or empty result. */
       char *buf = lj_buf_need(sb, sz);
       size_t len = strftime(buf, sbufsz(sb), s, stm);
       if (len) {

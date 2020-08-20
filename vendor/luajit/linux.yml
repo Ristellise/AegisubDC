@@ -1,0 +1,9 @@
+steps:
+  - script: |
+     cd src
+     make -j$(nproc) XCFLAGS="$(buildFlags)" "$(makeFlags)"
+    displayName: Linux Build
+
+  - script: |
+     make check
+    displayName: Linux Tests

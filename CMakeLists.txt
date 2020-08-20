@@ -53,9 +53,11 @@ endif()
 add_executable(luajit-buildvm
     vendor/luajit/src/host/buildvm.c
     vendor/luajit/src/host/buildvm_asm.c
-    vendor/luajit/src/host/buildvm_peobj.c
-    vendor/luajit/src/host/buildvm_lib.c
     vendor/luajit/src/host/buildvm_fold.c
+    vendor/luajit/src/host/buildvm_lib.c
+    vendor/luajit/src/host/buildvm_peobj.c
+
+
 
     "${CMAKE_CURRENT_BINARY_DIR}/vendor/luajit/src/gen/buildvm_arch.h"
 )
@@ -115,6 +117,7 @@ add_library(luajit STATIC
     vendor/luajit/src/lib_debug.c
     vendor/luajit/src/lib_jit.c
     vendor/luajit/src/lib_ffi.c
+    vendor/luajit/src/lib_utf8.c
     vendor/luajit/src/lj_gc.c
     vendor/luajit/src/lj_err.c
     vendor/luajit/src/lj_char.c
@@ -122,6 +125,9 @@ add_library(luajit STATIC
     vendor/luajit/src/lj_obj.c
     vendor/luajit/src/lj_buf.c
     vendor/luajit/src/lj_str.c
+    vendor/luajit/src/lj_str_hash.c
+    vendor/luajit/src/lj_assert.c
+    vendor/luajit/src/lj_init.c
     vendor/luajit/src/lj_tab.c
     vendor/luajit/src/lj_func.c
     vendor/luajit/src/lj_udata.c
@@ -569,13 +575,6 @@ if(WIN32)
     if(WITH_XAUDIO2)
         target_compile_definitions(Aegisub PRIVATE "WITH_XAUDIO2")
         target_sources(Aegisub PRIVATE src/audio_player_xaudio2.cpp)
-        option(XAUDIO2_REDIST "Use XAudio redistributable")
-        if(XAUDIO2_REDIST)
-            find_package(XAudio2redist REQUIRED)
-            target_compile_definitions(Aegisub PRIVATE "XAUDIO2_REDIST")
-            target_include_directories(Aegisub PRIVATE ${XAudio2redist_INCLUDE_DIRS})
-            target_link_libraries(Aegisub PRIVATE ${XAudio2redist_LIBRARIES})
-        endif()
     endif()
 else()
     set(WITH_DIRECTSOUND OFF)

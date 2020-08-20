@@ -1,4 +1,0 @@
-[submodule "googletest"]
-	path = vendor/googletest
-	url = git://github.com/svn2github/googletest.git
-	ignore = dirty

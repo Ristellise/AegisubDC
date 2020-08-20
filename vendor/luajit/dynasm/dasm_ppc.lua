@@ -257,9 +257,11 @@ map_op = {
   addic_3 =	"30000000RRI",
   ["addic._3"] = "34000000RRI",
   addi_3 =	"38000000RR0I",
+  addil_3 =	"38000000RR0J",
   li_2 =	"38000000RI",
   la_2 =	"38000000RD",
   addis_3 =	"3c000000RR0I",
+  addisl_3 =	"3c000000RR0J",
   lis_2 =	"3c000000RI",
   lus_2 =	"3c000000RU",
   bc_3 =	"40000000AAK",
@@ -840,6 +842,9 @@ map_op = {
     p[4] = "63-("..p[3]..")"
   end),
   srdi_3 =	op_alias("rldicl_4", function(p)
+    p[4] = p[3]; p[3] = "64-("..p[3]..")"
+  end),
+  ["srdi._3"] =	op_alias("rldicl._4", function(p)
     p[4] = p[3]; p[3] = "64-("..p[3]..")"
   end),
   clrldi_3 =	op_alias("rldicl_4", function(p)
@@ -1722,9 +1727,9 @@ op_template = function(params, template, nparams)
     elseif p == "M" then
       op = op + parse_shiftmask(params[n], false); n = n + 1
     elseif p == "J" or p == "K" then
-      local mode, n, s = parse_label(params[n], false)
-      if p == "K" then n = n + 2048 end
-      waction("REL_"..mode, n, s, 1)
+      local mode, m, s = parse_label(params[n], false)
+      if p == "K" then m = m + 2048 end
+      waction("REL_"..mode, m, s, 1)
       n = n + 1
     elseif p == "0" then
       if band(shr(op, rs), 31) == 0 then werror("cannot use r0") end

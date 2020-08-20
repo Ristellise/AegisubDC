@@ -23,125 +23,141 @@
 #include <libaegisub/io.h>
 #include <libaegisub/log.h>
 
-#include <vector>
 #include <ShlObj.h>
 #include <boost/scope_exit.hpp>
 #include <unicode/utf16.h>
 #include <Usp10.h>
 
-namespace {
-uint32_t murmur3(const char *data, uint32_t len) {
-	static const uint32_t c1 = 0xcc9e2d51;
-	static const uint32_t c2 = 0x1b873593;
-	static const uint32_t r1 = 15;
-	static const uint32_t r2 = 13;
-	static const uint32_t m = 5;
-	static const uint32_t n = 0xe6546b64;
-
-	uint32_t hash = 0;
-
-	const int nblocks = len / 4;
-	auto blocks = reinterpret_cast<const uint32_t *>(data);
-	for (uint32_t i = 0; i * 4 < len; ++i) {
-		uint32_t k = blocks[i];
-		k *= c1;
-		k = _rotl(k, r1);
-		k *= c2;
-
-		hash ^= k;
-		hash = _rotl(hash, r2) * m + n;
-	}
-
-	hash ^= len;
-	hash ^= hash >> 16;
-	hash *= 0x85ebca6b;
-	hash ^= hash >> 13;
-	hash *= 0xc2b2ae35;
-	hash ^= hash >> 16;
-
-	return hash;
-}
-
-std::vector<agi::fs::path> get_installed_fonts() {
+static void read_fonts_from_key(HKEY hkey, agi::fs::path font_dir, std::vector<agi::fs::path>& files) {
 	static const auto fonts_key_name = L"SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion\\Fonts";
 
-	std::vector<agi::fs::path> files;
+	HKEY key;
+	auto ret = RegOpenKeyExW(hkey, fonts_key_name, 0, KEY_QUERY_VALUE, &key);
+	if (ret != ERROR_SUCCESS) return;
+	BOOST_SCOPE_EXIT_ALL(= ) { RegCloseKey(key); };
 
-	for (HKEY hKey : { HKEY_CURRENT_USER, HKEY_LOCAL_MACHINE }) {
-		HKEY key;
-		auto ret = RegOpenKeyExW(hKey, fonts_key_name, 0, KEY_QUERY_VALUE, &key);
+	DWORD name_buf_size = SHRT_MAX;
+	DWORD data_buf_size = MAX_PATH;
+
+	auto font_name = new wchar_t[name_buf_size];
+	auto font_filename = new wchar_t[data_buf_size];
+
+	for (DWORD i = 0;; ++i) {
+	retry:
+		DWORD name_len = name_buf_size;
+		DWORD data_len = data_buf_size;
+
+		ret = RegEnumValueW(key, i, font_name, &name_len, NULL, NULL, reinterpret_cast<BYTE*>(font_filename), &data_len);
+		if (ret == ERROR_MORE_DATA) {
+			data_buf_size = data_len;
+			delete font_filename;
+			font_filename = new wchar_t[data_buf_size];
+			goto retry;
+		}
+		if (ret == ERROR_NO_MORE_ITEMS) break;
 		if (ret != ERROR_SUCCESS) continue;
-		BOOST_SCOPE_EXIT_ALL(= ) { RegCloseKey(key); };
+
+		agi::fs::path font_path(font_filename);
+		if (!agi::fs::FileExists(font_path))
+			// Doesn't make a ton of sense to do this with user fonts, but they seem to be stored as full paths anyway
+			font_path = font_dir / font_path;
+		if (agi::fs::FileExists(font_path)) // The path might simply be invalid
+			files.push_back(font_path);
+	}
+
+	delete font_name;
+	delete font_filename;
+}
+
+namespace {
+	uint32_t murmur3(const char* data, uint32_t len) {
+		static const uint32_t c1 = 0xcc9e2d51;
+		static const uint32_t c2 = 0x1b873593;
+		static const uint32_t r1 = 15;
+		static const uint32_t r2 = 13;
+		static const uint32_t m = 5;
+		static const uint32_t n = 0xe6546b64;
+
+		uint32_t hash = 0;
+
+		const int nblocks = len / 4;
+		auto blocks = reinterpret_cast<const uint32_t*>(data);
+		for (uint32_t i = 0; i * 4 < len; ++i) {
+			uint32_t k = blocks[i];
+			k *= c1;
+			k = _rotl(k, r1);
+			k *= c2;
+
+			hash ^= k;
+			hash = _rotl(hash, r2) * m + n;
+		}
+
+		hash ^= len;
+		hash ^= hash >> 16;
+		hash *= 0x85ebca6b;
+		hash ^= hash >> 13;
+		hash *= 0xc2b2ae35;
+		hash ^= hash >> 16;
+
+		return hash;
+	}
+
+	std::vector<agi::fs::path> get_installed_fonts() {
+		std::vector<agi::fs::path> files;
 
 		wchar_t fdir[MAX_PATH];
 		SHGetFolderPathW(NULL, CSIDL_FONTS, NULL, 0, fdir);
 		agi::fs::path font_dir(fdir);
 
-		for (DWORD i = 0;; ++i) {
-			WCHAR font_name[SHRT_MAX];
-			std::vector<WCHAR> font_filename(MAX_PATH);
-			DWORD name_len = sizeof(font_name);
-			DWORD data_len = font_filename.size();
+		// System fonts
+		read_fonts_from_key(HKEY_LOCAL_MACHINE, font_dir, files);
 
-			ret = RegEnumValueW(key, i, font_name, &name_len, NULL, NULL, reinterpret_cast<BYTE*>(font_filename.data()), &data_len);
-			if (ret == ERROR_MORE_DATA) {
-				name_len = sizeof(font_name);
-				font_filename.resize(data_len);
-				ret = RegEnumValueW(key, i, font_name, &name_len, NULL, NULL, reinterpret_cast<BYTE*>(font_filename.data()), &data_len);
+		// User fonts
+		read_fonts_from_key(HKEY_CURRENT_USER, font_dir, files);
+
+		return files;
+	}
+
+	using font_index = std::unordered_multimap<uint32_t, agi::fs::path>;
+
+	font_index index_fonts(FontCollectorStatusCallback& cb) {
+		font_index hash_to_path;
+		auto fonts = get_installed_fonts();
+		std::unique_ptr<char[]> buffer(new char[1024]);
+		for (auto const& path : fonts) {
+			try {
+				auto stream = agi::io::Open(path, true);
+				stream->read(&buffer[0], 1024);
+				auto hash = murmur3(&buffer[0], stream->tellg());
+				hash_to_path.emplace(hash, path);
 			}
-			if (ret == ERROR_NO_MORE_ITEMS) break;
-			if (ret != ERROR_SUCCESS) continue;
-
-			agi::fs::path font_path(font_filename.data());
-			if (!agi::fs::FileExists(font_path) && agi::fs::FileExists(font_dir / font_path))
-				font_path = font_dir / font_path;
-			files.push_back(font_path);
+			catch (agi::Exception const& e) {
+				cb(to_wx(e.GetMessage() + "\n"), 3);
+			}
 		}
+		return hash_to_path;
 	}
 
-	return files;
-}
+	void get_font_data(std::string& buffer, HDC dc) {
+		buffer.clear();
 
-using font_index = std::unordered_multimap<uint32_t, agi::fs::path>;
-
-font_index index_fonts(FontCollectorStatusCallback &cb) {
-	font_index hash_to_path;
-	auto fonts = get_installed_fonts();
-	std::unique_ptr<char[]> buffer(new char[1024]);
-	for (auto const& path : fonts) {
-		try {
-			auto stream = agi::io::Open(path, true);
-			stream->read(&buffer[0], 1024);
-			auto hash = murmur3(&buffer[0], stream->tellg());
-			hash_to_path.emplace(hash, path);
+		// For ttc files we have to ask for the "ttcf" table to get the complete file
+		DWORD ttcf = 0x66637474;
+		auto size = GetFontData(dc, ttcf, 0, nullptr, 0);
+		if (size == GDI_ERROR) {
+			ttcf = 0;
+			size = GetFontData(dc, 0, 0, nullptr, 0);
 		}
-		catch (agi::Exception const& e) {
-			cb(to_wx(e.GetMessage() + "\n"), 3);
-		}
+		if (size == GDI_ERROR || size == 0)
+			return;
+
+		buffer.resize(size);
+		GetFontData(dc, ttcf, 0, &buffer[0], size);
 	}
-	return hash_to_path;
 }
 
-void get_font_data(std::string& buffer, HDC dc) {
-	buffer.clear();
-
-	// For ttc files we have to ask for the "ttcf" table to get the complete file
-	DWORD ttcf = 0x66637474;
-	auto size = GetFontData(dc, ttcf, 0, nullptr, 0);
-	if (size == GDI_ERROR) {
-		ttcf = 0;
-		size = GetFontData(dc, 0, 0, nullptr, 0);
-	}
-	if (size == GDI_ERROR || size == 0)
-		return;
-
-	buffer.resize(size);
-	GetFontData(dc, ttcf, 0, &buffer[0], size);
-}
-}
-
-GdiFontFileLister::GdiFontFileLister(FontCollectorStatusCallback &cb)
-: dc(CreateCompatibleDC(nullptr), [](HDC dc) { DeleteDC(dc); })
+GdiFontFileLister::GdiFontFileLister(FontCollectorStatusCallback& cb)
+	: dc(CreateCompatibleDC(nullptr), [](HDC dc) { DeleteDC(dc); })
 {
 	cb(_("Updating font cache\n"), 0);
 	index = index_fonts(cb);
@@ -155,16 +171,16 @@ CollectionResult GdiFontFileLister::GetFontPaths(std::string const& facename, in
 	wcsncpy(lf.lfFaceName, agi::charset::ConvertW(facename).c_str(), LF_FACESIZE);
 	lf.lfItalic = italic ? -1 : 0;
 	lf.lfWeight = bold == 0 ? 400 :
-	              bold == 1 ? 700 :
-	                          bold;
+		bold == 1 ? 700 :
+		bold;
 
 	// Gather all of the styles for the given family name
 	std::vector<LOGFONTW> matches;
 	using type = decltype(matches);
-	EnumFontFamiliesExW(dc, &lf, [](const LOGFONTW *lf, const TEXTMETRICW *, DWORD, LPARAM lParam) -> int {
+	EnumFontFamiliesEx(dc, &lf, [](const LOGFONT* lf, const TEXTMETRIC*, DWORD, LPARAM lParam) -> int {
 		reinterpret_cast<type*>(lParam)->push_back(*lf);
 		return 1;
-	}, (LPARAM)&matches, 0);
+		}, (LPARAM)&matches, 0);
 
 	if (matches.empty())
 		return ret;
@@ -194,10 +210,13 @@ CollectionResult GdiFontFileLister::GetFontPaths(std::string const& facename, in
 		ret.fake_bold = (italic && has_italic ? !has_bold_italic : !has_bold);
 	}
 
+	// Use the family name supplied by EnumFontFamiliesEx as it may be a localized version
+	memcpy(lf.lfFaceName, matches[0].lfFaceName, LF_FACESIZE);
+
 	// Open the font and get the data for it to look up in the index
-	auto hfont = CreateFontIndirectW(&matches[0]);
+	auto hfont = CreateFontIndirectW(&lf);
 	SelectObject(dc, hfont);
-	BOOST_SCOPE_EXIT_ALL(=) {
+	BOOST_SCOPE_EXIT_ALL(= ) {
 		SelectObject(dc, nullptr);
 		DeleteObject(hfont);
 	};

@@ -116,10 +116,10 @@ std::unique_ptr<agi::AudioProvider> GetAudioProvider(fs::path const& filename,
 	if (cache == 1) {
 		if (sizeof(void*) == 4 && (provider->GetNumSamples() * provider->GetChannels() * provider->GetBytesPerSample() >= (1 << 30))) {
 			wxMessageBox(_(
-				"Unable to create RAM audio cache: 32-bit memory limit exceeded. Fallback to hard disk cache.\n\n"
+				"Unable to create RAM audio cache: 32-bit memory limit exceeded. Fallback to hard disk cache.\n"
 				"Possible solutions:\n"
 				"- Use 64-bit version\n"
-				"- Turn off cache or switch to hard disk cache in Preferences -> Advanced -> Audio -> Cache -> Cache type\n"
+				"- Switch to hard disk cache in Preferences -> Advanced -> Audio -> Cache -> Cache type\n"
 				"- Enable channel downmix in Preferences -> Advanced -> Audio"
 			), _("Out of Memory"), wxICON_ERROR | wxOK | wxCENTRE);
 			cache = 2;

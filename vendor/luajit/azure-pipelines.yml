@@ -1,0 +1,44 @@
+# LuaJIT Azure Piplines build script
+jobs:
+- job: Windows_Build
+  pool:
+    vmImage: windows-2019
+
+  strategy:
+    maxParallel: 3
+    matrix:
+      Win_x86:
+        VC_ARCH: x86
+        buildMode:
+      Win_x64:
+        VC_ARCH: amd64
+        buildMode:
+      Win_x64_GC64:
+        VC_ARCH: amd64
+        buildMode: gc64
+  steps:
+  - template: ./windows.yml
+
+- job: Linux
+  pool:
+    vmImage: 'ubuntu-latest'
+  strategy:
+    maxParallel: 3
+    matrix:
+      Linux_x64:
+        buildFlags: -DLUA_USE_ASSERT
+        makeFlags: all
+      Linux_x64_GC64:
+        buildFlags: -DLUA_USE_ASSERT -DLUAJIT_ENABLE_GC64
+        makeFlags: all
+      Linux_x64_NoJIT:
+        buildFlags: -DLUA_USE_ASSERT -DLUAJIT_DISABLE_JIT
+        makeFlags: all
+      Linux_x64_52COMPAT:
+        buildFlags: -DLUA_USE_ASSERT -DLUAJIT_ENABLE_LUA52COMPAT
+        makeFlags: all
+      Linux_x64_amalg:
+        buildFlags: -DLUA_USE_ASSERT
+        makeFlags: amalg
+  steps:
+  - template: ./linux.yml

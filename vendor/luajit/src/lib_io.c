@@ -26,16 +26,6 @@
 #include "lj_ff.h"
 #include "lj_lib.h"
 
-#if LJ_TARGET_WINDOWS
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-
-static int widen(const char *in, wchar_t *out)
-{
-  return MultiByteToWideChar(CP_UTF8, 0, in, -1, out, MAX_PATH);
-}
-#endif
-
 /* Userdata payload for I/O file. */
 typedef struct IOFileUD {
   FILE *fp;		/* File handle. */
@@ -94,15 +84,7 @@ static IOFileUD *io_file_open(lua_State *L, const char *mode)
 {
   const char *fname = strdata(lj_lib_checkstr(L, 1));
   IOFileUD *iof = io_file_new(L);
-#if LJ_TARGET_WINDOWS
-  wchar_t wfname[MAX_PATH];
-  wchar_t wmode[MAX_PATH];
-  if (!widen(fname, wfname) || !widen(mode, wmode))
-    luaL_argerror(L, 1, lj_strfmt_pushf(L, "%s: failed to convert path to utf-16", fname));
-  iof->fp = _wfopen(wfname, wmode);
-#else
   iof->fp = fopen(fname, mode);
-#endif
   if (iof->fp == NULL)
     luaL_argerror(L, 1, lj_strfmt_pushf(L, "%s: %s", fname, strerror(errno)));
   return iof;
@@ -117,11 +99,8 @@ static int io_file_close(lua_State *L, IOFileUD *iof)
     int stat = -1;
 #if LJ_TARGET_POSIX
     stat = pclose(iof->fp);
-#elif LJ_TARGET_WINDOWS && !LJ_TARGET_XBOXONE
+#elif LJ_TARGET_WINDOWS && !LJ_TARGET_XBOXONE && !LJ_TARGET_UWP
     stat = _pclose(iof->fp);
-#else
-    lua_assert(0);
-    return 0;
 #endif
 #if LJ_52
     iof->fp = NULL;
@@ -130,7 +109,8 @@ static int io_file_close(lua_State *L, IOFileUD *iof)
     ok = (stat != -1);
 #endif
   } else {
-    lua_assert((iof->type & IOFILE_TYPE_MASK) == IOFILE_TYPE_STDF);
+    lj_assertL((iof->type & IOFILE_TYPE_MASK) == IOFILE_TYPE_STDF,
+	       "close of unknown FILE* type");
     setnilV(L->top++);
     lua_pushliteral(L, "cannot close standard file");
     return 2;
@@ -324,6 +304,14 @@ LJLIB_CF(io_method_flush)		LJLIB_REC(io_flush 0)
   return luaL_fileresult(L, fflush(io_tofile(L)->fp) == 0, NULL);
 }
 
+#if LJ_32 && defined(__ANDROID__) && __ANDROID_API__ < 24
+/* The Android NDK is such an unmatched marvel of engineering. */
+extern int fseeko32(FILE *, long int, int) __asm__("fseeko");
+extern long int ftello32(FILE *) __asm__("ftello");
+#define fseeko(fp, pos, whence)	(fseeko32((fp), (pos), (whence)))
+#define ftello(fp)		(ftello32((fp)))
+#endif
+
 LJLIB_CF(io_method_seek)
 {
   FILE *fp = io_tofile(L)->fp;
@@ -418,20 +406,13 @@ LJLIB_CF(io_open)
   GCstr *s = lj_lib_optstr(L, 2);
   const char *mode = s ? strdata(s) : "r";
   IOFileUD *iof = io_file_new(L);
-#if LJ_TARGET_WINDOWS
-  wchar_t wfname[MAX_PATH];
-  wchar_t wmode[MAX_PATH];
-  if (widen(fname, wfname) && widen(mode, wmode))
-    iof->fp = _wfopen(wfname, wmode);
-#else
   iof->fp = fopen(fname, mode);
-#endif
   return iof->fp != NULL ? 1 : luaL_fileresult(L, 0, fname);
 }
 
 LJLIB_CF(io_popen)
 {
-#if LJ_TARGET_POSIX || (LJ_TARGET_WINDOWS && !LJ_TARGET_XBOXONE)
+#if LJ_TARGET_POSIX || (LJ_TARGET_WINDOWS && !LJ_TARGET_XBOXONE && !LJ_TARGET_UWP)
   const char *fname = strdata(lj_lib_checkstr(L, 1));
   GCstr *s = lj_lib_optstr(L, 2);
   const char *mode = s ? strdata(s) : "r";
@@ -441,10 +422,7 @@ LJLIB_CF(io_popen)
   fflush(NULL);
   iof->fp = popen(fname, mode);
 #else
-  wchar_t wfname[MAX_PATH];
-  wchar_t wmode[MAX_PATH];
-  if (widen(fname, wfname) && widen(mode, wmode))
-    iof->fp = _wpopen(wfname, wmode);
+  iof->fp = _popen(fname, mode);
 #endif
   return iof->fp != NULL ? 1 : luaL_fileresult(L, 0, fname);
 #else

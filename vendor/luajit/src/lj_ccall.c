@@ -337,7 +337,8 @@
   if (LJ_TARGET_IOS && isva) { \
     /* IOS: All variadic arguments are on the stack. */ \
   } else if (isfp) {  /* Try to pass argument in FPRs. */ \
-    int n2 = ctype_isvector(d->info) ? 1 : n*isfp; \
+    int n2 = ctype_isvector(d->info) ? 1 : \
+	     isfp == 1 ? n : (d->size >> (4-isfp)); \
     if (nfpr + n2 <= CCALL_NARG_FPR) { \
       dp = &cc->fpr[nfpr]; \
       nfpr += n2; \
@@ -369,6 +370,82 @@
 #elif LJ_TARGET_PPC
 /* -- PPC calling conventions --------------------------------------------- */
 
+#if LJ_ARCH_BITS == 64
+
+#if LJ_ARCH_PPC_ELFV2
+
+#define CCALL_HANDLE_STRUCTRET \
+  if (sz > 16 && ccall_classify_fp(cts, ctr) <= 0) { \
+    cc->retref = 1;  /* Return by reference. */ \
+    cc->gpr[ngpr++] = (GPRArg)dp; \
+  }
+
+#define CCALL_HANDLE_STRUCTRET2 \
+  int isfp = ccall_classify_fp(cts, ctr); \
+  int i; \
+  if (isfp == FTYPE_FLOAT) { \
+    for (i = 0; i < ctr->size / 4; i++) \
+      ((float *)dp)[i] = cc->fpr[i]; \
+  } else if (isfp == FTYPE_DOUBLE) { \
+    for (i = 0; i < ctr->size / 8; i++) \
+      ((double *)dp)[i] = cc->fpr[i]; \
+  } else { \
+    if (ctr->size < 8 && LJ_BE) { \
+      sp += 8 - ctr->size; \
+    } \
+    memcpy(dp, sp, ctr->size); \
+  }
+
+#else
+
+#define CCALL_HANDLE_STRUCTRET \
+  cc->retref = 1;  /* Return all structs by reference. */ \
+  cc->gpr[ngpr++] = (GPRArg)dp;
+
+#endif
+
+#define CCALL_HANDLE_COMPLEXRET \
+  /* Complex values are returned in 2 or 4 GPRs. */ \
+  cc->retref = 0;
+
+#define CCALL_HANDLE_STRUCTARG
+
+#define CCALL_HANDLE_COMPLEXRET2 \
+  if (ctr->size == 2*sizeof(float)) {  /* Copy complex float from FPRs. */ \
+    ((float *)dp)[0] = cc->fpr[0]; \
+    ((float *)dp)[1] = cc->fpr[1]; \
+  } else {  /* Copy complex double from FPRs. */ \
+    ((double *)dp)[0] = cc->fpr[0]; \
+    ((double *)dp)[1] = cc->fpr[1]; \
+  }
+
+#define CCALL_HANDLE_COMPLEXARG \
+  isfp = 1; \
+  if (d->size == sizeof(float) * 2) { \
+    d = ctype_get(cts, CTID_COMPLEX_DOUBLE); \
+    isf32 = 1; \
+  }
+
+#define CCALL_HANDLE_REGARG \
+  if (isfp && d->size == sizeof(float)) { \
+    d = ctype_get(cts, CTID_DOUBLE); \
+    isf32 = 1; \
+  } \
+  if (ngpr < maxgpr) { \
+   dp = &cc->gpr[ngpr]; \
+   ngpr += n; \
+   if (ngpr > maxgpr) { \
+     nsp += ngpr - 8; \
+     ngpr = 8; \
+     if (nsp > CCALL_MAXSTACK) { \
+       goto err_nyi; \
+     } \
+   } \
+   goto done; \
+  }
+
+#else
+
 #define CCALL_HANDLE_STRUCTRET \
   cc->retref = 1;  /* Return all structs by reference. */ \
   cc->gpr[ngpr++] = (GPRArg)dp;
@@ -377,16 +454,35 @@
   /* Complex values are returned in 2 or 4 GPRs. */ \
   cc->retref = 0;
 
-#define CCALL_HANDLE_COMPLEXRET2 \
-  memcpy(dp, sp, ctr->size);  /* Copy complex from GPRs. */
-
 #define CCALL_HANDLE_STRUCTARG \
   rp = cdataptr(lj_cdata_new(cts, did, sz)); \
   sz = CTSIZE_PTR;  /* Pass all structs by reference. */
 
+#define CCALL_HANDLE_COMPLEXRET2 \
+  memcpy(dp, sp, ctr->size);  /* Copy complex from GPRs. */
+
 #define CCALL_HANDLE_COMPLEXARG \
   /* Pass complex by value in 2 or 4 GPRs. */
 
+#define CCALL_HANDLE_GPR \
+  /* Try to pass argument in GPRs. */ \
+  if (n > 1) { \
+    /* int64_t or complex (float). */ \
+    lj_assertL(n == 2 || n == 4, "bad GPR size %d", n); \
+    if (ctype_isinteger(d->info) || ctype_isfp(d->info)) \
+      ngpr = (ngpr + 1u) & ~1u;  /* Align int64_t to regpair. */ \
+    else if (ngpr + n > maxgpr) \
+      ngpr = maxgpr;  /* Prevent reordering. */ \
+  } \
+  if (ngpr + n <= maxgpr) { \
+    dp = &cc->gpr[ngpr]; \
+    ngpr += n; \
+    goto done; \
+  } \
+
+#if LJ_ABI_SOFTFP
+#define CCALL_HANDLE_REGARG  CCALL_HANDLE_GPR
+#else
 #define CCALL_HANDLE_REGARG \
   if (isfp) {  /* Try to pass argument in FPRs. */ \
     if (nfpr + 1 <= CCALL_NARG_FPR) { \
@@ -395,24 +491,18 @@
       d = ctype_get(cts, CTID_DOUBLE);  /* FPRs always hold doubles. */ \
       goto done; \
     } \
-  } else {  /* Try to pass argument in GPRs. */ \
-    if (n > 1) { \
-      lua_assert(n == 2 || n == 4);  /* int64_t or complex (float). */ \
-      if (ctype_isinteger(d->info)) \
-	ngpr = (ngpr + 1u) & ~1u;  /* Align int64_t to regpair. */ \
-      else if (ngpr + n > maxgpr) \
-	ngpr = maxgpr;  /* Prevent reordering. */ \
-    } \
-    if (ngpr + n <= maxgpr) { \
-      dp = &cc->gpr[ngpr]; \
-      ngpr += n; \
-      goto done; \
-    } \
+  } else { \
+    CCALL_HANDLE_GPR \
   }
+#endif
 
+#endif
+
+#if !LJ_ABI_SOFTFP
 #define CCALL_HANDLE_RET \
   if (ctype_isfp(ctr->info) && ctr->size == sizeof(float)) \
     ctr = ctype_get(cts, CTID_DOUBLE);  /* FPRs always hold doubles. */
+#endif
 
 #elif LJ_TARGET_MIPS32
 /* -- MIPS o32 calling conventions ---------------------------------------- */
@@ -562,6 +652,40 @@
     goto done; \
   }
 
+#elif LJ_TARGET_S390X
+/* -- POSIX/s390x calling conventions --------------------------------------- */
+
+#define CCALL_HANDLE_STRUCTRET \
+  cc->retref = 1;  /* Return all structs by reference. */ \
+  cc->gpr[ngpr++] = (GPRArg)dp;
+
+#define CCALL_HANDLE_COMPLEXRET \
+  cc->retref = 1;  /* Return all complex values by reference. */ \
+  cc->gpr[ngpr++] = (GPRArg)dp;
+
+#define CCALL_HANDLE_COMPLEXRET2 \
+  UNUSED(dp); /* Nothing to do. */
+
+#define CCALL_HANDLE_STRUCTARG \
+  /* Pass structs of size 1, 2, 4 or 8 in a GPR by value. */ \
+  if (!(sz == 1 || sz == 2 || sz == 4 || sz == 8)) { \
+    rp = cdataptr(lj_cdata_new(cts, did, sz)); \
+    sz = CTSIZE_PTR;  /* Pass all other structs by reference. */ \
+  }
+
+#define CCALL_HANDLE_COMPLEXARG \
+  /* Pass complex numbers by reference. */ \
+  /* TODO: not sure why this is different to structs. */ \
+  rp = cdataptr(lj_cdata_new(cts, did, sz)); \
+  sz = CTSIZE_PTR; \
+
+#define CCALL_HANDLE_REGARG \
+  if (isfp) { \
+    if (nfpr < CCALL_NARG_FPR) { dp = &cc->fpr[nfpr++]; goto done; } \
+  } else { \
+    if (ngpr < maxgpr) { dp = &cc->gpr[ngpr++]; goto done; } \
+  }
+
 #else
 #error "Missing calling convention definitions for this architecture"
 #endif
@@ -631,7 +755,8 @@ static void ccall_classify_ct(CTState *cts, CType *ct, int *rcl, CTSize ofs)
     ccall_classify_struct(cts, ct, rcl, ofs);
   } else {
     int cl = ctype_isfp(ct->info) ? CCALL_RCL_SSE : CCALL_RCL_INT;
-    lua_assert(ctype_hassize(ct->info));
+    lj_assertCTS(ctype_hassize(ct->info),
+		 "classify ctype %08x without size", ct->info);
     if ((ofs & (ct->size-1))) cl = CCALL_RCL_MEM;  /* Unaligned. */
     rcl[(ofs >= 8)] |= cl;
   }
@@ -656,12 +781,13 @@ static int ccall_classify_struct(CTState *cts, CType *ct, int *rcl, CTSize ofs)
 }
 
 /* Try to split up a small struct into registers. */
-static int ccall_struct_reg(CCallState *cc, GPRArg *dp, int *rcl)
+static int ccall_struct_reg(CCallState *cc, CTState *cts, GPRArg *dp, int *rcl)
 {
   MSize ngpr = cc->ngpr, nfpr = cc->nfpr;
   uint32_t i;
+  UNUSED(cts);
   for (i = 0; i < 2; i++) {
-    lua_assert(!(rcl[i] & CCALL_RCL_MEM));
+    lj_assertCTS(!(rcl[i] & CCALL_RCL_MEM), "pass mem struct in reg");
     if ((rcl[i] & CCALL_RCL_INT)) {  /* Integer class takes precedence. */
       if (ngpr >= CCALL_NARG_GPR) return 1;  /* Register overflow. */
       cc->gpr[ngpr++] = dp[i];
@@ -682,7 +808,8 @@ static int ccall_struct_arg(CCallState *cc, CTState *cts, CType *d, int *rcl,
   dp[0] = dp[1] = 0;
   /* Convert to temp. struct. */
   lj_cconv_ct_tv(cts, d, (uint8_t *)dp, o, CCF_ARG(narg));
-  if (ccall_struct_reg(cc, dp, rcl)) {  /* Register overflow? Pass on stack. */
+  if (ccall_struct_reg(cc, cts, dp, rcl)) {
+    /* Register overflow? Pass on stack. */
     MSize nsp = cc->nsp, n = rcl[1] ? 2 : 1;
     if (nsp + n > CCALL_MAXSTACK) return 1;  /* Too many arguments. */
     cc->nsp = nsp + n;
@@ -801,6 +928,50 @@ noth:  /* Not a homogeneous float/double aggregate. */
 
 #endif
 
+/* -- PowerPC64 ELFv2 ABI struct classification ------------------- */
+
+#if LJ_ARCH_PPC_ELFV2
+
+#define FTYPE_FLOAT	1
+#define FTYPE_DOUBLE	2
+
+static unsigned int ccall_classify_fp(CTState *cts, CType *ct) {
+  if (ctype_isfp(ct->info)) {
+    if (ct->size == sizeof(float))
+      return FTYPE_FLOAT;
+    else
+      return FTYPE_DOUBLE;
+  } else if (ctype_iscomplex(ct->info)) {
+    if (ct->size == sizeof(float) * 2)
+      return FTYPE_FLOAT;
+    else
+      return FTYPE_DOUBLE;
+  } else if (ctype_isstruct(ct->info)) {
+    int res = -1;
+    int sz = ct->size;
+    while (ct->sib) {
+      ct = ctype_get(cts, ct->sib);
+      if (ctype_isfield(ct->info)) {
+        int sub = ccall_classify_fp(cts, ctype_rawchild(cts, ct));
+        if (res == -1)
+          res = sub;
+        if (sub != -1 && sub != res)
+          return 0;
+      } else if (ctype_isbitfield(ct->info) ||
+        ctype_isxattrib(ct->info, CTA_SUBTYPE)) {
+        return 0;
+      }
+    }
+    if (res > 0 && sz > res * 4 * 8)
+      return 0;
+    return res;
+  } else {
+    return 0;
+  }
+}
+
+#endif
+
 /* -- MIPS64 ABI struct classification ---------------------------- */
 
 #if LJ_TARGET_MIPS64
@@ -838,7 +1009,8 @@ noth:  /* Not a homogeneous float/double aggregate. */
   return 0;  /* Struct is in GPRs. */
 }
 
-void ccall_copy_struct(CCallState *cc, CType *ctr, void *dp, void *sp, int ft)
+static void ccall_copy_struct(CCallState *cc, CType *ctr, void *dp, void *sp,
+			      int ft)
 {
   if (LJ_ABI_SOFTFP ? ft :
       ((ft & 3) == FTYPE_FLOAT || (ft >> 2) == FTYPE_FLOAT)) {
@@ -972,13 +1144,16 @@ static int ccall_set_args(lua_State *L, CTState *cts, CType *ct,
     CTypeID did;
     CType *d;
     CTSize sz;
-    MSize n, isfp = 0, isva = 0;
+    MSize n, isfp = 0, isva = 0, onstack = 0;
     void *dp, *rp = NULL;
+#if LJ_TARGET_PPC && LJ_ARCH_BITS == 64
+    int isf32 = 0;
+#endif
 
     if (fid) {  /* Get argument type from field. */
       CType *ctf = ctype_get(cts, fid);
       fid = ctf->sib;
-      lua_assert(ctype_isfield(ctf->info));
+      lj_assertL(ctype_isfield(ctf->info), "field expected");
       did = ctype_cid(ctf->info);
     } else {
       if (!(ct->info & CTF_VARARG))
@@ -1012,6 +1187,7 @@ static int ccall_set_args(lua_State *L, CTState *cts, CType *ct,
     CCALL_HANDLE_REGARG  /* Handle register arguments. */
 
     /* Otherwise pass argument on stack. */
+    onstack = 1;
     if (CCALL_ALIGN_STACKARG && !rp && (d->info & CTF_ALIGN) > CTALIGN_PTR) {
       MSize align = (1u << ctype_align(d->info-CTALIGN_PTR)) -1;
       nsp = (nsp + align) & ~align;  /* Align argument on stack. */
@@ -1030,7 +1206,37 @@ static int ccall_set_args(lua_State *L, CTState *cts, CType *ct,
       *(void **)dp = rp;
       dp = rp;
     }
+#if LJ_TARGET_PPC && LJ_ARCH_BITS == 64 && LJ_BE
+    if (ctype_isstruct(d->info) && sz < CTSIZE_PTR) {
+      dp = (char *)dp + (CTSIZE_PTR - sz);
+    }
+#endif
     lj_cconv_ct_tv(cts, d, (uint8_t *)dp, o, CCF_ARG(narg));
+#if LJ_TARGET_PPC && LJ_ARCH_BITS == 64
+    if (isfp) {
+      int i;
+      for (i = 0; i < d->size / 8 && nfpr < CCALL_NARG_FPR; i++)
+        cc->fpr[nfpr++] = ((double *)dp)[i];
+    }
+    if (isf32) {
+      int i;
+      for (i = 0; i < d->size / 8; i++)
+        ((float *)dp)[i*2] = ((double *)dp)[i];
+    }
+#endif
+#if LJ_ARCH_PPC_ELFV2
+    if (ctype_isstruct(d->info)) {
+      isfp = ccall_classify_fp(cts, d);
+      int i;
+      if (isfp == FTYPE_FLOAT) {
+        for (i = 0; i < d->size / 4 && nfpr < CCALL_NARG_FPR; i++)
+          cc->fpr[nfpr++] = ((float *)dp)[i];
+      } else if (isfp == FTYPE_DOUBLE) {
+        for (i = 0; i < d->size / 8 && nfpr < CCALL_NARG_FPR; i++)
+          cc->fpr[nfpr++] = ((double *)dp)[i];
+      }
+    }
+#endif
     /* Extend passed integers to 32 bits at least. */
     if (ctype_isinteger_or_bool(d->info) && d->size < 4) {
       if (d->info & CTF_UNSIGNED)
@@ -1044,6 +1250,15 @@ static int ccall_set_args(lua_State *L, CTState *cts, CType *ct,
     if (isfp && d->size == sizeof(float))
       ((float *)dp)[1] = ((float *)dp)[0];  /* Floats occupy high slot. */
 #endif
+#if LJ_TARGET_PPC && LJ_ARCH_BITS == 64
+    if ((ctype_isinteger_or_bool(d->info) || ctype_isenum(d->info))
+	&& d->size <= 4) {
+      if (d->info & CTF_UNSIGNED)
+	*(uint64_t *)dp = (uint64_t)*(uint32_t *)dp;
+      else
+        *(int64_t *)dp = (int64_t)*(int32_t *)dp;
+    }
+#endif
 #if LJ_TARGET_MIPS64 || (LJ_TARGET_ARM64 && LJ_BE)
     if ((ctype_isinteger_or_bool(d->info) || ctype_isenum(d->info)
 #if LJ_TARGET_MIPS64
@@ -1052,6 +1267,18 @@ static int ccall_set_args(lua_State *L, CTState *cts, CType *ct,
 	 ) && d->size <= 4) {
       *(int64_t *)dp = (int64_t)*(int32_t *)dp;  /* Sign-extend to 64 bit. */
     }
+#endif
+#if LJ_TARGET_S390X
+    /* Arguments need to be sign-/zero-extended to 64-bits. */
+    if ((ctype_isinteger_or_bool(d->info) || ctype_isenum(d->info) ||
+          (isfp && onstack)) && d->size <= 4) {
+      if (d->info & CTF_UNSIGNED || isfp)
+        *(uint64_t *)dp = (uint64_t)*(uint32_t *)dp;
+      else
+        *(int64_t *)dp = (int64_t)*(int32_t *)dp;
+    }
+#else
+    UNUSED(onstack);
 #endif
 #if LJ_TARGET_X64 && LJ_ABI_WIN
     if (isva) {  /* Windows/x64 mirrors varargs in both register sets. */
@@ -1080,7 +1307,7 @@ static int ccall_set_args(lua_State *L, CTState *cts, CType *ct,
   }
   if (fid) lj_err_caller(L, LJ_ERR_FFI_NUMARG);  /* Too few arguments. */
 
-#if LJ_TARGET_X64 || LJ_TARGET_PPC
+#if LJ_TARGET_X64 || (LJ_TARGET_PPC && !LJ_ABI_SOFTFP)
   cc->nfpr = nfpr;  /* Required for vararg functions. */
 #endif
   cc->nsp = nsp;
@@ -1126,7 +1353,8 @@ static int ccall_get_results(lua_State *L, CTState *cts, CType *ct,
   CCALL_HANDLE_RET
 #endif
   /* No reference types end up here, so there's no need for the CTypeID. */
-  lua_assert(!(ctype_isrefarray(ctr->info) || ctype_isstruct(ctr->info)));
+  lj_assertL(!(ctype_isrefarray(ctr->info) || ctype_isstruct(ctr->info)),
+	     "unexpected reference ctype");
   return lj_cconv_tv_ct(cts, ctr, 0, L->top-1, sp);
 }
 

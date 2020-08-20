@@ -1,0 +1,8 @@
+prefix=D:/TestSub/vendor/exten/fribidi-1.0.10/build
+srcdir=D:/TestSub/vendor/exten/fribidi-1.0.10
+
+Name: GNU FriBidi
+Description: Unicode Bidirectional Algorithm Library
+Version: 1.0.10
+Libs: -L${prefix}/D:\TestSub\vendor\exten\fribidi-1.0.10\build\lib -lfribidi
+Cflags:-I${prefix}\lib -I${srcdir}\lib -I${prefix}\. -I${srcdir}\. -I${prefix}\gen.tab -I${srcdir}\gen.tab

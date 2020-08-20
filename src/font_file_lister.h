@@ -47,7 +47,8 @@ class GdiFontFileLister {
 	std::string buffer;
 
 	bool ProcessLogFont(LOGFONTW const& expected, LOGFONTW const& actual, std::vector<int> const& characters);
-
+	bool has_weight(LOGFONTW font, int weight);
+	bool has_italic(LOGFONTW font);
 public:
 	/// Constructor
 	/// @param cb Callback for status logging

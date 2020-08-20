@@ -158,6 +158,20 @@ LUALIB_API void luaL_setfuncs(lua_State *L, const luaL_Reg *l, int nup)
   lua_pop(L, nup);  /* Remove upvalues. */
 }
 
+LUALIB_API int luaL_getsubtable(lua_State *L, int idx, const char *fname)
+{
+  lua_getfield(L, idx, fname);
+  if (lua_istable(L, -1)) return 1;  /* table already there */
+  else {
+    lua_pop(L, 1);  /* remove previous result */
+    idx = lua_absindex(L, idx);
+    lua_newtable(L);
+    lua_pushvalue(L, -1);  /* copy to be left at top */
+    lua_setfield(L, idx, fname);  /* assign new table to field */
+    return 0;  /* false, because did not find table there */
+  }
+}
+
 LUALIB_API const char *luaL_gsub(lua_State *L, const char *s,
 				 const char *p, const char *r)
 {
@@ -218,8 +232,15 @@ LUALIB_API char *luaL_prepbuffer(luaL_Buffer *B)
 
 LUALIB_API void luaL_addlstring(luaL_Buffer *B, const char *s, size_t l)
 {
-  while (l--)
-    luaL_addchar(B, *s++);
+  if (l <= bufffree(B)) {
+    memcpy(B->p, s, l);
+    B->p += l;
+  } else {
+    emptybuffer(B);
+    lua_pushlstring(B->L, s, l);
+    B->lvl++;
+    adjuststack(B);
+  }
 }
 
 LUALIB_API void luaL_addstring(luaL_Buffer *B, const char *s)
@@ -232,6 +253,12 @@ LUALIB_API void luaL_pushresult(luaL_Buffer *B)
   emptybuffer(B);
   lua_concat(B->L, B->lvl);
   B->lvl = 1;
+}
+
+LUALIB_API void luaL_pushresultsize(luaL_Buffer *B, size_t sz)
+{
+  luaL_addsize(B, sz);
+  luaL_pushresult(B);
 }
 
 LUALIB_API void luaL_addvalue(luaL_Buffer *B)

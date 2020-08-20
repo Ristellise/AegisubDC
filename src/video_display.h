@@ -143,6 +143,7 @@ class VideoDisplay final : public wxGLCanvas {
 	void OnSizeEvent(wxSizeEvent &event);
 	void OnContextMenu(wxContextMenuEvent&);
 	void OnIdle(wxIdleEvent&);
+	void SetViewport(GLint cx, GLint cy, GLsizei w, GLsizei h);
 	void DoRender();
 
 public:

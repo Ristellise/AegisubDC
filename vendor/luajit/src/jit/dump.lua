@@ -55,7 +55,7 @@
 
 -- Cache some library functions and objects.
 local jit = require("jit")
-assert(jit.version_num == 20100, "LuaJIT core/library version mismatch")
+assert(jit.version_num == 20200, "moonjit core/library version mismatch")
 local jutil = require("jit.util")
 local vmdef = require("jit.vmdef")
 local funcinfo, funcbc = jutil.funcinfo, jutil.funcbc
@@ -591,6 +591,9 @@ local function dump_record(tr, func, pc, depth, callee)
   if pc >= 0 then
     line = bcline(func, pc, recprefix)
     if dumpmode.H then line = gsub(line, "[<>&]", html_escape) end
+    if pc > 0 then
+      line = sub(line, 1, -2) .. "       (" .. fmtfunc(func, pc) .. ")\n"
+    end
   else
     line = "0000 "..recprefix.." FUNCC      \n"
     callee = func

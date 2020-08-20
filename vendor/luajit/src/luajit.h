@@ -30,11 +30,12 @@
 
 #include "lua.h"
 
-#define LUAJIT_VERSION		"LuaJIT 2.1.0-beta3"
-#define LUAJIT_VERSION_NUM	20100  /* Version 2.1.0 = 02.01.00. */
-#define LUAJIT_VERSION_SYM	luaJIT_version_2_1_0_beta3
-#define LUAJIT_COPYRIGHT	"Copyright (C) 2005-2017 Mike Pall"
-#define LUAJIT_URL		"http://luajit.org/"
+#define LUAJIT_VERSION		"moonjit 2.2.0"
+#define MOONJIT_VERSION		LUAJIT_VERSION
+#define LUAJIT_VERSION_NUM	20200  /* Version 2.2.0 = 02.02.00. */
+#define LUAJIT_VERSION_SYM	moonjit_version_2_2_0
+#define LUAJIT_COPYRIGHT	"Copyright (C) 2019-2020 moonjit developers"
+#define LUAJIT_URL		"https://github.com/moonjit/moonjit"
 
 /* Modes for luaJIT_setmode. */
 #define LUAJIT_MODE_MASK	0x00ff
@@ -75,5 +76,7 @@ LUA_API const char *luaJIT_profile_dumpstack(lua_State *L, const char *fmt,
 
 /* Enforce (dynamic) linker error for version mismatches. Call from main. */
 LUA_API void LUAJIT_VERSION_SYM(void);
+
+LUA_API int luaJIT_compat52;
 
 #endif
