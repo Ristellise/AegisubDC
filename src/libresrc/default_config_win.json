@@ -1,0 +1,15 @@
+{
+	"Audio" : {
+		"Player" : "XAudio2"
+	},
+	"Provider" : {
+		"Audio" : {
+			"FFmpegSource" : {
+				"Downmix" : false
+			}
+		}
+	},
+	"Subtitle" : {
+		"Provider" : "CSRI/xy-vsfilter_aegisub"
+	}
+}

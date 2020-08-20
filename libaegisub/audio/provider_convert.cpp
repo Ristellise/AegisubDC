@@ -1,0 +1,101 @@
+// Copyright (c) 2014, Thomas Goyne <plorkyeran@aegisub.org>
+//
+// Permission to use, copy, modify, and distribute this software for any
+// purpose with or without fee is hereby granted, provided that the above
+// copyright notice and this permission notice appear in all copies.
+//
+// THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
+// WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
+// MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
+// ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
+// WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
+// ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
+// OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
+//
+// Aegisub Project http://www.aegisub.org/
+
+#include "libaegisub/audio/provider.h"
+
+#include <libaegisub/log.h>
+#include <libaegisub/make_unique.h>
+
+#include <limits>
+
+using namespace agi;
+
+/// Anything -> mono 16 bit signed machine-endian audio converter
+namespace {
+class ConvertAudioProvider final : public AudioProviderWrapper {
+public:
+	ConvertAudioProvider(std::unique_ptr<AudioProvider> src) : AudioProviderWrapper(std::move(src)) {
+		float_samples = false;
+		channels = 1;
+		bytes_per_sample = sizeof(int16_t);
+	}
+
+	void FillBuffer(void *buf, int64_t start, int64_t count) const override {
+		source->GetInt16MonoAudio(reinterpret_cast<int16_t*>(buf), start, count);
+	}
+};
+
+/// Sample doubler with linear interpolation for the samples provider
+/// Requires 16-bit mono input
+class SampleDoublingAudioProvider final : public AudioProviderWrapper {
+public:
+	SampleDoublingAudioProvider(std::unique_ptr<AudioProvider> src) : AudioProviderWrapper(std::move(src)) {
+		sample_rate *= 2;
+		num_samples *= 2;
+		decoded_samples = decoded_samples * 2;
+	}
+
+	void FillBuffer(void *buf, int64_t start, int64_t count) const override {
+		int16_t *src, *dst = static_cast<int16_t *>(buf);
+
+		// We need to always get at least two samples to be able to interpolate
+		int16_t srcbuf[2];
+		if (count == 1) {
+			source->GetAudio(srcbuf, start / 2, 2);
+			src = srcbuf;
+		}
+		else {
+			source->GetAudio(buf, start / 2, (start + count) / 2 - start / 2 + 1);
+			src = dst;
+		}
+
+		// walking backwards so that the conversion can be done in place
+		for (; count > 0; --count) {
+			auto src_index = (start + count - 1) / 2 - start / 2;
+			auto i = count - 1;
+			if ((start + i) & 1)
+				dst[i] = (int16_t)(((int32_t)src[src_index] + src[src_index + 1]) / 2);
+			else
+				dst[i] = src[src_index];
+		}
+	}
+};
+}
+
+namespace agi {
+std::unique_ptr<AudioProvider> CreateConvertAudioProvider(std::unique_ptr<AudioProvider> provider) {
+	// Ensure 16-bit audio with proper endianness
+	if (provider->AreSamplesFloat())
+		LOG_D("audio_provider") << "Converting float to S16";
+	else if (provider->GetBytesPerSample() != 2)
+		LOG_D("audio_provider") << "Converting " << provider->GetBytesPerSample() << " bytes per sample to S16";
+
+	// We currently only support mono audio
+	if (provider->GetChannels() != 1)
+		LOG_D("audio_provider") << "Downmixing to mono from " << provider->GetChannels() << " channels";
+
+	// Some players don't like low sample rate audio
+	if (provider->GetSampleRate() < 32000) {
+		provider = agi::make_unique<ConvertAudioProvider>(std::move(provider));
+		while (provider->GetSampleRate() < 32000) {
+			LOG_D("audio_provider") << "Doubling sample rate";
+			provider = agi::make_unique<SampleDoublingAudioProvider>(std::move(provider));
+		}
+	}
+
+	return provider;
+}
+}

@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+
+    <!-- General settings -->
+	<key>CFBundleDevelopmentRegion</key>
+	<string>English</string>
+	<key>CFBundleExecutable</key>
+	<string>aegisub</string>
+	<key>CFBundleIconFile</key>
+	<string>Aegisub</string>
+	<key>CFBundleIdentifier</key>
+	<string>com.aegisub.aegisub</string>
+	<key>CFBundleName</key>
+	<string>Aegisub</string>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleSignature</key>
+	<string>agsu</string>
+	<key>NSPrincipalClass</key>
+	<string>NSApplication</string>
+
+    <!-- Bundle version -->
+    <!-- This should be bumped on any major changes -->
+	<key>CFBundleVersion</key>
+	<string>1</string>
+
+    <!-- aegisub version -->
+    <key>CFBundleShortVersionString</key>
+    <string>@PLIST_VERSION@</string>
+
+    <key>CFBundleLongVersionString</key>
+    <string>@PLIST_VERSION@, Copyright 2005-2014, aegisub http://www.aegisub.org/</string>
+
+    <!-- Values: i386, ppc, x86_65, ppc64 -->
+    <key>LSArchitecturePriority</key>
+    <array>
+        <string>x86_64</string>
+        <string>i386</string>
+    </array>
+
+    <!-- Displayed in the 'Get Info' context menu dialogue -->
+    <key>CFBundleGetInfoString</key>
+    <string>aegisub version @PLIST_VERSION@ built on @PLIST_BUILD_DATE@ http://www.aegisub.org/</string>
+
+    <!-- Whether to allow multiple instances across user logins -->
+    <key>LSMultipleInstancesProhibited</key>
+    <false/>
+
+    <!-- Map resource files to memory -->
+	<key>CSResourcesFileMapped</key>
+	<true/>
+
+    <!-- Localizations supported -->
+    <key>CFBundleLocalizations</key>
+    <array>
+        @LOCALIZATIONS@
+    </array>
+
+    <!-- Supported document types -->
+	<key>CFBundleDocumentTypes</key>
+	<array>
+        <!-- .ass -->
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>ass</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>assIcon</string>
+			<key>CFBundleTypeName</key>
+			<string>Advanced Substation Alpha</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSTypeIsPackage</key>
+			<false/>
+			<key>NSPersistentStoreTypeKey</key>
+			<string>Binary</string>
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
+		</dict>
+
+        <!-- .ssa -->
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>ssa</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>ssaIcon</string>
+			<key>CFBundleTypeName</key>
+			<string>Substation Alpha</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSTypeIsPackage</key>
+			<false/>
+			<key>NSPersistentStoreTypeKey</key>
+			<string>Binary</string>
+            <key>LSHandlerRank</key>
+            <string>Owner</string>
+		</dict>
+
+        <!-- .srt -->
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>srt</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>srtIcon</string>
+			<key>CFBundleTypeName</key>
+			<string>SubRip</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSTypeIsPackage</key>
+			<false/>
+			<key>NSPersistentStoreTypeKey</key>
+			<string>Binary</string>
+            <key>LSHandlerRank</key>
+            <string>Alternate</string>
+		</dict>
+
+        <!-- .txt -->
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
+				<string>txt</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>txtIcon</string>
+			<key>CFBundleTypeName</key>
+			<string>Plain text</string>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>LSTypeIsPackage</key>
+			<false/>
+			<key>NSPersistentStoreTypeKey</key>
+			<string>binary</string>
+            <key>LSHandlerRank</key>
+            <string>None</string>
+		</dict>
+	</array>
+
+</dict>
+</plist>

@@ -1,0 +1,24 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="16.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="D:\TestSub\vendor\exten\harfbuzz\src\hb-icu.cc">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="D:\TestSub\vendor\exten\harfbuzz\src\hb-icu.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\TestSub\vendor\exten\harfbuzz\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Header Files">
+      <UniqueIdentifier>{FB61B398-15AB-3840-968D-FD160EF4982B}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{0B3448FD-ADAD-382F-9E2A-0B2024796F24}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

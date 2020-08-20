@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:xlink="http://www.w3.org/1999/xlink"
+   version="1.0"
+   width="64"
+   height="64"
+   id="svg2385">
+  <defs
+     id="defs2387">
+    <linearGradient
+       id="linearGradient2406">
+      <stop
+         id="stop2408"
+         style="stop-color:#81ff81;stop-opacity:1"
+         offset="0" />
+      <stop
+         id="stop2410"
+         style="stop-color:#11aa00;stop-opacity:1"
+         offset="0.46710721" />
+      <stop
+         id="stop2412"
+         style="stop-color:#226000;stop-opacity:1"
+         offset="1" />
+    </linearGradient>
+    <linearGradient
+       id="linearGradient2398">
+      <stop
+         id="stop2400"
+         style="stop-color:#81ff81;stop-opacity:1"
+         offset="0" />
+      <stop
+         id="stop2402"
+         style="stop-color:#11aa00;stop-opacity:1"
+         offset="0.49946836" />
+      <stop
+         id="stop2404"
+         style="stop-color:#226000;stop-opacity:1"
+         offset="1" />
+    </linearGradient>
+    <radialGradient
+       cx="25.166662"
+       cy="23.999998"
+       r="8.5"
+       fx="25.166662"
+       fy="23.999998"
+       id="radialGradient2456"
+       xlink:href="#linearGradient2406"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(-0.8823528,-0.8823527,0.882353,-0.882353,41.029281,60.382343)" />
+    <radialGradient
+       cx="7.1205034"
+       cy="6.4747353"
+       r="8.5"
+       fx="7.1205034"
+       fy="6.4747353"
+       id="radialGradient2458"
+       xlink:href="#linearGradient2398"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(1.1764706,-3.8823529,1.1754856,0.3562077,21.511855,75.337956)" />
+    <radialGradient
+       cx="7.1205034"
+       cy="6.4747353"
+       r="8.5"
+       fx="7.1205034"
+       fy="6.4747353"
+       id="radialGradient2422"
+       xlink:href="#linearGradient2398"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.9411765,-3.1058823,0.9403885,0.2849662,11.709459,65.720365)" />
+    <radialGradient
+       cx="25.166662"
+       cy="23.999998"
+       r="8.5"
+       fx="25.166662"
+       fy="23.999998"
+       id="radialGradient2424"
+       xlink:href="#linearGradient2406"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(-0.7058822,-0.7058822,0.7058824,-0.7058824,27.3234,53.755874)" />
+    <radialGradient
+       cx="7.1205034"
+       cy="6.4747353"
+       r="8.5"
+       fx="7.1205034"
+       fy="6.4747353"
+       id="radialGradient2430"
+       xlink:href="#linearGradient2398"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(0.7058824,-2.3294117,0.7052914,0.2137246,3.9070628,56.102774)" />
+    <radialGradient
+       cx="25.166662"
+       cy="23.999998"
+       r="8.5"
+       fx="25.166662"
+       fy="23.999998"
+       id="radialGradient2432"
+       xlink:href="#linearGradient2406"
+       gradientUnits="userSpaceOnUse"
+       gradientTransform="matrix(-0.5294117,-0.5294116,0.5294118,-0.5294118,15.617519,47.129406)" />
+  </defs>
+  <path
+     d="M 16.5,25.9 L 9,40.3 C 8.1,42.1 12.3,43.9 16.5,43.9 C 20.7,43.9 24.9,42.1 24,40.3 L 16.5,25.9 z"
+     id="path2426"
+     style="fill:url(#radialGradient2430);stroke:#000000;stroke-width:0.60000002;stroke-linecap:round;stroke-linejoin:round" />
+  <path
+     d="M 22.5,22.6 C 22.5,25.9 19.8,28.6 16.5,28.6 C 13.2,28.6 10.5,25.9 10.5,22.6 C 10.5,19.3 13.2,16.6 16.5,16.6 C 19.8,16.6 22.5,19.3 22.5,22.6 z"
+     id="path2428"
+     style="fill:url(#radialGradient2432);stroke:#000000;stroke-width:0.60000002;stroke-linecap:round;stroke-linejoin:round" />
+  <path
+     d="M 28.5,25.45 L 18.5,44.65 C 17.3,47.05 22.9,49.45 28.5,49.45 C 34.1,49.45 39.7,47.05 38.5,44.65 L 28.5,25.45 z"
+     id="path2414"
+     style="fill:url(#radialGradient2422);stroke:#000000;stroke-width:0.80000001;stroke-linecap:round;stroke-linejoin:round" />
+  <path
+     d="M 36.5,21.05 C 36.5,25.45 32.9,29.05 28.5,29.05 C 24.1,29.05 20.5,25.45 20.5,21.05 C 20.5,16.65 24.1,13.05 28.5,13.05 C 32.9,13.05 36.5,16.65 36.5,21.05 z"
+     id="path2416"
+     style="fill:url(#radialGradient2424);stroke:#000000;stroke-width:0.80000001;stroke-linecap:round;stroke-linejoin:round" />
+  <path
+     d="M 42.5,25 L 30,49 C 28.5,52 35.5,55 42.5,55 C 49.5,55 56.5,52 55,49 L 42.5,25 z"
+     id="path2393"
+     style="fill:url(#radialGradient2458);stroke:#000000;stroke-width:1;stroke-linecap:round;stroke-linejoin:round" />
+  <path
+     d="M 52.5,19.5 C 52.5,25 48,29.5 42.5,29.5 C 37,29.5 32.5,25 32.5,19.5 C 32.5,14 37,9.5 42.5,9.5 C 48,9.5 52.5,14 52.5,19.5 z"
+     id="path2384"
+     style="fill:url(#radialGradient2456);stroke:#000000;stroke-width:1;stroke-linecap:round;stroke-linejoin:round" />
+</svg>

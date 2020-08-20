@@ -1,0 +1,11 @@
+build-dir
+.vs/
+vendor/exten/harfbuzz/test/
+vendor/exten/harfbuzz/test/*
+*.obj
+*.pdb
+*.log
+*.tlog/
+vendor/exten/harfbuzz/tests/
+/vendor/exten/hunspell/tests
+/vendor/exten/libiconv/tests
