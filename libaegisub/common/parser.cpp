@@ -111,69 +111,76 @@ struct dialogue_tokens final : lex::lexer<Lexer> {
 	int paren_depth;
 
 	template<typename KT>
-	void init(KT &&kara_templater) {
+	void init(KT &&kara_templater, bool onlyKT = false) {
 		using lex::_state;
 		using lex::char_;
 		using lex::string;
 		using namespace boost::phoenix;
 		using namespace agi::ass::DialogueTokenType;
 
-		this->self
-			= string("\\\\[nNh]", LINE_BREAK)
-			| char_('{', OVR_BEGIN)[ref(paren_depth) = 0, _state = "OVR"]
-			| kara_templater
-			| string(".", TEXT)
-			;
+		if (onlyKT)
+		{
+		}
+		else
+		{
+			this->self
+				= string("\\\\[nNh]", LINE_BREAK)
+				| char_('{', OVR_BEGIN)[ref(paren_depth) = 0, _state = "OVR"]
+				| kara_templater
+				| string(".", TEXT)
+				;
 
-		this->self("OVR")
-			= char_('{', ERROR)
-			| char_('}', OVR_END)[_state = "INITIAL"]
-			| char_('\\', TAG_START)[_state = "TAGSTART"]
-			| string("\\s+", WHITESPACE)
-			| kara_templater
-			| string(".", COMMENT)
-			;
+			this->self("OVR")
+				= char_('{', ERROR)
+				| char_('}', OVR_END)[_state = "INITIAL"]
+				| char_('\\', TAG_START)[_state = "TAGSTART"]
+				| string("\\s+", WHITESPACE)
+				| kara_templater
+				| string(".", COMMENT)
+				;
 
-		this->self("ARG")
-			= char_('{', ERROR)
-			| char_('}', OVR_END)[_state = "INITIAL"]
-			| char_('(', OPEN_PAREN)[++ref(paren_depth)]
-			| char_(')', CLOSE_PAREN)[--ref(paren_depth), if_(ref(paren_depth) == 0)[_state = "OVR"]]
-			| char_('\\', TAG_START)[_state = "TAGSTART"]
-			| char_(',', ARG_SEP)
-			| string("\\s+", WHITESPACE)
-			| string(".", ARG)
-			| kara_templater
-			;
+			this->self("ARG")
+				= char_('{', ERROR)
+				| char_('}', OVR_END)[_state = "INITIAL"]
+				| char_('(', OPEN_PAREN)[++ref(paren_depth)]
+				| char_(')', CLOSE_PAREN)[--ref(paren_depth), if_(ref(paren_depth) == 0)[_state = "OVR"]]
+				| char_('\\', TAG_START)[_state = "TAGSTART"]
+				| char_(',', ARG_SEP)
+				| string("\\s+", WHITESPACE)
+				| string(".", ARG)
+				| kara_templater
+				;
 
-		this->self("TAGSTART")
-			= string("\\s+", WHITESPACE)
-			| string("r|fn", TAG_NAME)[_state = "ARG"]
-			| char_('\\', TAG_START)
-			| char_('}', OVR_END)[_state = "INITIAL"]
-			| string("[a-z0-9]", TAG_NAME)[_state = "TAGNAME"]
-			| string(".", COMMENT)[_state = "OVR"]
-			| kara_templater
-			;
+			this->self("TAGSTART")
+				= string("\\s+", WHITESPACE)
+				| string("r|fn", TAG_NAME)[_state = "ARG"]
+				| char_('\\', TAG_START)
+				| char_('}', OVR_END)[_state = "INITIAL"]
+				| string("[a-z0-9]", TAG_NAME)[_state = "TAGNAME"]
+				| string(".", COMMENT)[_state = "OVR"]
+				| kara_templater
+				;
 
-		this->self("TAGNAME")
-			= string("[a-z]+", TAG_NAME)[_state = "ARG"]
-			| char_('(', OPEN_PAREN)[++ref(paren_depth), _state = "ARG"]
-			| char_(')', CLOSE_PAREN)[--ref(paren_depth), if_(ref(paren_depth) == 0)[_state = "OVR"]]
-			| char_('}', OVR_END)[_state = "INITIAL"]
-			| char_('\\', TAG_START)[_state = "TAGSTART"]
-			| string(".", ARG)[_state = "ARG"]
-			| kara_templater
-			;
+			this->self("TAGNAME")
+				= string("[a-z]+", TAG_NAME)[_state = "ARG"]
+				| char_('(', OPEN_PAREN)[++ref(paren_depth), _state = "ARG"]
+				| char_(')', CLOSE_PAREN)[--ref(paren_depth), if_(ref(paren_depth) == 0)[_state = "OVR"]]
+				| char_('}', OVR_END)[_state = "INITIAL"]
+				| char_('\\', TAG_START)[_state = "TAGSTART"]
+				| string(".", ARG)[_state = "ARG"]
+				| kara_templater
+				;
+		}
+		
 	}
 
-	dialogue_tokens(bool karaoke_templater) : paren_depth(0) {
+	dialogue_tokens(int lexer_type) : paren_depth(0) {
 		using lex::string;
 		using namespace agi::ass::DialogueTokenType;
 
-		if (karaoke_templater)
+		if (lexer_type == 1)
 			init(string("![^!]*!", KARAOKE_TEMPLATE) | string("\\$[A-Za-z_]+", KARAOKE_VARIABLE));
-		else
+		else if (lexer_type == 0)
 			init(lex::char_('\1'));
 	}
 };
@@ -205,15 +212,19 @@ namespace parser {
 }
 
 namespace ass {
-	std::vector<DialogueToken> TokenizeDialogueBody(std::string const& str, bool karaoke_templater) {
-		static const dialogue_tokens<lex::lexertl::actor_lexer<>> kt(true);
-		static const dialogue_tokens<lex::lexertl::actor_lexer<>> not_kt(false);
-		auto const& tokenizer = karaoke_templater ? kt : not_kt;
-
+	std::vector<DialogueToken> TokenizeDialogueBody(std::string const& str, int lexer_type) {
+		static dialogue_tokens<lex::lexertl::actor_lexer<>> lua_lexer(2);
+		static dialogue_tokens<lex::lexertl::actor_lexer<>> kara_lexer(1);
+		static dialogue_tokens<lex::lexertl::actor_lexer<>> ass_lexer(0);
+		auto* tokenizer = &ass_lexer;
+		if (lexer_type == 1) // karaoke lexer
+			tokenizer = &kara_lexer;
+		else if (lexer_type == 2) // lua code lexer
+			tokenizer = &lua_lexer;
 		char const *first = str.c_str();
 		char const *last = first + str.size();
 		std::vector<DialogueToken> data;
-		auto it = tokenizer.begin(first, last), end = tokenizer.end();
+		auto it = (*tokenizer).begin(first, last), end = (*tokenizer).end();
 
 		for (; it != end && token_is_valid(*it); ++it) {
 			int id = it->id();
