@@ -1,7 +1,7 @@
 cmake -S . -B build-dir -G "Visual Studio 16 2019" -A x64 ^
-    -DWITH_AVISYNTH=OFF -DWITH_BUILD_CREDIT=ON -DWITH_CSRI=ON -DWITH_DIRECTSOUND=ON ^
+    -DWITH_AVISYNTH=OFF -DWITH_CSRI=ON -DWITH_DIRECTSOUND=ON ^
     -DWITH_FFMS2=ON -DWITH_FFTW3=ON -DWITH_HUNSPELL=ON -DWITH_UCHARDET=ON ^
-    -DWITH_XAUDIO2=ON -DWITH_STARTUPLOG=ON -DWITH_BUILD_CREDIT=ON ^
+    -DWITH_XAUDIO2=ON -DWITH_BUILD_CREDIT=ON -DWITH_STARTUPLOG=OFF ^
     -DBUILD_CREDIT="\"Daydream Cafe Edition [Shinon]\"" ^
     -Dass_INCLUDE_DIRS="%cd%/vendor/exten/libass/libass" -Dass_LIBRARIES="%cd%/vendor/exten/libass/bin/Release_x64/libass.lib" ^
     -DIconv_INCLUDE_DIR="%cd%/vendor/exten/libiconv/include" -DIconv_LIBRARY="%cd%/vendor/exten/libiconv/lib/iconv.lib" ^
