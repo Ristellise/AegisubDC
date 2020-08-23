@@ -42,7 +42,7 @@ TextFileWriter::TextFileWriter(agi::fs::path const& filename, std::string encodi
 
 	try {
 		// Write the BOM
-		WriteLineToFile("\xEF\xBB\xBF", false);
+		WriteLineToFile("", false);
 	}
 	catch (agi::charset::ConversionFailure&) {
 		// If the BOM could not be converted to the target encoding it isn't needed
