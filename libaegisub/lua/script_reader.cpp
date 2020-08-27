@@ -59,8 +59,16 @@ namespace agi { namespace lua {
 		lua_setfield(L, LUA_REGISTRYINDEX, ("raw moonscript: " + filename.string()).c_str());
 
 		push_value(L, filename);
-		if (lua_pcall(L, 2, 2, 0))
-			return false; // Leaves error message on stack
+		try
+		{
+			if (lua_pcall(L, 2, 2, 0))
+				return false; // Leaves error message on stack
+		}
+		catch (const std::exception& except)
+		{
+			LOG_E("auto4/lua/moon") << except.what();
+		}
+		
 
 		// loadstring returns nil, error on error or a function on success
 		if (lua_isnil(L, 1)) {

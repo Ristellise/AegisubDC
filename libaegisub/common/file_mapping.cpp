@@ -83,15 +83,19 @@ file_mapping::file_mapping(fs::path const& filename, bool temporary)
 	temporary ? OPEN_ALWAYS : OPEN_EXISTING,
 	0, 0))
 {
+	auto err = GetLastError();
 	if (handle == ipcdetail::invalid_file()) {
-		switch (GetLastError()) {
-		case ERROR_FILE_NOT_FOUND:
-		case ERROR_PATH_NOT_FOUND:
+		switch (err) {
+		case boost::winapi::ERROR_FILE_NOT_FOUND_:
+		case boost::winapi::ERROR_PATH_NOT_FOUND_:
 			throw fs::FileNotFound(filename);
-		case ERROR_ACCESS_DENIED:
+			break;
+		case boost::winapi::ERROR_ACCESS_DENIED_:
 			throw fs::ReadDenied(filename);
+			break;
 		default:
-			throw fs::FileSystemUnknownError(util::ErrorString(GetLastError()));
+			throw fs::FileSystemUnknownError(util::ErrorString(err));
+			break;
 		}
 	}
 #else
