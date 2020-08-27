@@ -69,7 +69,7 @@ namespace agi {
 		};
 
 		/// Tokenize the passed string as the body of a dialogue line
-		std::vector<DialogueToken> TokenizeDialogueBody(std::string const& str, bool karaoke_templater=false);
+		std::vector<DialogueToken> TokenizeDialogueBody(std::string const& str, int lexer_type = 0);
 
 		/// Convert the body of drawings to DRAWING tokens
 		void MarkDrawings(std::string const& str, std::vector<DialogueToken> &tokens);

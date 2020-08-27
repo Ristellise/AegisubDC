@@ -56,15 +56,18 @@ is a short (and incomplete) todo
 */
 void Check(fs::path const& file, acs::Type type) {
 	DWORD file_attr = GetFileAttributes(file.c_str());
+	auto errCode = GetLastError();
 	if ((file_attr & INVALID_FILE_ATTRIBUTES) == INVALID_FILE_ATTRIBUTES) {
-		switch (GetLastError()) {
+		switch (errCode) {
 			case ERROR_FILE_NOT_FOUND:
 			case ERROR_PATH_NOT_FOUND:
 				throw fs::FileNotFound(file);
+				break;
 			case ERROR_ACCESS_DENIED:
 				throw fs::ReadDenied(file);
+				break;
 			default:
-				throw fs::FileSystemUnknownError(agi::format("Unexpected error when getting attributes for \"%s\": %s", file, util::ErrorString(GetLastError())));
+				throw fs::FileSystemUnknownError(agi::format("Unexpected error when getting attributes for \"%s\": %s", file, util::ErrorString(errCode)));
 		}
 	}
 
