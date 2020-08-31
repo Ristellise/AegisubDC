@@ -458,6 +458,7 @@ add_executable(Aegisub WIN32
     src/visual_feature.cpp
 )
 target_link_libraries(Aegisub PRIVATE ${CMAKE_DL_LIBS} libaegisub luajit)
+target_include_directories(Aegisub PRIVATE ${sol_INCLUDE})
 target_compile_definitions(Aegisub PRIVATE CMAKE_BUILD)
 target_include_directories(Aegisub PRIVATE "src/libresrc" "${CMAKE_CURRENT_BINARY_DIR}/src/libresrc")
 target_precompile_headers(Aegisub PRIVATE "src/agi_pre.h")
