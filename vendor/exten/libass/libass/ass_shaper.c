@@ -595,7 +595,7 @@ shape_harfbuzz_process_run(GlyphInfo *glyphs, hb_buffer_t *buf, int offset)
 
         // if we have more than one glyph per cluster, allocate a new one
         // and attach to the root glyph
-        if (info->skip == 0) {
+        if (!info->skip) {
             while (info->next)
                 info = info->next;
             info->next = malloc(sizeof(GlyphInfo));
@@ -608,7 +608,7 @@ shape_harfbuzz_process_run(GlyphInfo *glyphs, hb_buffer_t *buf, int offset)
         }
 
         // set position and advance
-        info->skip = 0;
+        info->skip = false;
         info->glyph_index = glyph_info[j].codepoint;
         info->offset.x    = pos[j].x_offset * info->scale_x;
         info->offset.y    = -pos[j].y_offset * info->scale_y;
@@ -634,7 +634,7 @@ static void shape_harfbuzz(ASS_Shaper *shaper, GlyphInfo *glyphs, size_t len)
 
     // Initialize: skip all glyphs, this is undone later as needed
     for (i = 0; i < len; i++)
-        glyphs[i].skip = 1;
+        glyphs[i].skip = true;
 
     for (i = 0; i < len; i++) {
         int offset = i;
@@ -878,12 +878,16 @@ static void ass_shaper_skip_characters(TextInfo *text_info)
         // Skip direction override control characters
         if ((glyphs[i].symbol <= 0x202e && glyphs[i].symbol >= 0x202a)
                 || (glyphs[i].symbol <= 0x200f && glyphs[i].symbol >= 0x200b)
-                || (glyphs[i].symbol <= 0x2063 && glyphs[i].symbol >= 0x2060)
+                || (glyphs[i].symbol <= 0x206f && glyphs[i].symbol >= 0x2060)
+                || (glyphs[i].symbol <= 0xfe0f && glyphs[i].symbol >= 0xfe00)
+                || (glyphs[i].symbol <= 0xe01ef && glyphs[i].symbol >= 0xe0100)
+                || (glyphs[i].symbol <= 0x180f && glyphs[i].symbol >= 0x180b)
+                || glyphs[i].symbol == 0x061c
                 || glyphs[i].symbol == 0xfeff
                 || glyphs[i].symbol == 0x00ad
                 || glyphs[i].symbol == 0x034f) {
             glyphs[i].symbol = 0;
-            glyphs[i].skip++;
+            glyphs[i].skip = true;
         }
     }
 }
