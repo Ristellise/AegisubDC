@@ -1,9 +1,9 @@
-util = require 'aegisub.util'
-unicode = require 'unicode'
+local util = require 'aegisub.util'
+local unicode = require 'unicode'
 
-matchfloat = "%-?%f[%.%d]%d*%.?%d*%f[^%.%d%]]"
+local matchfloat = "%-?%f[%.%d]%d*%.?%d*%f[^%.%d%]]"
 
-function booltost(bool)
+local function booltost(bool)
   if bool == nil then
     return "nil";
   end
@@ -14,7 +14,7 @@ function booltost(bool)
   end
 end
 
-function tabletost(t, depth)
+local function tabletost(t, depth)
   local tabst = ""
   depth = depth or 0
   for key, val in pairs(t) do
@@ -29,7 +29,7 @@ function tabletost(t, depth)
   return tabst;
 end
 
-function makestring(variable)
+local function makestring(variable)
   if variable == nil then
     return "nil"
   elseif type(variable) == "number" or type(variable) == "string" then
@@ -44,7 +44,7 @@ function makestring(variable)
   end
 end
 
-function findtag(text, tagtype, startindex, endindex)
+local function findtag(text, tagtype, startindex, endindex)
   local valuestarts = "[0123456789%&%-%(]"
   if tagtype == nil then tagtype = "[^\\%}]"; valuestarts = "[^\\%}]" end
   if tagtype == "fn" then valuestarts = "[^\\%}]" end
@@ -54,7 +54,7 @@ function findtag(text, tagtype, startindex, endindex)
   if startindex == nil then startindex = 1 end
   if endindex == nil then endindex = -1 end
   if text == nil then return 0,0 end
-  tagstart = text:find(("\\%s%s"):format(tagtype,valuestarts), startindex)
+  local tagstart = text:find(("\\%s%s"):format(tagtype,valuestarts), startindex)
   if tagstart == nil then return 0,0 end
   local depth = 0
   for i=startindex,tagstart do
@@ -82,10 +82,11 @@ end
 
 local tenv
 
-function an2point(alignment)
-  x = 1 + ((alignment - 1) % 3);
-  y = 1 + (alignment - x) / 3;
-  yval = tenv.line.bottom;
+local function an2point(alignment)
+  local x = 1 + ((alignment - 1) % 3);
+  local y = 1 + (alignment - x) / 3;
+  local yval = tenv.line.bottom;
+  local xval
   if y == 2 then
     yval = tenv.line.middle;
   elseif y > 2 then
@@ -111,7 +112,7 @@ end
 
 local lnlib
 
-function startbuffertime(k_min, fad_min)
+local function startbuffertime(k_min, fad_min)
   if lnlib.line.tag("fad") ~= "" then
     return math.max(fad_min, tonumber(string.match(lnlib.line.tag("fad"), "(%d+),%d+"))), true
   else
@@ -125,7 +126,7 @@ function startbuffertime(k_min, fad_min)
   return k_min, false;
 end
 
-function endbuffertime(k_min, fad_min)
+local function endbuffertime(k_min, fad_min)
   if lnlib.line.tag("fad") ~= "" then
     return math.max(fad_min, tonumber(string.match(lnlib.line.tag("fad"), "%d+,(%d+)"))), true
   else
@@ -139,7 +140,7 @@ function endbuffertime(k_min, fad_min)
   return k_min, false
 end
 
-RGB2HSL = function(r,g,b)
+local RGB2HSL = function(r,g,b)
   r = r / 255
   g = g / 255
   b = b / 255
@@ -172,7 +173,7 @@ RGB2HSL = function(r,g,b)
   return (h or 0)*255, s*255, l*255
 end
 
-HSL2RGB = function(h, s, l)
+local HSL2RGB = function(h, s, l)
   h = h / 255
   s = s / 255
   l = l / 255
@@ -211,20 +212,23 @@ HSL2RGB = function(h, s, l)
   return 255*(r+m),255*(g+m),255*(b+m)
 end
 
-function formtag(tag, argumentlist)
+local function formtag(tag, argumentlist)
   if type(argumentlist) ~= "table" then argumentlist = { argumentlist } end;
-  local argstring = argumentlist[1];
+  local value = argumentlist[1];
+  
   if #argumentlist == 1 then
-    if type(argstring) == "number" then
-      if tag == "alpha" or tag == "a" or tag == "1a" or tag == "2a" or tag == "3a" or tag == "4a" then
-        return ("\\%s&H%02X&"):format(tag, argstring);
+    if type(value) == "number" then
+      if tag == "alpha" or tag == "1a" or tag == "2a" or tag == "3a" or tag == "4a" then
+        value = lnlib.math.clamp(value, 0, 255)
+        return ("\\%s&H%02X&"):format(tag, value);
       else
-        return ("\\%s%.2f"):format(tag,argstring);
+        return ("\\%s%.2f"):format(tag,value);
       end
     else
-      return ("\\%s%s"):format(tag,argstring);
+      return ("\\%s%s"):format(tag,value);
     end
   end
+
   for i = 2, #argumentlist do
     if type(argumentlist[i]) == "number" then
       argumentlist[i] = ("%.2f"):format(argumentlist[i])
@@ -233,17 +237,17 @@ function formtag(tag, argumentlist)
   return ("\\%s(%s)"):format(tag,table.concat(argumentlist, ", "));
 end
 
-function formtags(taglist, argumentlist)
+local function formtags(taglist, argumentlist)
   if type(taglist) ~= "table" then taglist = { taglist } end
   if type(argumentlist) ~= "table" then argumentlist = { argumentlist } end
   local tagstrings = {}
-  for i=1, #taglist do
-    table.insert(tagstrings, formtag(taglist[i], argumentlist[((i-1)%#argumentlist)+1]))
+  for i = 1, #taglist do
+    table.insert(tagstrings, formtag(taglist[i], argumentlist[((i-1) % #(argumentlist))+1]))
   end
   return table.concat(tagstrings)
 end
 
-function calcTable(functions, value)
+local function calcTable(functions, value)
   local outt = {}
   if type(functions) ~= "table" then functions = {functions} end
   for i = 1, #functions do
@@ -252,7 +256,15 @@ function calcTable(functions, value)
   return outt
 end
 
-function shiftDrawing(str, x, y)
+local function formtagsv2(tags_with_funcs, value)
+  local tagstrings = {}
+  for i = 1, #tags_with_funcs do
+    table.insert(tagstrings, formtag(tags_with_funcs[i][1], tags_with_funcs[i][2](value)))
+  end
+  return table.concat(tagstrings)
+end
+
+local function shiftDrawing(str, x, y)
   local txt = str
   local i = 1
   while true do
@@ -260,8 +272,8 @@ function shiftDrawing(str, x, y)
     if not pair then break end
     local starti = txt:find("%-?%d+ %-?%d+", i)
     local origlen = #pair
-    pairx = pair:match("%-?%d+")
-    pairy = pair:match("%-?%d+", pair:find(pairx)+#pairx)
+    local pairx = pair:match("%-?%d+")
+    local pairy = pair:match("%-?%d+", pair:find(pairx)+#pairx)
     pair = string.format("%d %d",tonumber(pairx) + x, tonumber(pairy) + y)
     txt = txt:sub(1,starti-1) .. pair .. txt:sub(starti + origlen)
     i = starti + #pair
@@ -270,10 +282,18 @@ function shiftDrawing(str, x, y)
   return txt
 end
 
-function cleartable(table)
+local function cleartable(table)
   for i in pairs(table) do
     table[i] = nil
   end
+end
+
+local function paircount(table)
+  local count = 0
+  for k,v in pairs(table) do
+    count = count + 1
+  end
+  return count
 end
 
 local randomizer_table = {}
@@ -325,8 +345,8 @@ lnlib = {
     tag = function (tags)
       local ret = {}
       if type(tags) == "string" then tags = {tags} end
-      for i=1,#tags do
-        table.insert(ret,tenv.line.raw:sub(findtag(tenv.line.raw, tags[i])))
+      for key,val in pairs(tags) do
+        table.insert(ret,tenv.line.raw:sub(findtag(tenv.line.raw, val)))
       end
       return table.concat(ret)
     end,
@@ -450,12 +470,11 @@ lnlib = {
   tag = {
     pos = function(alignment, anchorpoint, xoffset, yoffset, line_kara_mode)
       if type(alignment) == "table" then
-        local tab = alignment
-        alignment = tab.alignment or tenv.line.styleref.align or 5
-        anchorpoint = tab.anchorpoint or alignment or tenv.line.styleref.align or 5
-        xoffset = tab.xoffset or tab.offset_x or 0
-        yoffset = tab.yoffset or tab.offset_y or 0
-        line_kara_mode = tab.line_kara_mode
+        alignment = alignment.alignment or tenv.line.styleref.align or 5
+        anchorpoint = alignment.anchorpoint or alignment or tenv.line.styleref.align or 5
+        xoffset = alignment.offset_x or 0
+        yoffset = alignment.offset_y or 0
+        line_kara_mode = alignment.line_kara_mode
       else
         alignment = alignment or tenv.line.styleref.align or 5
         anchorpoint = anchorpoint or alignment or tenv.line.styleref.align or 5
@@ -480,12 +499,14 @@ lnlib = {
       end
     end,
     kanjipos = function(xoffset, yoffset, line_kara_mode) -- fuck it, using fixed an5 | also this breaks if rotation is used for anything else
-      if type(alignment) == "table" then
+      local alignment
+      local anchorpoint
+      if type(xoffset) == "table" then
         alignment = 5
         anchorpoint = 5
-        xoffset = (alignment.offset_x or 0)
-        yoffset = (alignment.offset_y or 0)
-        line_kara_mode = alignment.line_kara_mode
+        xoffset = (xoffset.offset_x or 0)
+        yoffset = (xoffset.offset_y or 0)
+        line_kara_mode = xoffset.line_kara_mode
       else
         alignment = 5
         anchorpoint = 5
@@ -539,23 +560,19 @@ lnlib = {
     end,
     move = function(xoff0, yoff0, xoff1, yoff1, time0, time1, alignment, anchorpoint, line_kara_mode)
       if type(xoff0) == "table" then
-        -- parse args table, set defaults if necessary
         local tab = xoff0
         alignment = tab.alignment or tenv.line.styleref.align or 5
         anchorpoint = tab.anchorpoint or alignment or tenv.line.styleref.align or 5
-        xoff0 = tab.xoff0 or tab.offset_x_start or tab.x0 or 0
-        yoff0 = tab.yoff0 or tab.offset_y_start or tab.y0 or 0
-        xoff1 = tab.xoff1 or tab.offset_x_end or tab.x1 or 0
-        yoff1 = tab.yoff1 or tab.offset_y_end or tab.y1 or 0
-        time0 = tab.time0 or tab.time_start or tab.t0 or nil
-        time1 = tab.time1 or tab.time_end or tab.t1 or nil
+        xoff0 = tab.offset_x_start or tab.x0 or 0
+        yoff0 = tab.offset_x_start or tab.y0 or 0
+        xoff1 = tab.offset_x_end or tab.x1 or 0
+        yoff1 = tab.offset_x_end or tab.y1 or 0
+        time0 = tab.time_start or tab.t0 or nil
+        time1 = tab.time_end or tab.t1 or nil
         line_kara_mode = tab.line_kara_mode
       else
-        -- set defaults for nil values
         alignment = alignment or tenv.line.styleref.align or 5
         anchorpoint = anchorpoint or tenv.line.styleref.align or 5
-        xoff0 = xoff0 or 0
-        yoff0 = yoff0 or 0
         xoff1 = xoff1 or 0
         yoff1 = yoff1 or 0
       end
@@ -572,14 +589,14 @@ lnlib = {
       end
       local timest;
       if time0 == nil or time1 == nil then
-        timest = ""                              -- no time values, move over entire line duration
+        timest = ""
       else
-        timest = (",%d,%d"):format(time0,time1)  -- set time values as given
+        timest = (",%d,%d"):format(time0,time1)
       end
       if x ~= nil and y~= nil then
-        return ("\\an%d\\move(%.2f,%.2f,%.2f,%.2f%s)"):format(alignment,x + xoff0,y + yoff0,x + xoff1,y + yoff1,timest)
+        return ("\\an%d\\move(%.2f,%.2f,%.2f,%.2f%s)"):format(alignment,x + xoff0,y + yoff0,x + xoff1,y + yoff1,timest);
       else
-        return ""
+        return "";
       end
     end,
     t = function(a0, a1, a2, a3)
@@ -690,11 +707,13 @@ lnlib = {
       local ftable = {}
       return {
         addWave = function(waveform, wavelength, amplitude, phase)
+          amplitude = amplitude or 1
+          phase = phase or 0
           if waveform == "noise" or waveform == "random" then
             local randomvalues = {}
             math.randomseed(phase)
             for i = 1, wavelength do
-              randomvalues[math.floor(i+phase % wavelength)] = amplitude * (math.random() * 2 - 1)
+              randomvalues[math.floor((i+phase) % wavelength) + 1] = amplitude * (math.random() * 2 - 1)
             end
             table.insert(ftable, {form="noise", w=wavelength,a=amplitude,p=phase, val=randomvalues})
           else
@@ -718,7 +737,7 @@ lnlib = {
             local randomvalues = {}
             math.randomseed(phase)
             for i = 1, wavelength do
-              randomvalues[math.floor(i+phase % wavelength)] = amplitude * (math.random() * 2 - 1)
+              randomvalues[math.floor((i+phase) % wavelength) + 1] = amplitude * (math.random() * 2 - 1)
             end
             table.insert(ftable, {form="noise", w=wavelength,a=amplitude,p=phase, val=randomvalues})
           else
@@ -743,7 +762,7 @@ lnlib = {
             elseif wave.form == "triangle" then
               y = y + wave.a * (math.abs(((time / wave.w + wave.p - 0.25) % 1) * 4 - 2) - 1)
             elseif wave.form == "sawtooth" then
-              y = y + wave.a * a * (((time / wave.w + wave.p - 0.5) % 1)*2 - 1)
+              y = y + wave.a * (((time / wave.w + wave.p - 0.5) % 1)*2 - 1)
             elseif wave.form == "function" then
               y = y + wave.f(time)
             else
@@ -755,26 +774,78 @@ lnlib = {
       }
     end,
 
-    transform = function(wave, tags, starttime, endtime, delay, framestep, jumpToStartingPosition, modifierFunctions, dutyCycle)
-      framestep = framestep or 1
-      dutyCycle = dutyCycle or 0.2
+    transform = function(wave, tags, starttime, endtime, delay, framestep, jumpToStartingPosition, argY, argZ)
+      framestep = framestep or 2
       starttime = starttime or 0
       endtime = endtime or tenv.line.duration
-      if modifierFunctions == nil then
-        modifierFunctions = {function(x) return x end}
+      delay = delay or 0
+      
+      local modifierFunctions
+      local dutyCycle
+      if argY and type(argY) == "number" then
+        dutyCycle = argY
+      else
+        modifierFunctions = argY
+        dutyCycle = argZ
       end
-      if delay == nil then delay = 0 end
+
+      local identity = function(x) return x end
+
+      if type(tags) == "string" then
+        tags = {{tags, identity}}
+      else
+        for i,val in ipairs(tags) do
+          if type(val) ~= "table" then
+            tags[i] = {val, identity}
+          elseif val[2] == nil then
+            val[2] = identity
+          end
+        end
+      end
+      -- transform old syntax into new syntax
+      if modifierFunctions then
+        aegisub.log(2, "Warning: this syntax is deprecated. Instead of a separate modifierFunctions table, please bundle the modifier functions with their tags in the tags table. For more information, see the readme.\n")
+        for i,val in ipairs(tags) do
+          local modfun = modifierFunctions[(i-1) % #modifierFunctions+1]
+          if type(modfun) == "function" then
+            val[2] = modfun
+          elseif modfun ~= nil then
+            aegisub.log(2, "Warning: modifierFunctions should be functions. Got %s for tag \\%s\n", type(modfun), val[1])
+          end
+        end
+      end
+
+      dutyCycle = dutyCycle or 1
 
       jumpToStartingPosition = jumpToStartingPosition or true
 
       local timestep = framestep * 1000 / 23.976
       local tfs = {}
+      local prevtags = ""
       if jumpToStartingPosition then
-        table.insert( tfs, lnlib.tag.t(starttime, starttime + 1, 1, formtags(tags, calcTable(modifierFunctions, wave.getValue(starttime - delay)))) )
+        local firsttags = formtagsv2(tags, wave.getValue(starttime - delay))
+        table.insert( tfs, lnlib.tag.t(starttime, starttime + 1, 1, firsttags) )
+        prevtags = firsttags
       end
       for i = starttime, endtime - 1, timestep do
-        local accel = lnlib.math.clamp(lnlib.math.log(0.5, math.abs((wave.getValue(i + timestep / 2 - delay) - wave.getValue(i - delay)) / (wave.getValue(i + timestep - delay) - wave.getValue(i - delay)))),0.15, 8);
-        table.insert( tfs, lnlib.tag.t(i, i + timestep*dutyCycle + 1, accel, formtags(tags, calcTable(modifierFunctions, wave.getValue(i + timestep - delay)))) )
+        local t0 = i
+        if jumpToStartingPosition and i == starttime then
+          t0 = i + 1
+        end
+        local t1 = t0 + timestep * dutyCycle + 1
+
+        local val0    = wave.getValue(i - delay)
+        local valHalf = wave.getValue(i + timestep / 2 - delay)
+        local val1    = wave.getValue(i + timestep - delay)
+
+        local accel_unclamped = lnlib.math.log(0.5, math.abs((valHalf - val0) / (val1 - val0)))
+        local accel = lnlib.math.clamp(accel_unclamped, 0.01, 100);
+        
+        local _tags = formtagsv2(tags, val1)
+        if _tags ~= prevtags then
+          table.insert( tfs, lnlib.tag.t(t0, t1, accel, _tags) )
+          prevtags = _tags
+        end
       end
       return table.concat(tfs)
     end
@@ -914,7 +985,7 @@ lnlib = {
     end,
     xerp = function(time, val1, val2, accel)
       local amount = math.pow(time, accel or 1);
-      return ln.math.lerp(amount, val1, val2);
+      return lnlib.math.lerp(amount, val1, val2);
     end
   },
 
@@ -994,7 +1065,7 @@ lnlib = {
       r1 = lnlib.math.round(r1)
       r2 = lnlib.math.round(r2)
       r3 = lnlib.math.round(r3)
-      segments = lnlib.math.round(n)
+      local segments = lnlib.math.round(n)
       local blen = (4/3)*math.tan(math.pi*(1-t)/(2*segments))
       local minX, minY, maxX, maxY = -1, -1, 1, 1
       local phi = 0
