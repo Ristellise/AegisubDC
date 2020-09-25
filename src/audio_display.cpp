@@ -1283,7 +1283,12 @@ void AudioDisplay::OnPlaybackPosition(int ms)
 		}
 		else if (scroll_left + client_width < std::min(pixel_audio_width - 1, pixel_position + edge_size))
 		{
-			ScrollPixelToLeft(std::min(pixel_position - client_width + edge_size, pixel_audio_width - client_width - 1));
+			if (OPT_GET("Audio/Smooth Scrolling")->GetBool()) {
+				ScrollPixelToLeft(std::min(pixel_position - client_width + edge_size, pixel_audio_width - client_width - 1));
+			}
+			else {
+				ScrollPixelToLeft(std::min(pixel_position - edge_size, pixel_audio_width - client_width - 1));
+			}
 		}
 	}
 }

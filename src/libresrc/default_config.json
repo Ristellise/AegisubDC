@@ -62,6 +62,7 @@
 		"Line Boundaries Thickness" : 2,
 		"Link" : true,
 		"Lock Scroll on Cursor" : false,
+		"Smooth Scrolling" : false,
 		"Medusa Timing Hotkeys" : false,
 		"Next Line on Commit" : true,
 		"Player" : "",
