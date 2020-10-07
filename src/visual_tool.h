@@ -100,6 +100,7 @@ protected:
 	bool alt_down = false; ///< Is alt down?
 
 	Vector2D mouse_pos; ///< Last seen mouse position
+	Vector2D offset;	///< Offset of the videoDisplay
 	Vector2D drag_start; ///< Mouse position at the beginning of the last drag
 	Vector2D script_res; ///< Script resolution
 	Vector2D video_pos; ///< Top-left corner of the video in the display area

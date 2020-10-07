@@ -156,6 +156,8 @@ public:
 		agi::Context *context);
 	~VideoDisplay();
 
+	Vector2D video_offset;
+
 	/// @brief Render the currently visible frame
 	void Render();
 
