@@ -50,7 +50,7 @@
 #include "video_out_gl.h"
 #include "video_controller.h"
 #include "visual_tool.h"
-
+#include <sstream>
 #include <libaegisub/make_unique.h>
 
 #include <algorithm>
@@ -314,6 +314,10 @@ void VideoDisplay::PositionVideo() {
 		}
 	}
 
+	viewport_left += video_offset.X();
+	viewport_bottom -= video_offset.Y();
+	viewport_top -= video_offset.Y();
+
 	if (tool)
 		tool->SetDisplayArea(viewport_left / scale_factor, viewport_top / scale_factor,
 		                     viewport_width / scale_factor, viewport_height / scale_factor);
@@ -366,11 +370,19 @@ void VideoDisplay::OnSizeEvent(wxSizeEvent &event) {
 void VideoDisplay::OnMouseEvent(wxMouseEvent& event) {
 	if (event.ButtonDown())
 		SetFocus();
-
-	last_mouse_pos = mouse_pos = event.GetPosition();
+	mouse_pos = event.GetPosition();
+	if (event.MiddleIsDown() && HasFocus())
+	{
+		Vector2D delta = Vector2D(mouse_pos) - last_mouse_pos;
+		video_offset = video_offset + delta;
+		PositionVideo();
+		render_requested = true;
+	}
+	last_mouse_pos = mouse_pos;
 
 	if (tool)
 		tool->OnMouseEvent(event);
+		
 }
 
 void VideoDisplay::OnMouseLeave(wxMouseEvent& event) {

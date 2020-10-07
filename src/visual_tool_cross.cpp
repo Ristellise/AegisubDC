@@ -69,10 +69,10 @@ void VisualToolCross::Draw() {
 	gl.SetInvert();
 	gl.SetLineColour(*wxWHITE, 1.0, 1);
 	float lines[] = {
-		0.f, mouse_pos.Y(),
-		video_res.X() + video_pos.X() * 2, mouse_pos.Y(),
-		mouse_pos.X(), 0.f,
-		mouse_pos.X(), video_res.Y() + video_pos.Y() * 2
+		0.f			  - offset.X(),						  mouse_pos.Y() - offset.Y(),
+		video_res.X() + offset.X() + (video_pos.X() * 2), mouse_pos.Y() - offset.Y(),
+		mouse_pos.X() - offset.X(),						  0.f - offset.Y(),
+		mouse_pos.X() - offset.X(),						  video_res.Y() + (video_pos.Y() * 2) - offset.Y()
 	};
 	gl.DrawLines(2, lines, 4);
 	gl.ClearInvert();

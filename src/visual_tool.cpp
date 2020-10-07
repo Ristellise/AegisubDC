@@ -168,6 +168,9 @@ void VisualTool<FeatureType>::OnMouseEvent(wxMouseEvent &event) {
 	alt_down = event.AltDown();
 
 	mouse_pos = event.GetPosition();
+	
+	mouse_pos = Vector2D(mouse_pos.X(), mouse_pos.Y());
+	offset = parent->video_offset;
 
 	if (event.Leaving()) {
 		mouse_pos = Vector2D();
