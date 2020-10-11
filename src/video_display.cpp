@@ -371,10 +371,17 @@ void VideoDisplay::OnMouseEvent(wxMouseEvent& event) {
 	if (event.ButtonDown())
 		SetFocus();
 	mouse_pos = event.GetPosition();
-	if (event.MiddleIsDown() && HasFocus())
+	bool videoPan = OPT_GET("Experiments/Video Pan")->GetBool();
+	if (event.MiddleIsDown() && HasFocus() && videoPan)
 	{
 		Vector2D delta = Vector2D(mouse_pos) - last_mouse_pos;
 		video_offset = video_offset + delta;
+		PositionVideo();
+		render_requested = true;
+	}
+	if (!videoPan && (video_offset.X() != 0.f || video_offset.Y() != 0.f))
+	{
+		video_offset = Vector2D(0, 0);
 		PositionVideo();
 		render_requested = true;
 	}
