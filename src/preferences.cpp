@@ -363,6 +363,14 @@ void Advanced(wxTreebook *book, Preferences *parent) {
 	p->SetSizerAndFit(p->sizer);
 }
 
+void Experiments(wxTreebook* book, Preferences* parent) {
+	auto p = new OptionPage(book, parent, _("Experiments"), OptionPage::PAGE_SUB);
+
+	auto general = p->PageSizer(_("Experiments"));
+	p->OptionAdd(general, _("Video Panning"), "Experiments/Video Pan");
+	p->CellSkip(general);
+}
+
 /// Advanced Audio preferences subpage
 void Advanced_Audio(wxTreebook *book, Preferences *parent) {
 	auto p = new OptionPage(book, parent, _("Audio"), OptionPage::PAGE_SUB);
@@ -722,6 +730,7 @@ Preferences::Preferences(wxWindow *parent): wxDialog(parent, -1, _("Preferences"
 	Advanced(book, this);
 	Advanced_Audio(book, this);
 	Advanced_Video(book, this);
+	Experiments(book, this);
 
 	book->Fit();
 
