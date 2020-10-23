@@ -113,11 +113,7 @@ ASS_Renderer *ass_renderer_init(ASS_Library *library)
         goto fail;
 
     ass_shaper_info(library);
-#ifdef CONFIG_HARFBUZZ
     priv->settings.shaper = ASS_SHAPING_COMPLEX;
-#else
-    priv->settings.shaper = ASS_SHAPING_SIMPLE;
-#endif
 
     ass_msg(library, MSGL_V, "Initialized");
 
@@ -223,21 +219,6 @@ static double x2scr_pos_scaled(ASS_Renderer *render_priv, double x)
 {
     return x * render_priv->orig_width / render_priv->track->PlayResX +
         render_priv->settings.left_margin;
-}
-static double x2scr_left_scaled(ASS_Renderer *render_priv, double x)
-{
-    if (render_priv->state.explicit || !render_priv->settings.use_margins)
-        return x2scr_pos_scaled(render_priv, x);
-    return x * render_priv->fit_width /
-        render_priv->track->PlayResX;
-}
-static double x2scr_right_scaled(ASS_Renderer *render_priv, double x)
-{
-    if (render_priv->state.explicit || !render_priv->settings.use_margins)
-        return x2scr_pos_scaled(render_priv, x);
-    return x * render_priv->fit_width /
-        render_priv->track->PlayResX +
-        (render_priv->width - render_priv->fit_width);
 }
 /**
  * \brief Mapping between script and screen coordinates
@@ -983,14 +964,12 @@ static void init_font_scale(ASS_Renderer *render_priv)
     if (settings_priv->storage_height)
         render_priv->blur_scale = font_scr_h / settings_priv->storage_height;
     else
-        render_priv->blur_scale = 1.;
+        render_priv->blur_scale = font_scr_h / render_priv->track->PlayResY;
     if (render_priv->track->ScaledBorderAndShadow)
         render_priv->border_scale =
             font_scr_h / render_priv->track->PlayResY;
     else
         render_priv->border_scale = render_priv->blur_scale;
-    if (!settings_priv->storage_height)
-        render_priv->blur_scale = render_priv->border_scale;
 
     if (render_priv->state.apply_font_scale) {
         render_priv->font_scale *= settings_priv->font_size_coeff;
@@ -1599,6 +1578,8 @@ static void trim_whitespace(ASS_Renderer *render_priv)
         cur->is_trimmed_whitespace = true;
         cur = ti->glyphs + ++i;
     }
+    if (i < ti->length)
+        cur->starts_new_run = true;
 
     // Mark all extraneous whitespace inbetween
     for (i = 0; i < ti->length; ++i) {
@@ -1627,6 +1608,8 @@ static void trim_whitespace(ASS_Renderer *render_priv)
                 }
                 i = j - 1;
             }
+            if (cur < ti->glyphs + ti->length)
+                cur->starts_new_run = true;
         }
     }
 }
@@ -1867,42 +1850,43 @@ fix_glyph_scaling(ASS_Renderer *priv, GlyphInfo *glyph)
     glyph->font_size = ft_size;
 }
 
- /**
-  * \brief Checks whether a glyph should start a new bitmap run
-  * \param info Pointer to new GlyphInfo to check
-  * \param current_info Pointer to CombinedBitmapInfo for current run (may be NULL)
-  * \return true if a new run should be started
-  */
-static bool is_new_bm_run(GlyphInfo *info, GlyphInfo *last)
+// Initial run splitting based purely on the characters' styles
+static void split_style_runs(ASS_Renderer *render_priv)
 {
-    // FIXME: Don't break on glyph substitutions
-    return !last || info->effect || info->drawing_text || last->drawing_text ||
-        strcmp(last->font->desc.family, info->font->desc.family) ||
-        last->font->desc.vertical != info->font->desc.vertical ||
-        last->face_index != info->face_index ||
-        last->font_size != info->font_size ||
-        last->c[0] != info->c[0] ||
-        last->c[1] != info->c[1] ||
-        last->c[2] != info->c[2] ||
-        last->c[3] != info->c[3] ||
-        last->be != info->be ||
-        last->blur != info->blur ||
-        last->shadow_x != info->shadow_x ||
-        last->shadow_y != info->shadow_y ||
-        last->frx != info->frx ||
-        last->fry != info->fry ||
-        last->frz != info->frz ||
-        last->fax != info->fax ||
-        last->fay != info->fay ||
-        last->scale_x != info->scale_x ||
-        last->scale_y != info->scale_y ||
-        last->border_style != info->border_style ||
-        last->border_x != info->border_x ||
-        last->border_y != info->border_y ||
-        last->hspacing != info->hspacing ||
-        last->italic != info->italic ||
-        last->bold != info->bold ||
-        ((last->flags ^ info->flags) & ~DECO_ROTATE);
+    render_priv->text_info.glyphs[0].starts_new_run = true;
+    for (int i = 1; i < render_priv->text_info.length; i++) {
+        GlyphInfo *info = render_priv->text_info.glyphs + i;
+        GlyphInfo *last = render_priv->text_info.glyphs + (i - 1);
+        info->starts_new_run =
+            info->effect_type != EF_NONE ||
+            info->drawing_text ||
+            last->drawing_text ||
+            strcmp(last->font->desc.family, info->font->desc.family) ||
+            last->font->desc.vertical != info->font->desc.vertical ||
+            last->font_size != info->font_size ||
+            last->c[0] != info->c[0] ||
+            last->c[1] != info->c[1] ||
+            last->c[2] != info->c[2] ||
+            last->c[3] != info->c[3] ||
+            last->be != info->be ||
+            last->blur != info->blur ||
+            last->shadow_x != info->shadow_x ||
+            last->shadow_y != info->shadow_y ||
+            last->frx != info->frx ||
+            last->fry != info->fry ||
+            last->frz != info->frz ||
+            last->fax != info->fax ||
+            last->fay != info->fay ||
+            last->scale_x != info->scale_x ||
+            last->scale_y != info->scale_y ||
+            last->border_style != info->border_style ||
+            last->border_x != info->border_x ||
+            last->border_y != info->border_y ||
+            last->hspacing != info->hspacing ||
+            last->italic != info->italic ||
+            last->bold != info->bold ||
+            ((last->flags ^ info->flags) & ~DECO_ROTATE);
+    }
 }
 
 // Parse event text.
@@ -2147,8 +2131,10 @@ static void align_lines(ASS_Renderer *render_priv, double max_text_width)
     int justify = render_priv->state.justify;
     double max_width = 0;
 
-    if (render_priv->state.evt_type == EVENT_HSCROLL)
-        return;
+    if (render_priv->state.evt_type & EVENT_HSCROLL) {
+        justify = halign;
+        halign = HALIGN_LEFT;
+    }
 
     for (i = 0; i <= text_info->length; ++i) {   // (text_info->length + 1) is the end of the last line
         if ((i == text_info->length) || glyphs[i].linebreak) {
@@ -2290,14 +2276,13 @@ static void render_and_combine_glyphs(ASS_Renderer *render_priv,
     int left = render_priv->settings.left_margin;
     device_x = (device_x - left) * render_priv->font_scale_x + left;
     unsigned nb_bitmaps = 0;
-    char linebreak = 0;
+    bool new_run = true;
     CombinedBitmapInfo *combined_info = text_info->combined_bitmaps;
     CombinedBitmapInfo *current_info = NULL;
-    GlyphInfo *last_info = NULL;
     ASS_DVector offset;
     for (int i = 0; i < text_info->length; i++) {
         GlyphInfo *info = text_info->glyphs + i;
-        if (info->linebreak) linebreak = 1;
+        if (info->starts_new_run) new_run = true;
         if (info->skip) {
             for (; info; info = info->next)
                 ass_cache_dec_ref(info->outline);
@@ -2327,9 +2312,7 @@ static void render_and_combine_glyphs(ASS_Renderer *render_priv,
                 info->border_style == 3)
                 flags |= FILTER_FILL_IN_BORDER;
 
-            if (linebreak || is_new_bm_run(info, last_info)) {
-                linebreak = 0;
-                last_info = NULL;
+            if (new_run) {
                 if (nb_bitmaps >= text_info->max_bitmaps) {
                     size_t new_size = 2 * text_info->max_bitmaps;
                     if (!ASS_REALLOC_ARRAY(text_info->combined_bitmaps, new_size)) {
@@ -2374,8 +2357,8 @@ static void render_and_combine_glyphs(ASS_Renderer *render_priv,
                 current_info->max_bitmap_count = MAX_SUB_BITMAPS_INITIAL;
 
                 nb_bitmaps++;
+                new_run = false;
             }
-            last_info = info;
             assert(current_info);
 
             ASS_Vector pos, pos_o;
@@ -2623,12 +2606,14 @@ ass_render_event(ASS_Renderer *render_priv, ASS_Event *event,
         return false;
     }
 
+    split_style_runs(render_priv);
+
     // Find shape runs and shape text
     ass_shaper_set_base_direction(render_priv->shaper,
             resolve_base_direction(render_priv->state.font_encoding));
     ass_shaper_find_runs(render_priv->shaper, render_priv, text_info->glyphs,
             text_info->length);
-    if (ass_shaper_shape(render_priv->shaper, text_info) < 0) {
+    if (!ass_shaper_shape(render_priv->shaper, text_info)) {
         ass_msg(render_priv->library, MSGL_ERR, "Failed to shape text");
         free_render_context(render_priv);
         return false;
@@ -2656,16 +2641,7 @@ ass_render_event(ASS_Renderer *render_priv, ASS_Event *event,
         x2scr_left(render_priv, MarginL);
 
     // wrap lines
-    if (render_priv->state.evt_type != EVENT_HSCROLL) {
-        // rearrange text in several lines
-        wrap_lines_smart(render_priv, max_text_width);
-    } else {
-        // no breaking or wrapping, everything in a single line
-        text_info->lines[0].offset = 0;
-        text_info->lines[0].len = text_info->length;
-        text_info->n_lines = 1;
-        measure_text(render_priv);
-    }
+    wrap_lines_smart(render_priv, max_text_width);
 
     reorder_text(render_priv);
 
@@ -2676,13 +2652,23 @@ ass_render_event(ASS_Renderer *render_priv, ASS_Event *event,
     compute_string_bbox(text_info, &bbox);
 
     // determine device coordinates for text
-
-    // x coordinate for everything except positioned events
     double device_x = 0;
-    if (render_priv->state.evt_type == EVENT_NORMAL ||
-        render_priv->state.evt_type == EVENT_VSCROLL) {
-        device_x = x2scr_left(render_priv, MarginL);
-    } else if (render_priv->state.evt_type == EVENT_HSCROLL) {
+    double device_y = 0;
+
+    // handle positioned events first: an event can be both positioned and
+    // scrolling, and the scrolling effect overrides the position on one axis
+    if (render_priv->state.evt_type & EVENT_POSITIONED) {
+        double base_x = 0;
+        double base_y = 0;
+        get_base_point(&bbox, render_priv->state.alignment, &base_x, &base_y);
+        device_x =
+            x2scr_pos(render_priv, render_priv->state.pos_x) - base_x;
+        device_y =
+            y2scr_pos(render_priv, render_priv->state.pos_y) - base_y;
+    }
+
+    // x coordinate
+    if (render_priv->state.evt_type & EVENT_HSCROLL) {
         if (render_priv->state.scroll_direction == SCROLL_RL)
             device_x =
                 x2scr_pos(render_priv,
@@ -2692,12 +2678,25 @@ ass_render_event(ASS_Renderer *render_priv, ASS_Event *event,
             device_x =
                 x2scr_pos(render_priv, render_priv->state.scroll_shift) -
                 (bbox.x_max - bbox.x_min);
+    } else if (!(render_priv->state.evt_type & EVENT_POSITIONED)) {
+        device_x = x2scr_left(render_priv, MarginL);
     }
 
-    // y coordinate for everything except positioned events
-    double device_y = 0;
-    if (render_priv->state.evt_type == EVENT_NORMAL ||
-        render_priv->state.evt_type == EVENT_HSCROLL) {
+    // y coordinate
+    if (render_priv->state.evt_type & EVENT_VSCROLL) {
+        if (render_priv->state.scroll_direction == SCROLL_TB)
+            device_y =
+                y2scr(render_priv,
+                      render_priv->state.scroll_y0 +
+                      render_priv->state.scroll_shift) -
+                bbox.y_max;
+        else if (render_priv->state.scroll_direction == SCROLL_BT)
+            device_y =
+                y2scr(render_priv,
+                      render_priv->state.scroll_y1 -
+                      render_priv->state.scroll_shift) -
+                bbox.y_min;
+    } else if (!(render_priv->state.evt_type & EVENT_POSITIONED)) {
         if (valign == VALIGN_TOP) {     // toptitle
             device_y =
                 y2scr_top(render_priv,
@@ -2728,56 +2727,10 @@ ass_render_event(ASS_Renderer *render_priv, ASS_Event *event,
                 device_y = scr_y0;
             }
         }
-    } else if (render_priv->state.evt_type == EVENT_VSCROLL) {
-        if (render_priv->state.scroll_direction == SCROLL_TB)
-            device_y =
-                y2scr(render_priv,
-                      render_priv->state.clip_y0 +
-                      render_priv->state.scroll_shift) -
-                (bbox.y_max - bbox.y_min);
-        else if (render_priv->state.scroll_direction == SCROLL_BT)
-            device_y =
-                y2scr(render_priv,
-                      render_priv->state.clip_y1 -
-                      render_priv->state.scroll_shift);
     }
 
-    // positioned events are totally different
-    if (render_priv->state.evt_type == EVENT_POSITIONED) {
-        double base_x = 0;
-        double base_y = 0;
-        get_base_point(&bbox, render_priv->state.alignment, &base_x, &base_y);
-        device_x =
-            x2scr_pos(render_priv, render_priv->state.pos_x) - base_x;
-        device_y =
-            y2scr_pos(render_priv, render_priv->state.pos_y) - base_y;
-    }
-
-    // fix clip coordinates (they depend on alignment)
-    if (render_priv->state.evt_type == EVENT_NORMAL ||
-        render_priv->state.evt_type == EVENT_HSCROLL ||
-        render_priv->state.evt_type == EVENT_VSCROLL) {
-        render_priv->state.clip_x0 =
-            x2scr_left_scaled(render_priv, render_priv->state.clip_x0);
-        render_priv->state.clip_x1 =
-            x2scr_right_scaled(render_priv, render_priv->state.clip_x1);
-        if (valign == VALIGN_TOP) {
-            render_priv->state.clip_y0 =
-                y2scr_top(render_priv, render_priv->state.clip_y0);
-            render_priv->state.clip_y1 =
-                y2scr_top(render_priv, render_priv->state.clip_y1);
-        } else if (valign == VALIGN_CENTER) {
-            render_priv->state.clip_y0 =
-                y2scr(render_priv, render_priv->state.clip_y0);
-            render_priv->state.clip_y1 =
-                y2scr(render_priv, render_priv->state.clip_y1);
-        } else if (valign == VALIGN_SUB) {
-            render_priv->state.clip_y0 =
-                y2scr_sub(render_priv, render_priv->state.clip_y0);
-            render_priv->state.clip_y1 =
-                y2scr_sub(render_priv, render_priv->state.clip_y1);
-        }
-    } else if (render_priv->state.evt_type == EVENT_POSITIONED) {
+    // fix clip coordinates
+    if (render_priv->state.explicit || !render_priv->settings.use_margins) {
         render_priv->state.clip_x0 =
             x2scr_pos_scaled(render_priv, render_priv->state.clip_x0);
         render_priv->state.clip_x1 =
@@ -2786,25 +2739,33 @@ ass_render_event(ASS_Renderer *render_priv, ASS_Event *event,
             y2scr_pos(render_priv, render_priv->state.clip_y0);
         render_priv->state.clip_y1 =
             y2scr_pos(render_priv, render_priv->state.clip_y1);
-    }
 
-    if (render_priv->state.explicit) {
-        // we still need to clip against screen boundaries
-        double zx = x2scr_pos_scaled(render_priv, 0);
-        double zy = y2scr_pos(render_priv, 0);
-        double sx = x2scr_pos_scaled(render_priv, render_priv->track->PlayResX);
-        double sy = y2scr_pos(render_priv, render_priv->track->PlayResY);
+        if (render_priv->state.explicit) {
+            // we still need to clip against screen boundaries
+            double zx = x2scr_pos_scaled(render_priv, 0);
+            double zy = y2scr_pos(render_priv, 0);
+            double sx = x2scr_pos_scaled(render_priv, render_priv->track->PlayResX);
+            double sy = y2scr_pos(render_priv, render_priv->track->PlayResY);
 
-        render_priv->state.clip_x0 = render_priv->state.clip_x0 < zx ? zx : render_priv->state.clip_x0;
-        render_priv->state.clip_y0 = render_priv->state.clip_y0 < zy ? zy : render_priv->state.clip_y0;
-        render_priv->state.clip_x1 = render_priv->state.clip_x1 > sx ? sx : render_priv->state.clip_x1;
-        render_priv->state.clip_y1 = render_priv->state.clip_y1 > sy ? sy : render_priv->state.clip_y1;
-    } else if (render_priv->settings.use_margins) {
+            render_priv->state.clip_x0 = FFMAX(render_priv->state.clip_x0, zx);
+            render_priv->state.clip_y0 = FFMAX(render_priv->state.clip_y0, zy);
+            render_priv->state.clip_x1 = FFMIN(render_priv->state.clip_x1, sx);
+            render_priv->state.clip_y1 = FFMIN(render_priv->state.clip_y1, sy);
+        }
+    } else {
         // no \clip (explicit==0) and use_margins => only clip to screen with margins
         render_priv->state.clip_x0 = 0;
         render_priv->state.clip_y0 = 0;
         render_priv->state.clip_x1 = render_priv->settings.frame_width;
         render_priv->state.clip_y1 = render_priv->settings.frame_height;
+    }
+
+    if (render_priv->state.evt_type & EVENT_VSCROLL) {
+        double y0 = y2scr_pos(render_priv, render_priv->state.scroll_y0);
+        double y1 = y2scr_pos(render_priv, render_priv->state.scroll_y1);
+
+        render_priv->state.clip_y0 = FFMAX(render_priv->state.clip_y0, y0);
+        render_priv->state.clip_y1 = FFMIN(render_priv->state.clip_y1, y1);
     }
 
     calculate_rotation_params(render_priv, &bbox, device_x, device_y);
@@ -2935,17 +2896,17 @@ static ASS_RenderPriv *get_render_priv(ASS_Renderer *render_priv,
     return event->render_priv;
 }
 
-static int overlap(Segment *s1, Segment *s2)
+static int overlap(Rect *s1, Rect *s2)
 {
-    if (s1->a >= s2->b || s2->a >= s1->b ||
-        s1->ha >= s2->hb || s2->ha >= s1->hb)
+    if (s1->y0 >= s2->y1 || s2->y0 >= s1->y1 ||
+        s1->x0 >= s2->x1 || s2->x0 >= s1->x1)
         return 0;
     return 1;
 }
 
-static int cmp_segment(const void *p1, const void *p2)
+static int cmp_rect_y0(const void *p1, const void *p2)
 {
-    return ((Segment *) p1)->a - ((Segment *) p2)->a;
+    return ((Rect *) p1)->y0 - ((Rect *) p2)->y0;
 }
 
 static void
@@ -2976,31 +2937,31 @@ shift_event(ASS_Renderer *render_priv, EventImages *ei, int shift)
 
 // dir: 1 - move down
 //      -1 - move up
-static int fit_segment(Segment *s, Segment *fixed, int *cnt, int dir)
+static int fit_rect(Rect *s, Rect *fixed, int *cnt, int dir)
 {
     int i;
     int shift = 0;
 
     if (dir == 1)               // move down
         for (i = 0; i < *cnt; ++i) {
-            if (s->b + shift <= fixed[i].a || s->a + shift >= fixed[i].b ||
-                s->hb <= fixed[i].ha || s->ha >= fixed[i].hb)
+            if (s->y1 + shift <= fixed[i].y0 || s->y0 + shift >= fixed[i].y1 ||
+                s->x1 <= fixed[i].x0 || s->x0 >= fixed[i].x1)
                 continue;
-            shift = fixed[i].b - s->a;
+            shift = fixed[i].y1 - s->y0;
     } else                      // dir == -1, move up
         for (i = *cnt - 1; i >= 0; --i) {
-            if (s->b + shift <= fixed[i].a || s->a + shift >= fixed[i].b ||
-                s->hb <= fixed[i].ha || s->ha >= fixed[i].hb)
+            if (s->y1 + shift <= fixed[i].y0 || s->y0 + shift >= fixed[i].y1 ||
+                s->x1 <= fixed[i].x0 || s->x0 >= fixed[i].x1)
                 continue;
-            shift = fixed[i].a - s->b;
+            shift = fixed[i].y0 - s->y1;
         }
 
-    fixed[*cnt].a = s->a + shift;
-    fixed[*cnt].b = s->b + shift;
-    fixed[*cnt].ha = s->ha;
-    fixed[*cnt].hb = s->hb;
+    fixed[*cnt].y0 = s->y0 + shift;
+    fixed[*cnt].y1 = s->y1 + shift;
+    fixed[*cnt].x0 = s->x0;
+    fixed[*cnt].x1 = s->x1;
     (*cnt)++;
-    qsort(fixed, *cnt, sizeof(Segment), cmp_segment);
+    qsort(fixed, *cnt, sizeof(*fixed), cmp_rect_y0);
 
     return shift;
 }
@@ -3008,7 +2969,7 @@ static int fit_segment(Segment *s, Segment *fixed, int *cnt, int dir)
 static void
 fix_collisions(ASS_Renderer *render_priv, EventImages *imgs, int cnt)
 {
-    Segment *used = ass_realloc_array(NULL, cnt, sizeof(*used));
+    Rect *used = ass_realloc_array(NULL, cnt, sizeof(*used));
     int cnt_used = 0;
     int i, j;
 
@@ -3022,11 +2983,11 @@ fix_collisions(ASS_Renderer *render_priv, EventImages *imgs, int cnt)
             continue;
         priv = get_render_priv(render_priv, imgs[i].event);
         if (priv && priv->height > 0) { // it's a fixed event
-            Segment s;
-            s.a = priv->top;
-            s.b = priv->top + priv->height;
-            s.ha = priv->left;
-            s.hb = priv->left + priv->width;
+            Rect s;
+            s.y0 = priv->top;
+            s.y1 = priv->top + priv->height;
+            s.x0 = priv->left;
+            s.x1 = priv->left + priv->width;
             if (priv->height != imgs[i].height) {       // no, it's not
                 ass_msg(render_priv->library, MSGL_WARN,
                         "Event height has changed");
@@ -3043,16 +3004,16 @@ fix_collisions(ASS_Renderer *render_priv, EventImages *imgs, int cnt)
                     priv->width = 0;
                 }
             if (priv->height > 0) {     // still a fixed event
-                used[cnt_used].a = priv->top;
-                used[cnt_used].b = priv->top + priv->height;
-                used[cnt_used].ha = priv->left;
-                used[cnt_used].hb = priv->left + priv->width;
+                used[cnt_used].y0 = priv->top;
+                used[cnt_used].y1 = priv->top + priv->height;
+                used[cnt_used].x0 = priv->left;
+                used[cnt_used].x1 = priv->left + priv->width;
                 cnt_used++;
                 shift_event(render_priv, imgs + i, priv->top - imgs[i].top);
             }
         }
     }
-    qsort(used, cnt_used, sizeof(Segment), cmp_segment);
+    qsort(used, cnt_used, sizeof(*used), cmp_rect_y0);
 
     // try to fit other events in free spaces
     for (i = 0; i < cnt; ++i) {
@@ -3062,12 +3023,12 @@ fix_collisions(ASS_Renderer *render_priv, EventImages *imgs, int cnt)
         priv = get_render_priv(render_priv, imgs[i].event);
         if (priv && priv->height == 0) {        // not a fixed event
             int shift;
-            Segment s;
-            s.a = imgs[i].top;
-            s.b = imgs[i].top + imgs[i].height;
-            s.ha = imgs[i].left;
-            s.hb = imgs[i].left + imgs[i].width;
-            shift = fit_segment(&s, used, &cnt_used, imgs[i].shift_direction);
+            Rect s;
+            s.y0 = imgs[i].top;
+            s.y1 = imgs[i].top + imgs[i].height;
+            s.x0 = imgs[i].left;
+            s.x1 = imgs[i].left + imgs[i].width;
+            shift = fit_rect(&s, used, &cnt_used, imgs[i].shift_direction);
             if (shift)
                 shift_event(render_priv, imgs + i, shift);
             // make it fixed
