@@ -26,9 +26,7 @@
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
 #include FT_SYNTHESIS_H
-#ifdef CONFIG_HARFBUZZ
 #include <hb.h>
-#endif
 
 #include "ass.h"
 #include "ass_font.h"
@@ -128,11 +126,7 @@ typedef struct glyph_info {
     ASS_Font *font;
     int face_index;
     int glyph_index;
-#ifdef CONFIG_HARFBUZZ
     hb_script_t script;
-#else
-    int script;
-#endif
     double font_size;
     char *drawing_text;
     int drawing_scale;
@@ -143,11 +137,11 @@ typedef struct glyph_info {
     ASS_Vector pos;
     ASS_Vector offset;
     char linebreak;             // the first (leading) glyph of some line ?
+    bool starts_new_run;
     uint32_t c[4];              // colors
     uint8_t a_pre_fade[4];      // alpha values before applying fades
     ASS_Vector advance;         // 26.6
     ASS_Vector cluster_advance;
-    char effect;                // the first (leading) glyph of some effect ?
     Effect effect_type;
     int effect_timing;          // time duration of current karaoke word
     // after process_karaoke_effects: distance in pixels from the glyph origin.
@@ -224,10 +218,10 @@ typedef struct {
     double border_x;            // outline width
     double border_y;
     enum {
-        EVENT_NORMAL,           // "normal" top-, sub- or mid- title
-        EVENT_POSITIONED,       // happens after pos(,), margins are ignored
-        EVENT_HSCROLL,          // "Banner" transition effect, text_width is unlimited
-        EVENT_VSCROLL           // "Scroll up", "Scroll down" transition effects
+        EVENT_NORMAL = 0,       // "normal" top-, sub- or mid- title
+        EVENT_POSITIONED = 1,   // happens after \pos or \move, margins are ignored
+        EVENT_HSCROLL = 2,      // "Banner" transition effect, text_width is unlimited
+        EVENT_VSCROLL = 4       // "Scroll up", "Scroll down" transition effects
     } evt_type;
     int border_style;
     uint32_t c[4];              // colors(Primary, Secondary, so on) in RGBA
@@ -261,6 +255,7 @@ typedef struct {
         SCROLL_BT
     } scroll_direction;         // for EVENT_HSCROLL, EVENT_VSCROLL
     int scroll_shift;
+    int scroll_y0, scroll_y1;
 
     // face properties
     char *family;
@@ -338,11 +333,6 @@ typedef struct {
     int x1;
     int y1;
 } Rect;
-
-typedef struct {
-    int a, b;                   // top and height
-    int ha, hb;                 // left and width
-} Segment;
 
 void reset_render_context(ASS_Renderer *render_priv, ASS_Style *style);
 void ass_frame_ref(ASS_Image *img);

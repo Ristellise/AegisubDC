@@ -27,8 +27,9 @@
 #include <limits.h>
 #include <stdbool.h>
 
-#ifdef CONFIG_HARFBUZZ
-#include <hb-ft.h>
+#include <ft2build.h>
+#include FT_FREETYPE_H
+#include FT_TRUETYPE_TABLES_H
 enum {
     VERT = 0,
     VKNA,
@@ -37,7 +38,6 @@ enum {
     CLIG
 };
 #define NUM_FEATURES 5
-#endif
 
 struct ass_shaper {
     ASS_ShapingLevel shaping_level;
@@ -50,7 +50,6 @@ struct ass_shaper {
     FriBidiStrIndex *cmap;
     FriBidiParType base_direction;
 
-#ifdef CONFIG_HARFBUZZ
     // OpenType features
     int n_features;
     hb_feature_t *features;
@@ -58,7 +57,6 @@ struct ass_shaper {
 
     // Glyph metrics cache, to speed up shaping
     Cache *metrics_cache;
-#endif
 
 #ifdef USE_FRIBIDI_EX_API
     FriBidiBracketType *btypes;
@@ -66,7 +64,6 @@ struct ass_shaper {
 #endif
 };
 
-#ifdef CONFIG_HARFBUZZ
 struct ass_shaper_metrics_data {
     Cache *metrics_cache;
     GlyphMetricsHashKey hash_key;
@@ -78,7 +75,6 @@ struct ass_shaper_font_data {
     hb_font_funcs_t *font_funcs[ASS_FONT_MAX_FACES];
     struct ass_shaper_metrics_data *metrics_data[ASS_FONT_MAX_FACES];
 };
-#endif
 
 /**
  * \brief Print version information
@@ -87,9 +83,7 @@ void ass_shaper_info(ASS_Library *lib)
 {
     ass_msg(lib, MSGL_INFO, "Shaper: FriBidi "
             FRIBIDI_VERSION " (SIMPLE)"
-#ifdef CONFIG_HARFBUZZ
             " HarfBuzz-ng %s (COMPLEX)", hb_version_string()
-#endif
            );
 }
 
@@ -118,10 +112,8 @@ static bool check_allocations(ASS_Shaper *shaper, size_t new_size)
  */
 void ass_shaper_free(ASS_Shaper *shaper)
 {
-#ifdef CONFIG_HARFBUZZ
     ass_cache_done(shaper->metrics_cache);
     free(shaper->features);
-#endif
     free(shaper->event_text);
     free(shaper->ctypes);
 #ifdef USE_FRIBIDI_EX_API
@@ -134,14 +126,11 @@ void ass_shaper_free(ASS_Shaper *shaper)
 
 void ass_shaper_empty_cache(ASS_Shaper *shaper)
 {
-#ifdef CONFIG_HARFBUZZ
     ass_cache_empty(shaper->metrics_cache);
-#endif
 }
 
 void ass_shaper_font_data_free(ASS_ShaperFontData *priv)
 {
-#ifdef CONFIG_HARFBUZZ
     int i;
     for (i = 0; i < ASS_FONT_MAX_FACES; i++)
         if (priv->fonts[i]) {
@@ -150,10 +139,8 @@ void ass_shaper_font_data_free(ASS_ShaperFontData *priv)
             hb_font_funcs_destroy(priv->font_funcs[i]);
         }
     free(priv);
-#endif
 }
 
-#ifdef CONFIG_HARFBUZZ
 /**
  * \brief set up the HarfBuzz OpenType feature list with some
  * standard features.
@@ -262,6 +249,31 @@ size_t ass_glyph_metrics_construct(void *key, void *value, void *priv)
         v->horiAdvance = v->vertAdvance;
 
     return 1;
+}
+
+static hb_blob_t*
+get_reference_table(hb_face_t *hbface, hb_tag_t tag, void *font_data)
+{
+  FT_Face face = font_data;
+  FT_ULong len = 0;
+
+  if (FT_Load_Sfnt_Table(face, tag, 0, NULL, &len) != FT_Err_Ok)
+    return NULL;
+
+  char *buf = malloc(len);
+  if (!buf)
+    return NULL;
+
+  if (FT_Load_Sfnt_Table(face, tag, 0, (FT_Byte*)buf, &len) != FT_Err_Ok) {
+    free(buf);
+    return NULL;
+  }
+
+  hb_blob_t *blob = hb_blob_create(buf, len, HB_MEMORY_MODE_WRITABLE, buf, free);
+  if (!blob)
+      free(buf);
+
+  return blob;
 }
 
 static hb_bool_t
@@ -418,22 +430,39 @@ static hb_font_t *get_hb_font(ASS_Shaper *shaper, GlyphInfo *info)
 
     if (!font->shaper_priv)
         font->shaper_priv = calloc(sizeof(ASS_ShaperFontData), 1);
-
+    if (!font->shaper_priv)
+        return NULL;
 
     hb_fonts = font->shaper_priv->fonts;
     if (!hb_fonts[info->face_index]) {
-        hb_fonts[info->face_index] =
-            hb_ft_font_create(font->faces[info->face_index], NULL);
+        FT_Face face = font->faces[info->face_index];
+        hb_face_t *hb_face = hb_face_create_for_tables(get_reference_table, face, NULL);
+        if (!hb_face)
+            return NULL;
+        hb_face_set_index(hb_face, face->face_index);
+        hb_face_set_upem(hb_face, face->units_per_EM);
+
+        hb_font_t *hb_font = hb_fonts[info->face_index] = hb_font_create(hb_face);
+        hb_face_destroy(hb_face);
+        if (!hb_font)
+            return NULL;
+
+        hb_font_set_scale(hb_font,
+            (int)(((uint64_t)face->size->metrics.x_scale * face->units_per_EM + (1<<15)) >> 16),
+            (int)(((uint64_t)face->size->metrics.y_scale * face->units_per_EM + (1<<15)) >> 16));
 
         // set up cached metrics access
-        font->shaper_priv->metrics_data[info->face_index] =
-            calloc(sizeof(struct ass_shaper_metrics_data), 1);
         struct ass_shaper_metrics_data *metrics =
-            font->shaper_priv->metrics_data[info->face_index];
+            font->shaper_priv->metrics_data[info->face_index] =
+                calloc(sizeof(struct ass_shaper_metrics_data), 1);
+        if (!metrics)
+            return NULL;
         metrics->metrics_cache = shaper->metrics_cache;
         metrics->vertical = info->font->desc.vertical;
 
         hb_font_funcs_t *funcs = hb_font_funcs_create();
+        if (!funcs)
+            return NULL;
         font->shaper_priv->font_funcs[info->face_index] = funcs;
         hb_font_funcs_set_nominal_glyph_func(funcs, get_glyph_nominal,
                 metrics, NULL);
@@ -455,8 +484,7 @@ static hb_font_t *get_hb_font(ASS_Shaper *shaper, GlyphInfo *info)
                 metrics, NULL);
         hb_font_funcs_set_glyph_contour_point_func(funcs, get_contour_point,
                 metrics, NULL);
-        hb_font_set_funcs(hb_fonts[info->face_index], funcs,
-                font->faces[info->face_index], NULL);
+        hb_font_set_funcs(hb_font, funcs, face, NULL);
     }
 
     ass_face_set_size(font->faces[info->face_index], info->font_size);
@@ -626,7 +654,7 @@ shape_harfbuzz_process_run(GlyphInfo *glyphs, hb_buffer_t *buf, int offset)
  * \param glyphs glyph clusters
  * \param len number of clusters
  */
-static void shape_harfbuzz(ASS_Shaper *shaper, GlyphInfo *glyphs, size_t len)
+static bool shape_harfbuzz(ASS_Shaper *shaper, GlyphInfo *glyphs, size_t len)
 {
     int i;
     hb_buffer_t *buf = hb_buffer_create();
@@ -637,20 +665,29 @@ static void shape_harfbuzz(ASS_Shaper *shaper, GlyphInfo *glyphs, size_t len)
         glyphs[i].skip = true;
 
     for (i = 0; i < len; i++) {
+        if (glyphs[i].drawing_text) {
+            glyphs[i].skip = false;
+            continue;
+        }
+
         int offset = i;
         hb_font_t *font = get_hb_font(shaper, glyphs + offset);
-        int level = glyphs[offset].shape_run_id;
-        int direction = shaper->emblevels[offset] % 2;
+        if (!font)
+            return false;
+        int run_id = glyphs[offset].shape_run_id;
+        int level = shaper->emblevels[offset];
 
         // advance in text until end of run
-        while (i < (len - 1) && level == glyphs[i+1].shape_run_id)
+        while (i < (len - 1) && run_id == glyphs[i + 1].shape_run_id &&
+                level == shaper->emblevels[i + 1])
             i++;
 
         hb_buffer_pre_allocate(buf, i - offset + 1);
         hb_buffer_add_utf32(buf, shaper->event_text + offset, i - offset + 1,
                 0, i - offset + 1);
 
-        props.direction = direction ? HB_DIRECTION_RTL : HB_DIRECTION_LTR;
+        props.direction = FRIBIDI_LEVEL_IS_RTL(level) ?
+            HB_DIRECTION_RTL : HB_DIRECTION_LTR;
         props.script = glyphs[offset].script;
         props.language  = hb_shaper_get_run_language(shaper, props.script);
         hb_buffer_set_segment_properties(buf, &props);
@@ -663,6 +700,8 @@ static void shape_harfbuzz(ASS_Shaper *shaper, GlyphInfo *glyphs, size_t len)
     }
 
     hb_buffer_destroy(buf);
+
+    return true;
 }
 
 /**
@@ -715,15 +754,6 @@ void ass_shaper_determine_script(ASS_Shaper *shaper, GlyphInfo *glyphs,
     }
 }
 
-#else
-
-size_t ass_glyph_metrics_construct(void *key, void *value, void *priv)
-{
-    return 0;  // that function should be never used
-}
-
-#endif
-
 /**
  * \brief Shape event text with FriBidi. Does mirroring and simple
  * Arabic shaping.
@@ -758,9 +788,7 @@ static void shape_fribidi(ASS_Shaper *shaper, GlyphInfo *glyphs, size_t len)
  */
 void ass_shaper_set_kerning(ASS_Shaper *shaper, bool kern)
 {
-#ifdef CONFIG_HARFBUZZ
     shaper->features[KERN].value = kern;
-#endif
 }
 
 /**
@@ -772,52 +800,25 @@ void ass_shaper_find_runs(ASS_Shaper *shaper, ASS_Renderer *render_priv,
     int i;
     int shape_run = 0;
 
-#ifdef CONFIG_HARFBUZZ
     ass_shaper_determine_script(shaper, glyphs, len);
-#endif
 
     // find appropriate fonts for the shape runs
     for (i = 0; i < len; i++) {
-        GlyphInfo *last = glyphs + i - 1;
         GlyphInfo *info = glyphs + i;
-        // skip drawings
-        if (info->symbol == 0xfffc)
-            continue;
-        // set size and get glyph index
-        ass_font_get_index(render_priv->fontselect, info->font,
-                info->symbol, &info->face_index, &info->glyph_index);
-        // shape runs break on: xbord, ybord, xshad, yshad,
-        // all four colors, all four alphas, be, blur, fn, fs,
-        // fscx, fscy, fsp, bold, italic, underline, strikeout,
-        // frx, fry, frz, fax, fay, karaoke start, karaoke type,
-        // and on every line break
-        if (i > 0 && (last->font != info->font ||
+        if (!info->drawing_text) {
+            // set size and get glyph index
+            ass_font_get_index(render_priv->fontselect, info->font,
+                    info->symbol, &info->face_index, &info->glyph_index);
+        }
+        if (i > 0) {
+            GlyphInfo *last = glyphs + i - 1;
+            if ((last->font != info->font ||
                     last->face_index != info->face_index ||
                     last->script != info->script ||
-                    last->font_size != info->font_size ||
-                    last->c[0] != info->c[0] ||
-                    last->c[1] != info->c[1] ||
-                    last->c[2] != info->c[2] ||
-                    last->c[3] != info->c[3] ||
-                    last->be != info->be ||
-                    last->blur != info->blur ||
-                    last->shadow_x != info->shadow_x ||
-                    last->shadow_y != info->shadow_y ||
-                    last->frx != info->frx ||
-                    last->fry != info->fry ||
-                    last->frz != info->frz ||
-                    last->fax != info->fax ||
-                    last->fay != info->fay ||
-                    last->scale_x != info->scale_x ||
-                    last->scale_y != info->scale_y ||
-                    last->border_style != info->border_style ||
-                    last->border_x != info->border_x ||
-                    last->border_y != info->border_y ||
-                    last->hspacing != info->hspacing ||
-                    last->italic != info->italic ||
-                    last->bold != info->bold ||
+                    info->starts_new_run ||
                     last->flags != info->flags))
-            shape_run++;
+                shape_run++;
+        }
         info->shape_run_id = shape_run;
     }
 }
@@ -838,7 +839,6 @@ void ass_shaper_set_base_direction(ASS_Shaper *shaper, FriBidiParType dir)
  */
 void ass_shaper_set_language(ASS_Shaper *shaper, const char *code)
 {
-#ifdef CONFIG_HARFBUZZ
     hb_language_t lang;
 
     if (code)
@@ -847,7 +847,6 @@ void ass_shaper_set_language(ASS_Shaper *shaper, const char *code)
         lang = HB_LANGUAGE_INVALID;
 
     shaper->language = lang;
-#endif
 }
 
 /**
@@ -897,14 +896,14 @@ static void ass_shaper_skip_characters(TextInfo *text_info)
  * \param text_info event's text
  * \return success, when 0
  */
-int ass_shaper_shape(ASS_Shaper *shaper, TextInfo *text_info)
+bool ass_shaper_shape(ASS_Shaper *shaper, TextInfo *text_info)
 {
     int i, ret, last_break;
     FriBidiParType dir;
     GlyphInfo *glyphs = text_info->glyphs;
 
     if (!check_allocations(shaper, text_info->length))
-        return -1;
+        return false;
 
     // Get bidi character types and embedding levels
     last_break = 0;
@@ -931,32 +930,20 @@ int ass_shaper_shape(ASS_Shaper *shaper, TextInfo *text_info)
                     i - last_break + 1, &dir, shaper->emblevels + last_break);
 #endif
             if (ret == 0)
-                return -1;
+                return false;
             last_break = i + 1;
         }
     }
 
-    // add embedding levels to shape runs for final runs
-    for (i = 0; i < text_info->length; i++) {
-        glyphs[i].shape_run_id += shaper->emblevels[i];
-    }
-
-#ifdef CONFIG_HARFBUZZ
     switch (shaper->shaping_level) {
     case ASS_SHAPING_SIMPLE:
         shape_fribidi(shaper, glyphs, text_info->length);
         ass_shaper_skip_characters(text_info);
-        break;
+        return true;
     case ASS_SHAPING_COMPLEX:
-        shape_harfbuzz(shaper, glyphs, text_info->length);
-        break;
+    default:
+        return shape_harfbuzz(shaper, glyphs, text_info->length);
     }
-#else
-        shape_fribidi(shaper, glyphs, text_info->length);
-        ass_shaper_skip_characters(text_info);
-#endif
-
-    return 0;
 }
 
 /**
@@ -970,13 +957,11 @@ ASS_Shaper *ass_shaper_new(void)
 
     shaper->base_direction = FRIBIDI_PAR_ON;
 
-#ifdef CONFIG_HARFBUZZ
     if (!init_features(shaper))
         goto error;
     shaper->metrics_cache = ass_glyph_metrics_cache_create();
     if (!shaper->metrics_cache)
         goto error;
-#endif
 
     return shaper;
 
