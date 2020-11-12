@@ -19,7 +19,8 @@
         "Toolbar Icon Size": 16
     },
     "Experiments": {
-        "Video Pan": false
+        "Video Pan": false,
+        "Unicode63 Bracket Matching": false
     },
 
 

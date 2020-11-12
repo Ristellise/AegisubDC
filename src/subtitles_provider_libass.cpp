@@ -37,6 +37,7 @@
 #include "compat.h"
 #include "include/aegisub/subtitles_provider.h"
 #include "video_frame.h"
+#include "options.h"
 
 #include <libaegisub/background_runner.h>
 #include <libaegisub/dispatch.h>
@@ -127,6 +128,7 @@ public:
 		if (ass_track) ass_free_track(ass_track);
 		ass_track = ass_read_memory(library, const_cast<char *>(data), len, nullptr);
 		if (!ass_track) throw agi::InternalError("libass failed to load subtitles.");
+		if (OPT_GET("Experiments/Unicode63 Bracket Matching")->GetBool()) ass_track_set_feature(ass_track, ASS_FEATURE_BIDI_BRACKETS, 1);
 	}
 
 	void DrawSubtitles(VideoFrame &dst, double time) override;

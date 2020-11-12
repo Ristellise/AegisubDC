@@ -280,6 +280,7 @@ static ASS_Image **render_glyph_i(ASS_Renderer *render_priv,
 
     dst_x += bm->left;
     dst_y += bm->top;
+    brk -= dst_x;
 
     // we still need to clip against screen boundaries
     zx = x2scr_pos_scaled(render_priv, 0);
@@ -381,7 +382,7 @@ render_glyph(ASS_Renderer *render_priv, Bitmap *bm, int dst_x, int dst_y,
         return render_glyph_i(render_priv, bm, dst_x, dst_y, color, color2,
                               brk, tail, type, source);
 
-    // brk is relative to dst_x
+    // brk is absolute
     // color = color left of brk
     // color2 = color right of brk
     int b_x0, b_y0, b_x1, b_y1; // visible part of the bitmap
@@ -391,7 +392,7 @@ render_glyph(ASS_Renderer *render_priv, Bitmap *bm, int dst_x, int dst_y,
 
     dst_x += bm->left;
     dst_y += bm->top;
-    brk -= bm->left;
+    brk -= dst_x;
 
     // clipping
     clip_x0 = FFMINMAX(render_priv->state.clip_x0, 0, render_priv->width);
@@ -786,7 +787,7 @@ static ASS_Image *render_text(ASS_Renderer *render_priv)
             continue;
 
         if ((info->effect_type == EF_KARAOKE_KO)
-                && (info->effect_timing <= info->first_pos_x)) {
+                && (info->effect_timing <= 0)) {
             // do nothing
         } else {
             tail =
@@ -802,7 +803,7 @@ static ASS_Image *render_text(ASS_Renderer *render_priv)
 
         if ((info->effect_type == EF_KARAOKE)
                 || (info->effect_type == EF_KARAOKE_KO)) {
-            if (info->effect_timing > info->first_pos_x)
+            if (info->effect_timing > 0)
                 tail =
                     render_glyph(render_priv, info->bm, info->x, info->y,
                                  info->c[0], 0, 1000000, tail,
@@ -997,11 +998,13 @@ void reset_render_context(ASS_Renderer *render_priv, ASS_Style *style)
         (style->StrikeOut ? DECO_STRIKETHROUGH : 0);
     render_priv->state.font_size = style->FontSize;
 
-    free(render_priv->state.family);
-    render_priv->state.family = NULL;
-    render_priv->state.family = strdup(style->FontName);
-    render_priv->state.treat_family_as_pattern =
-        style->treat_fontname_as_pattern;
+    char* new_family = strdup(style->FontName);
+    if (new_family) {
+        free(render_priv->state.family);
+        render_priv->state.family = new_family;
+        render_priv->state.treat_family_as_pattern =
+            style->treat_fontname_as_pattern;
+    }
     render_priv->state.bold = style->Bold;
     render_priv->state.italic = style->Italic;
     update_font(render_priv);
@@ -1017,7 +1020,7 @@ void reset_render_context(ASS_Renderer *render_priv, ASS_Style *style)
     render_priv->state.shadow_x = style->Shadow;
     render_priv->state.shadow_y = style->Shadow;
     render_priv->state.frx = render_priv->state.fry = 0.;
-    render_priv->state.frz = M_PI * style->Angle / 180.;
+    render_priv->state.frz = style->Angle;
     render_priv->state.fax = render_priv->state.fay = 0.;
     render_priv->state.font_encoding = style->Encoding;
 }
@@ -1246,9 +1249,13 @@ size_t ass_outline_construct(void *key, void *value, void *priv)
 static void calc_transform_matrix(ASS_Renderer *render_priv,
                                   GlyphInfo *info, double m[3][3])
 {
-    double sx = -sin(info->frx), cx = cos(info->frx);
-    double sy =  sin(info->fry), cy = cos(info->fry);
-    double sz = -sin(info->frz), cz = cos(info->frz);
+    double frx = M_PI / 180 * info->frx;
+    double fry = M_PI / 180 * info->fry;
+    double frz = M_PI / 180 * info->frz;
+
+    double sx = -sin(frx), cx = cos(frx);
+    double sy =  sin(fry), cy = cos(fry);
+    double sz = -sin(frz), cz = cos(frz);
 
     double fax = info->fax * info->scale_x / info->scale_y;
     double fay = info->fay * info->scale_y / info->scale_x;
@@ -1296,6 +1303,7 @@ static void calc_transform_matrix(ASS_Renderer *render_priv,
  */
 static void
 get_bitmap_glyph(ASS_Renderer *render_priv, GlyphInfo *info,
+                 int32_t *leftmost_x,
                  ASS_Vector *pos, ASS_Vector *pos_o,
                  ASS_DVector *offset, bool first, int flags)
 {
@@ -1313,6 +1321,9 @@ get_bitmap_glyph(ASS_Renderer *render_priv, GlyphInfo *info,
         m2[i][2] = m1[i][0] * tr->offset.x + m1[i][1] * tr->offset.y + m1[i][2];
     }
     memcpy(m, m2, sizeof(m));
+
+    if (info->effect_type == EF_KARAOKE_KF)
+        outline_update_min_transformed_x(&info->outline->outline[0], m, leftmost_x);
 
     BitmapHashKey key;
     key.outline = info->outline;
@@ -1853,12 +1864,15 @@ fix_glyph_scaling(ASS_Renderer *priv, GlyphInfo *glyph)
 // Initial run splitting based purely on the characters' styles
 static void split_style_runs(ASS_Renderer *render_priv)
 {
+    Effect last_effect_type = render_priv->text_info.glyphs[0].effect_type;
     render_priv->text_info.glyphs[0].starts_new_run = true;
     for (int i = 1; i < render_priv->text_info.length; i++) {
         GlyphInfo *info = render_priv->text_info.glyphs + i;
         GlyphInfo *last = render_priv->text_info.glyphs + (i - 1);
+        Effect effect_type = info->effect_type;
         info->starts_new_run =
-            info->effect_type != EF_NONE ||
+            info->effect_timing ||  // but ignore effect_skip_timing
+            (effect_type != EF_NONE && effect_type != last_effect_type) ||
             info->drawing_text ||
             last->drawing_text ||
             strcmp(last->font->desc.family, info->font->desc.family) ||
@@ -1886,6 +1900,8 @@ static void split_style_runs(ASS_Renderer *render_priv)
             last->italic != info->italic ||
             last->bold != info->bold ||
             ((last->flags ^ info->flags) & ~DECO_ROTATE);
+        if (effect_type != EF_NONE)
+            last_effect_type = effect_type;
     }
 }
 
@@ -2327,7 +2343,7 @@ static void render_and_combine_glyphs(ASS_Renderer *render_priv,
                 memcpy(&current_info->c, &info->c, sizeof(info->c));
                 current_info->effect_type = info->effect_type;
                 current_info->effect_timing = info->effect_timing;
-                current_info->first_pos_x = info->bbox.x_max >> 6;
+                current_info->leftmost_x = OUTLINE_MAX;
 
                 FilterDesc *filter = &current_info->filter;
                 filter->flags = flags;
@@ -2364,7 +2380,7 @@ static void render_and_combine_glyphs(ASS_Renderer *render_priv,
             ASS_Vector pos, pos_o;
             info->pos.x = double_to_d6(device_x + d6_to_double(info->pos.x) * render_priv->font_scale_x);
             info->pos.y = double_to_d6(device_y) + info->pos.y;
-            get_bitmap_glyph(render_priv, info, &pos, &pos_o,
+            get_bitmap_glyph(render_priv, info, &current_info->leftmost_x, &pos, &pos_o,
                              &offset, !current_info->bitmap_count, flags);
 
             if (!info->bm && !info->bm_o) {
@@ -2395,6 +2411,15 @@ static void render_and_combine_glyphs(ASS_Renderer *render_priv,
 
     for (int i = 0; i < nb_bitmaps; i++) {
         CombinedBitmapInfo *info = &combined_info[i];
+        if (!info->bitmap_count) {
+            free(info->bitmaps);
+            continue;
+        }
+
+        if (info->effect_type == EF_KARAOKE_KF)
+            info->effect_timing = lround(d6_to_double(info->leftmost_x) +
+                d6_to_double(info->effect_timing) * render_priv->font_scale_x);
+
         for (int j = 0; j < info->bitmap_count; j++) {
             info->bitmaps[j].pos.x -= info->x;
             info->bitmaps[j].pos.y -= info->y;
@@ -2623,9 +2648,6 @@ ass_render_event(ASS_Renderer *render_priv, ASS_Event *event,
 
     preliminary_layout(render_priv);
 
-    // depends on glyph x coordinates being monotonous, so it should be done before line wrap
-    process_karaoke_effects(render_priv);
-
     int valign = render_priv->state.alignment & 12;
 
     int MarginL =
@@ -2642,6 +2664,9 @@ ass_render_event(ASS_Renderer *render_priv, ASS_Event *event,
 
     // wrap lines
     wrap_lines_smart(render_priv, max_text_width);
+
+    // depends on glyph x coordinates being monotonous within runs, so it should be done before reorder
+    process_karaoke_effects(render_priv);
 
     reorder_text(render_priv);
 
