@@ -68,6 +68,9 @@ void ass_free_track(ASS_Track *track)
 {
     int i;
 
+    if (!track)
+        return;
+
     if (track->parser_priv) {
         free(track->parser_priv->read_order_bitmap);
         free(track->parser_priv->fontname);
@@ -93,7 +96,7 @@ void ass_free_track(ASS_Track *track)
 
 /// \brief Allocate a new style struct
 /// \param track track
-/// \return style id
+/// \return style id or negative value on failure
 int ass_alloc_style(ASS_Track *track)
 {
     int sid;
@@ -101,11 +104,12 @@ int ass_alloc_style(ASS_Track *track)
     assert(track->n_styles <= track->max_styles);
 
     if (track->n_styles == track->max_styles) {
-        track->max_styles += ASS_STYLES_ALLOC;
-        track->styles =
-            (ASS_Style *) realloc(track->styles,
-                                  sizeof(ASS_Style) *
-                                  track->max_styles);
+        if (track->max_styles >= FFMIN(SIZE_MAX, INT_MAX) - ASS_STYLES_ALLOC)
+            return -1;
+        int new_max = track->max_styles + ASS_STYLES_ALLOC;
+        if (!ASS_REALLOC_ARRAY(track->styles, new_max))
+            return -1;
+        track->max_styles = new_max;
     }
 
     sid = track->n_styles++;
@@ -115,7 +119,7 @@ int ass_alloc_style(ASS_Track *track)
 
 /// \brief Allocate a new event struct
 /// \param track track
-/// \return event id
+/// \return event id or negative value on failure
 int ass_alloc_event(ASS_Track *track)
 {
     int eid;
@@ -123,11 +127,12 @@ int ass_alloc_event(ASS_Track *track)
     assert(track->n_events <= track->max_events);
 
     if (track->n_events == track->max_events) {
-        track->max_events = track->max_events * 2 + 1;
-        track->events =
-            (ASS_Event *) realloc(track->events,
-                                  sizeof(ASS_Event) *
-                                  track->max_events);
+        if (track->max_events >= FFMIN(SIZE_MAX, INT_MAX) / 2)
+            return -1;
+        int new_max = track->max_events * 2 + 1;
+        if (!ASS_REALLOC_ARRAY(track->events, new_max))
+            return -1;
+        track->max_events = new_max;
     }
 
     eid = track->n_events++;
@@ -261,14 +266,20 @@ static long long string2timecode(ASS_Library *library, char *p)
 
 #define STRVAL(name) \
     } else if (ass_strcasecmp(tname, #name) == 0) { \
-        if (target->name != NULL) free(target->name); \
-        target->name = strdup(token);
+        char *new_str = strdup(token); \
+        if (new_str) { \
+            free(target->name); \
+            target->name = new_str; \
+        }
 
 #define STARREDSTRVAL(name) \
     } else if (ass_strcasecmp(tname, #name) == 0) { \
-        if (target->name != NULL) free(target->name); \
         while (*token == '*') ++token; \
-        target->name = strdup(token);
+        char *new_str = strdup(token); \
+        if (new_str) { \
+            free(target->name); \
+            target->name = new_str; \
+        }
 
 #define COLORVAL(name) ANYVAL(name,parse_color_header)
 #define INTVAL(name) ANYVAL(name,atoi)
@@ -327,15 +338,9 @@ static int process_event_tail(ASS_Track *track, ASS_Event *event,
     ASS_Event *target = event;
 
     char *format = strdup(track->event_format);
+    if (!format)
+        return -1;
     char *q = format;           // format scanning pointer
-
-    if (track->n_styles == 0) {
-        // add "Default" style to the end
-        // will be used if track does not contain a default style (or even does not contain styles at all)
-        int sid = ass_alloc_style(track);
-        set_default_style(&track->styles[sid]);
-        track->default_style = sid;
-    }
 
     for (i = 0; i < n_ignored; ++i) {
         NEXT(q, tname);
@@ -346,14 +351,14 @@ static int process_event_tail(ASS_Track *track, ASS_Event *event,
         if (ass_strcasecmp(tname, "Text") == 0) {
             char *last;
             event->Text = strdup(p);
-            if (*event->Text != 0) {
+            if (event->Text && *event->Text != 0) {
                 last = event->Text + strlen(event->Text) - 1;
                 if (last >= event->Text && *last == '\r')
                     *last = 0;
             }
             event->Duration -= event->Start;
             free(format);
-            return 0;           // "Text" is always the last
+            return event->Text ? 0 : -1;           // "Text" is always the last
         }
         NEXT(p, token);
 
@@ -483,21 +488,21 @@ static int process_style(ASS_Track *track, char *str)
             track->style_format = strdup(ssa_style_format);
         else
             track->style_format = strdup(ass_style_format);
+        if (!track->style_format)
+            return -1;
     }
 
     q = format = strdup(track->style_format);
-
-    // Add default style first
-    if (track->n_styles == 0) {
-        // will be used if track does not contain a default style (or even does not contain styles at all)
-        int sid = ass_alloc_style(track);
-        set_default_style(&track->styles[sid]);
-        track->default_style = sid;
-    }
+    if (!q)
+        return -1;
 
     ass_msg(track->library, MSGL_V, "[%p] Style: %s", track, str);
 
     sid = ass_alloc_style(track);
+    if (sid < 0) {
+        free(format);
+        return -1;
+    }
 
     style = track->styles + sid;
     target = style;
@@ -512,8 +517,6 @@ static int process_style(ASS_Track *track, char *str)
 
         PARSE_START
             STARREDSTRVAL(Name)
-            if (strcmp(target->Name, "Default") == 0)
-                track->default_style = sid;
             STRVAL(FontName)
             COLORVAL(PrimaryColour)
             COLORVAL(SecondaryColour)
@@ -549,6 +552,7 @@ static int process_style(ASS_Track *track, char *str)
             FPVAL(Shadow)
         PARSE_END
     }
+    free(format);
     style->ScaleX = FFMAX(style->ScaleX, 0.) / 100.;
     style->ScaleY = FFMAX(style->ScaleY, 0.) / 100.;
     style->Spacing = FFMAX(style->Spacing, 0.);
@@ -562,7 +566,13 @@ static int process_style(ASS_Track *track, char *str)
         style->Name = strdup("Default");
     if (!style->FontName)
         style->FontName = strdup("Arial");
-    free(format);
+    if (!style->Name || !style->FontName) {
+        ass_free_style(track, sid);
+        track->n_styles--;
+        return -1;
+    }
+    if (strcmp(target->Name, "Default") == 0)
+        track->default_style = sid;
     return 0;
 
 }
@@ -616,11 +626,14 @@ static void custom_format_line_compatibility(ASS_Track *const track,
 
 static int process_styles_line(ASS_Track *track, char *str)
 {
+    int ret = 0;
     if (!strncmp(str, "Format:", 7)) {
         char *p = str + 7;
         skip_spaces(&p);
         free(track->style_format);
         track->style_format = strdup(p);
+        if (!track->style_format)
+            return -1;
         ass_msg(track->library, MSGL_DBG2, "Style format: %s",
                track->style_format);
         if (track->track_type == TRACK_TYPE_ASS)
@@ -630,9 +643,9 @@ static int process_styles_line(ASS_Track *track, char *str)
     } else if (!strncmp(str, "Style:", 6)) {
         char *p = str + 6;
         skip_spaces(&p);
-        process_style(track, p);
+        ret = process_style(track, p);
     }
-    return 0;
+    return ret;
 }
 
 static inline void check_duplicate_info_line(const ASS_Track *const track,
@@ -759,6 +772,8 @@ static int process_events_line(ASS_Track *track, char *str)
         skip_spaces(&p);
         free(track->event_format);
         track->event_format = strdup(p);
+        if (!track->event_format)
+            return -1;
         ass_msg(track->library, MSGL_DBG2, "Event format: %s", track->event_format);
         if (track->track_type == TRACK_TYPE_ASS)
             custom_format_line_compatibility(track, p, ass_event_format);
@@ -779,17 +794,22 @@ static int process_events_line(ASS_Track *track, char *str)
         int eid;
         ASS_Event *event;
 
+        // We can't parse events without event_format
+        if (!track->event_format) {
+            event_format_fallback(track);
+            if (!track->event_format)
+                return -1;
+        }
+
         str += 9;
         skip_spaces(&str);
 
         eid = ass_alloc_event(track);
+        if (eid < 0)
+            return -1;
         event = track->events + eid;
 
-        // We can't parse events with event_format
-        if (!track->event_format)
-            event_format_fallback(track);
-
-        process_event_tail(track, event, str, 0);
+        return process_event_tail(track, event, str, 0);
     } else {
         ass_msg(track->library, MSGL_V, "Not understood: '%.30s'", str);
     }
@@ -797,7 +817,7 @@ static int process_events_line(ASS_Track *track, char *str)
 }
 
 static unsigned char *decode_chars(const unsigned char *src,
-                                   unsigned char *dst, int cnt_in)
+                                   unsigned char *dst, size_t cnt_in)
 {
     uint32_t value = 0;
     for (int i = 0; i < cnt_in; i++)
@@ -811,13 +831,23 @@ static unsigned char *decode_chars(const unsigned char *src,
     return dst;
 }
 
+static void reset_embedded_font_parsing(ASS_ParserPriv *parser_priv)
+{
+    free(parser_priv->fontname);
+    free(parser_priv->fontdata);
+    parser_priv->fontname = NULL;
+    parser_priv->fontdata = NULL;
+    parser_priv->fontdata_size = 0;
+    parser_priv->fontdata_used = 0;
+}
+
 static int decode_font(ASS_Track *track)
 {
     unsigned char *p;
     unsigned char *q;
-    int i;
-    int size;                   // original size
-    int dsize;                  // decoded size
+    size_t i;
+    size_t size;                   // original size
+    size_t dsize;                  // decoded size
     unsigned char *buf = 0;
 
     ass_msg(track->library, MSGL_V, "Font: %d bytes encoded data",
@@ -827,7 +857,7 @@ static int decode_font(ASS_Track *track)
         ass_msg(track->library, MSGL_ERR, "Bad encoded data size");
         goto error_decode_font;
     }
-    buf = malloc(size / 4 * 3 + FFMAX(size % 4 - 1, 0));
+    buf = malloc(size / 4 * 3 + FFMAX(size % 4, 1) - 1);
     if (!buf)
         goto error_decode_font;
     q = buf;
@@ -841,7 +871,7 @@ static int decode_font(ASS_Track *track)
         q = decode_chars(p, q, 3);
     }
     dsize = q - buf;
-    assert(dsize == size / 4 * 3 + FFMAX(size % 4 - 1, 0));
+    assert(dsize == size / 4 * 3 + FFMAX(size % 4, 1) - 1);
 
     if (track->library->extract_fonts) {
         ass_add_font(track->library, track->parser_priv->fontname,
@@ -850,18 +880,13 @@ static int decode_font(ASS_Track *track)
 
 error_decode_font:
     free(buf);
-    free(track->parser_priv->fontname);
-    free(track->parser_priv->fontdata);
-    track->parser_priv->fontname = 0;
-    track->parser_priv->fontdata = 0;
-    track->parser_priv->fontdata_size = 0;
-    track->parser_priv->fontdata_used = 0;
+    reset_embedded_font_parsing(track->parser_priv);
     return 0;
 }
 
 static int process_fonts_line(ASS_Track *track, char *str)
 {
-    int len;
+    size_t len;
 
     if (!strncmp(str, "fontname:", 9)) {
         char *p = str + 9;
@@ -870,29 +895,39 @@ static int process_fonts_line(ASS_Track *track, char *str)
             decode_font(track);
         }
         track->parser_priv->fontname = strdup(p);
+        if (!track->parser_priv->fontname)
+            return -1;
         ass_msg(track->library, MSGL_V, "Fontname: %s",
-               track->parser_priv->fontname);
+                track->parser_priv->fontname);
         return 0;
     }
 
     if (!track->parser_priv->fontname) {
         ass_msg(track->library, MSGL_V, "Not understood: '%s'", str);
-        return 0;
+        return 1;
     }
 
     len = strlen(str);
-    if (track->parser_priv->fontdata_used + len >
-        track->parser_priv->fontdata_size) {
-        track->parser_priv->fontdata_size += FFMAX(len, 100 * 1024);
-        track->parser_priv->fontdata =
-            realloc(track->parser_priv->fontdata,
-                    track->parser_priv->fontdata_size);
+    if (track->parser_priv->fontdata_used >=
+        SIZE_MAX - FFMAX(len, 100 * 1024)) {
+        goto mem_fail;
+    } else if (track->parser_priv->fontdata_used + len >
+               track->parser_priv->fontdata_size) {
+        size_t new_size =
+                track->parser_priv->fontdata_size + FFMAX(len, 100 * 1024);
+        if (!ASS_REALLOC_ARRAY(track->parser_priv->fontdata, new_size))
+            goto mem_fail;
+        track->parser_priv->fontdata_size = new_size;
     }
     memcpy(track->parser_priv->fontdata + track->parser_priv->fontdata_used,
            str, len);
     track->parser_priv->fontdata_used += len;
 
     return 0;
+
+mem_fail:
+    reset_embedded_font_parsing(track->parser_priv);
+    return -1;
 }
 
 /**
@@ -1032,7 +1067,7 @@ void ass_set_check_readorder(ASS_Track *track, int check_readorder)
 void ass_process_chunk(ASS_Track *track, char *data, int size,
                        long long timecode, long long duration)
 {
-    char *str;
+    char *str = NULL;
     int eid;
     char *p;
     char *token;
@@ -1048,18 +1083,20 @@ void ass_process_chunk(ASS_Track *track, char *data, int size,
 
     if (!track->event_format) {
         ass_msg(track->library, MSGL_WARN, "Event format header missing");
-        return;
+        goto cleanup;
     }
 
     str = malloc(size + 1);
     if (!str)
-        return;
+        goto cleanup;
     memcpy(str, data, size);
     str[size] = '\0';
     ass_msg(track->library, MSGL_V, "Event at %" PRId64 ", +%" PRId64 ": %s",
            (int64_t) timecode, (int64_t) duration, str);
 
     eid = ass_alloc_event(track);
+    if (eid < 0)
+        goto cleanup;
     event = track->events + eid;
 
     p = str;
@@ -1078,13 +1115,14 @@ void ass_process_chunk(ASS_Track *track, char *data, int size,
         event->Start = timecode;
         event->Duration = duration;
 
-        free(str);
-        return;
+        goto cleanup;
 //              dump_events(tid);
     } while (0);
     // some error
     ass_free_event(track, eid);
     track->n_events--;
+
+cleanup:
     free(str);
 }
 
@@ -1251,6 +1289,8 @@ static ASS_Track *parse_memory(ASS_Library *library, char *buf)
     int i;
 
     track = ass_new_track(library);
+    if (!track)
+        return NULL;
 
     // process header
     process_text(track, buf);
@@ -1451,18 +1491,33 @@ long long ass_step_sub(ASS_Track *track, long long now, int movement)
 
 ASS_Track *ass_new_track(ASS_Library *library)
 {
+    int def_sid = -1;
     ASS_Track *track = calloc(1, sizeof(ASS_Track));
     if (!track)
-        return NULL;
+        goto fail;
     track->library = library;
     track->ScaledBorderAndShadow = 0;
     track->parser_priv = calloc(1, sizeof(ASS_ParserPriv));
-    if (!track->parser_priv) {
-        free(track);
-        return NULL;
-    }
+    if (!track->parser_priv)
+        goto fail;
+    def_sid = ass_alloc_style(track);
+    if (def_sid < 0)
+        goto fail;
+    set_default_style(track->styles + def_sid);
+    track->default_style = def_sid;
+    if (!track->styles[def_sid].Name || !track->styles[def_sid].FontName)
+        goto fail;
     track->parser_priv->check_readorder = 1;
     return track;
+
+fail:
+    if (track) {
+        if (def_sid >= 0)
+            ass_free_style(track, def_sid);
+        free(track->parser_priv);
+        free(track);
+    }
+    return NULL;
 }
 
 int ass_track_set_feature(ASS_Track *track, ASS_Feature feature, int enable)

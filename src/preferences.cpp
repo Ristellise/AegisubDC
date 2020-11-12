@@ -368,7 +368,10 @@ void Experiments(wxTreebook* book, Preferences* parent) {
 
 	auto general = p->PageSizer(_("Experiments"));
 	p->OptionAdd(general, _("Video Panning"), "Experiments/Video Pan");
-	p->CellSkip(general);
+	auto libass = p->PageSizer(_("Libass only features"));
+	p->OptionAdd(libass, _("Unicode 6.3+ bracket matching"), "Experiments/Unicode63 Bracket Matching");
+
+	p->SetSizerAndFit(p->sizer);
 }
 
 /// Advanced Audio preferences subpage

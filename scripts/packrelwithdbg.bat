@@ -1,12 +1,7 @@
 @echo off
-robocopy automation\autoload build-dir\RelWithDebInfo\automation\autoload /IS /IT
-robocopy automation\include build-dir\RelWithDebInfo\automation\include /IS /IT
-robocopy automation\include\aegisub build-dir\RelWithDebInfo\automation\include\aegisub /IS /IT
-robocopy automation\include\ln build-dir\RelWithDebInfo\automation\include\ln /IS /IT
+robocopy automation build-dir\RelWithDebInfo\automation /IS /IT /S
 robocopy automation\demos build-dir\RelWithDebInfo\automation\demos /IS /IT
-robocopy "distro-extras" build-dir\RelWithDebInfo\ /IS /IT
-robocopy "distro-extras\csri" build-dir\RelWithDebInfo\csri /IS /IT
-robocopy "distro-extras\dictionaries" build-dir\RelWithDebInfo\dictionaries /IS /IT
+robocopy "distro-extras" build-dir\RelWithDebInfo\ /IS /IT /S
 robocopy "C:\Windows\System32" "build-dir\RelWithDebInfo" AviSynth.dll /IS /IT
 robocopy "C:\Boost\lib" "build-dir\RelWithDebInfo" boost_filesystem-vc142-mt-x64-1_73.dll boost_locale-vc142-mt-x64-1_73.dll boost_regex-vc142-mt-x64-1_73.dll boost_thread-vc142-mt-x64-1_73.dll /IS /IT
 robocopy "C:\Program Files (x86)\AviSynth+\plugins64+" "build-dir\RelWithDebInfo" DirectShowSource.dll /IS /IT
