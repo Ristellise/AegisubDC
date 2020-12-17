@@ -58,6 +58,7 @@
     <ClCompile Include="ass.c">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="libass_gdi_fontselect.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="$(ProjectDir)..\msvc\config.h">

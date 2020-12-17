@@ -19,6 +19,7 @@ Makefile.in
 
 # Test programs
 /test/test*
+/compare/compare*
 /profile/profile*
 
 # pkgconfig
@@ -36,8 +37,3 @@ Makefile.in
 /ltmain.sh
 /missing
 /m4
-
-# Visual Studio and MSVC
-/bin
-.vs/
-*.user
