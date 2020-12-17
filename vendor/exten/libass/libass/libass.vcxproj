@@ -50,7 +50,7 @@
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v142</PlatformToolset>
     <UseOfMfc>Static</UseOfMfc>
   </PropertyGroup>
@@ -154,6 +154,7 @@
       <AdditionalIncludeDirectories>$(ProjectDir)..\msvc;$(VcpkgRoot)include\fribidi;$(VcpkgRoot)include\harfbuzz;$(SolutionDir)..\fribidi-1.0.10\lib;$(SolutionDir)..\fribidi-1.0.10\build\lib;$(SolutionDir)..\harfbuzz\src;$(SolutionDir)..\freetype\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_WIN32_WINNT=0x0600;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -217,6 +218,7 @@
     <ClCompile Include="ass_string.c" />
     <ClCompile Include="ass_strtod.c" />
     <ClCompile Include="ass_utils.c" />
+    <ClCompile Include="libass_gdi_fontselect.cpp" />
   </ItemGroup>
   <ItemGroup>
     <NASM Include="x86\be_blur.asm">
