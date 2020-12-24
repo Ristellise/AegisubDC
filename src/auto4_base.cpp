@@ -208,6 +208,7 @@ namespace Automation4 {
 
 	void ProgressSink::ShowDialog(ScriptDialog *config_dialog)
 	{
+		// wxDialog w;
 		agi::dispatch::Main().Sync([=] {
 			wxDialog w; // container dialog box
 			w.SetExtraStyle(wxWS_EX_VALIDATE_RECURSIVELY);

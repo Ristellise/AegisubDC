@@ -236,6 +236,23 @@ struct video_cycle_subtitles_provider final : public cmd::Command {
 	}
 };
 
+struct video_reload_subtitles_provider final : public cmd::Command {
+	CMD_NAME("video/subtitles_provider/reload")
+		STR_MENU("Reload active subtitles provider")
+		STR_DISP("Reload active subtitles provider")
+		STR_HELP("Reloads the current subtitles providers")
+
+		void operator()(agi::Context* c) override {
+		auto providers = SubtitlesProviderFactory::GetClasses();
+		if (providers.empty()) return;
+
+		auto it = find(begin(providers), end(providers), OPT_GET("Subtitle/Provider")->GetString());
+
+		OPT_SET("Subtitle/Provider")->SetString(*it);
+		c->frame->StatusTimeout(fmt_tl("Subtitles provider set to %s", *it), 5000);
+	}
+};
+
 struct video_detach final : public validator_video_loaded {
 	CMD_NAME("video/detach")
 	CMD_ICON(detach_video_menu)
@@ -746,6 +763,7 @@ namespace cmd {
 		reg(agi::make_unique<video_close>());
 		reg(agi::make_unique<video_copy_coordinates>());
 		reg(agi::make_unique<video_cycle_subtitles_provider>());
+		reg(agi::make_unique<video_reload_subtitles_provider>());
 		reg(agi::make_unique<video_detach>());
 		reg(agi::make_unique<video_details>());
 		reg(agi::make_unique<video_focus_seek>());

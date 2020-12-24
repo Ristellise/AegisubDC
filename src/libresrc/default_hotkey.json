@@ -125,11 +125,8 @@
 		"edit/line/delete" : [
 			"Ctrl-Delete"
 		],
-		"edit/line/duplicate/shift" : [
+		"edit/line/duplicate" : [
 			"Ctrl-D"
-		],
-		"edit/line/duplicate/shift_back" : [
-			"Ctrl-Shift-D"
 		],
 		"edit/line/paste" : [
 			"Ctrl-V"

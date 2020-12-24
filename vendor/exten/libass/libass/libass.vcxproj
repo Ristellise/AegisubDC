@@ -34,7 +34,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
-    <CharacterSet>MultiByte</CharacterSet>
+    <CharacterSet>Unicode</CharacterSet>
     <PlatformToolset>v142</PlatformToolset>
     <UseOfMfc>Static</UseOfMfc>
   </PropertyGroup>
@@ -110,9 +110,10 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\msvc;$(VcpkgRoot)include\fribidi;$(VcpkgRoot)include\harfbuzz;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)..\msvc;$(VcpkgRoot)include\fribidi;$(VcpkgRoot)include\harfbuzz;$(SolutionDir)..\fribidi-1.0.10\lib;$(SolutionDir)..\fribidi-1.0.10\build\lib;$(SolutionDir)..\harfbuzz\src;$(SolutionDir)..\freetype\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_WIN32_WINNT=0x0600;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -122,6 +123,9 @@
       <PreprocessorDefinitions>ARCH_X86_64=1;HAVE_ALIGNED_STACK=1;HAVE_CPUNOP=0;private_prefix=ass;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </NASM>
+    <Lib>
+      <AdditionalDependencies>$(SolutionDir)..\freetype\win64\freetype.lib;$(SolutionDir)..\fribidi-1.0.10\build\lib\fribidi.lib;$(SolutionDir)..\harfbuzz\build\Release\harfbuzz.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>

@@ -12,3 +12,4 @@ vendor/exten/harfbuzz/tests/
 /vendor/exten/fribidi-1.0.10/build/lib/*@@fribidi@sha
 /vendor/exten/libass/compare
 /vendor/exten/zlib/contrib/vstudio/vc14/x64/ZlibStatRelease/Tmp
+/vendor/exten/libass/bin/Debug_x64/libass
