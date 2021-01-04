@@ -12,7 +12,7 @@ This is basically a patched wangqr build to include latest libraries et all.
 - Removed border UI for Text box. looks cleaner this way.
 - Fixed font detection for gdi.
 
-The bug tracker can be found at https://github.com/Ristellise/AegisubDC/issues .
+The bug tracker can be found at https://github.com/Ristellise/AegisubDC/issues.
 
 Support for this edition is available on this issues page.
 
