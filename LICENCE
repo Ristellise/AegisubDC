@@ -33,6 +33,9 @@ covered by another license in the file itself.
 The following directories and file are covered by their respective licenses as
 follows:
 
+automation/include/Yutils.lua
+ - MIT license. See automation/include/Yutils.lua
+
 src/gl/
  - MIT license. See src/gl/glext.h
 
