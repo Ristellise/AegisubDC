@@ -1,6 +1,0 @@
-D:/TestSub/vendor/exten/harfbuzz/build/CMakeFiles/harfbuzz.dir
-D:/TestSub/vendor/exten/harfbuzz/build/CMakeFiles/harfbuzz-icu.dir
-D:/TestSub/vendor/exten/harfbuzz/build/CMakeFiles/harfbuzz-subset.dir
-D:/TestSub/vendor/exten/harfbuzz/build/CMakeFiles/INSTALL.dir
-D:/TestSub/vendor/exten/harfbuzz/build/CMakeFiles/ALL_BUILD.dir
-D:/TestSub/vendor/exten/harfbuzz/build/CMakeFiles/ZERO_CHECK.dir

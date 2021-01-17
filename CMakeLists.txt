@@ -521,16 +521,18 @@ target_link_libraries(Aegisub PRIVATE "Boost::headers" "Boost::container" "Boost
 find_package(OpenGL REQUIRED)
 target_link_libraries(Aegisub PRIVATE "OpenGL::GL")
 
-find_package(Iconv REQUIRED)
-target_link_libraries(libaegisub PRIVATE "Iconv::Iconv")
 
-find_package(ICU REQUIRED uc)
+
+find_package(unofficial-iconv REQUIRED)
+target_link_libraries(libaegisub PRIVATE unofficial::iconv::libiconv unofficial::iconv::libcharset)
+
+find_package(ICU REQUIRED COMPONENTS uc)
 target_link_libraries(libaegisub PRIVATE "ICU::uc")
 target_link_libraries(Aegisub PRIVATE "ICU::uc")
 
 find_package(wxWidgets REQUIRED adv base core gl stc xml)
-include(${wxWidgets_USE_FILE})
 target_link_libraries(Aegisub LINK_PRIVATE ${wxWidgets_LIBRARIES})
+target_include_directories(Aegisub PRIVATE ${wxWidgets_INCLUDE_DIRS})
 
 find_package(ZLIB REQUIRED)
 target_link_libraries(Aegisub PRIVATE "ZLIB::ZLIB")
