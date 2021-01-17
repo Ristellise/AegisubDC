@@ -1,6 +1,0 @@
-[options]
-backend = vs2019
-buildtype = release
-
-[properties]
-
