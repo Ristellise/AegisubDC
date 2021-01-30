@@ -1,0 +1,10 @@
+prefix=${pcfiledir}/../..
+
+libdir=${prefix}/lib
+includedir=${prefix}/../include
+
+Name: GNU FriBidi
+Description: Unicode Bidirectional Algorithm Library
+Version: 1.0.10
+Libs: -L"${libdir}" -lfribidi
+Cflags: -I"${includedir}/fribidi"

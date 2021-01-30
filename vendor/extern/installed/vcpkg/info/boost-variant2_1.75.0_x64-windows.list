@@ -1,0 +1,10 @@
+x64-windows/
+x64-windows/include/
+x64-windows/include/boost/
+x64-windows/include/boost/variant2/
+x64-windows/include/boost/variant2/variant.hpp
+x64-windows/share/
+x64-windows/share/boost-variant2/
+x64-windows/share/boost-variant2/copyright
+x64-windows/share/boost-variant2/usage
+x64-windows/share/boost-variant2/vcpkg_abi_info.txt

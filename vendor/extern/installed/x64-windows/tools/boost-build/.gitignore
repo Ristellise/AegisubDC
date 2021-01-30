@@ -1,0 +1,17 @@
+*.code-workspace
+*.py[co]
+/.vscode
+/doc/bin
+/doc/html
+/b2
+/bjam
+/b2.exe
+/bjam.exe
+/.build
+/bootstrap.log
+/test/test_results.txt
+/project-config.jam
+/src/engine/b2
+/src/engine/b2.exe
+infer-out
+build.log
