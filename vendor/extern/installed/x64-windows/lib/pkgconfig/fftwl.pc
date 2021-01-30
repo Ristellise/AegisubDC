@@ -1,0 +1,11 @@
+prefix=D:/vcpkg2/packages/fftw3_x64-windows
+exec_prefix=D:/vcpkg2/packages/fftw3_x64-windows
+libdir=D:/vcpkg2/packages/fftw3_x64-windows/lib
+includedir=D:/vcpkg2/packages/fftw3_x64-windows/include
+
+Name: FFTW
+Description: fast Fourier transform library
+Version: 3.3.7
+Libs: -L${libdir} -lfftw3l 
+Libs.private: -lm
+Cflags: -I${includedir}

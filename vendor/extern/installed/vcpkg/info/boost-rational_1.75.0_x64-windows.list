@@ -1,0 +1,9 @@
+x64-windows/
+x64-windows/include/
+x64-windows/include/boost/
+x64-windows/include/boost/rational.hpp
+x64-windows/share/
+x64-windows/share/boost-rational/
+x64-windows/share/boost-rational/copyright
+x64-windows/share/boost-rational/usage
+x64-windows/share/boost-rational/vcpkg_abi_info.txt

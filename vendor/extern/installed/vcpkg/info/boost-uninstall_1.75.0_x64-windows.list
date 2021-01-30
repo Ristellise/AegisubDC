@@ -1,0 +1,4 @@
+x64-windows/
+x64-windows/share/
+x64-windows/share/boost-uninstall/
+x64-windows/share/boost-uninstall/vcpkg_abi_info.txt

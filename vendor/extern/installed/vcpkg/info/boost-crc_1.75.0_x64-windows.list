@@ -1,0 +1,9 @@
+x64-windows/
+x64-windows/include/
+x64-windows/include/boost/
+x64-windows/include/boost/crc.hpp
+x64-windows/share/
+x64-windows/share/boost-crc/
+x64-windows/share/boost-crc/copyright
+x64-windows/share/boost-crc/usage
+x64-windows/share/boost-crc/vcpkg_abi_info.txt

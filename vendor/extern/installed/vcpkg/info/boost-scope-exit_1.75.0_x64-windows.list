@@ -1,0 +1,9 @@
+x64-windows/
+x64-windows/include/
+x64-windows/include/boost/
+x64-windows/include/boost/scope_exit.hpp
+x64-windows/share/
+x64-windows/share/boost-scope-exit/
+x64-windows/share/boost-scope-exit/copyright
+x64-windows/share/boost-scope-exit/usage
+x64-windows/share/boost-scope-exit/vcpkg_abi_info.txt
