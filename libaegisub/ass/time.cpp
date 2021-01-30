@@ -90,6 +90,12 @@ std::string Time::GetSrtFormatted() const {
 	return ret;
 }
 
+void Time::RoundTime() {
+	float floatTime = (float)this->time / 10.0f;
+
+	time = floor(floatTime - 0.5) * 10;
+}
+
 SmpteFormatter::SmpteFormatter(vfr::Framerate fps, char sep)
 : fps(std::move(fps))
 , sep(sep)

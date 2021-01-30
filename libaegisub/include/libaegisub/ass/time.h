@@ -40,5 +40,8 @@ public:
 
 	/// Return the time as a string
 	std::string GetSrtFormatted() const;
+
+	/// Rounds the time up to the nearest tenths, for compatibility with SRT.
+	void RoundTime();
 };
 }
