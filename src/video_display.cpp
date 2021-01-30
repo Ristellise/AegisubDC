@@ -119,6 +119,10 @@ VideoDisplay::VideoDisplay(wxToolBar *toolbar, bool freeSize, wxComboBox *zoomBo
 	Bind(wxEVT_LEFT_DCLICK, &VideoDisplay::OnMouseEvent, this);
 	Bind(wxEVT_LEFT_DOWN, &VideoDisplay::OnMouseEvent, this);
 	Bind(wxEVT_LEFT_UP, &VideoDisplay::OnMouseEvent, this);
+	Bind(wxEVT_MIDDLE_DOWN, &VideoDisplay::OnMouseEvent, this);
+	Bind(wxEVT_MIDDLE_UP, &VideoDisplay::OnMouseEvent, this);
+	Bind(wxEVT_MIDDLE_DOWN, &VideoDisplay::OnMouseEvent, this);
+	Bind(wxEVT_MIDDLE_UP, &VideoDisplay::OnMouseEvent, this);
 	Bind(wxEVT_MOTION, &VideoDisplay::OnMouseEvent, this);
 	Bind(wxEVT_MOUSEWHEEL, &VideoDisplay::OnMouseWheel, this);
 
@@ -210,7 +214,7 @@ void VideoDisplay::DoRender() try {
 		PositionVideo();
 
 	videoOut->Render(viewport_left, viewport_bottom, viewport_width, viewport_height);
-	E(glViewport(0, std::min(viewport_bottom, 0), videoSize.GetWidth(), videoSize.GetHeight()));
+	E(glViewport(0, viewport_bottom_end, videoSize.GetWidth(), videoSize.GetHeight()));
 	E(glMatrixMode(GL_PROJECTION));
 	E(glLoadIdentity());
 	E(glOrtho(0.0f, videoSize.GetWidth() / scale_factor, videoSize.GetHeight() / scale_factor, 0.0f, -1000.0f, 1000.0f));
@@ -286,8 +290,11 @@ void VideoDisplay::PositionVideo() {
 	auto provider = con->project->VideoProvider();
 	if (!provider || !IsShownOnScreen()) return;
 
+	int client_w, client_h;
+	GetClientSize(&client_w, &client_h);
+
 	viewport_left = 0;
-	viewport_bottom = GetClientSize().GetHeight() * scale_factor - videoSize.GetHeight();
+	viewport_bottom_end = viewport_bottom = client_h * scale_factor - videoSize.GetHeight();
 	viewport_top = 0;
 	viewport_width = videoSize.GetWidth();
 	viewport_height = videoSize.GetHeight();
@@ -314,14 +321,16 @@ void VideoDisplay::PositionVideo() {
 		}
 	}
 
-	viewport_left += video_offset.X();
-	viewport_bottom -= video_offset.Y();
-	viewport_top -= video_offset.Y();
+	viewport_left += pan_x;
+	viewport_top += pan_y;
+	viewport_bottom -= pan_y;
+	viewport_bottom_end = std::min(viewport_bottom_end, 0);
 
-	if (tool)
+	if (tool) {
+		tool->SetClientSize(client_w * scale_factor, client_h * scale_factor, pan_x, pan_y);
 		tool->SetDisplayArea(viewport_left / scale_factor, viewport_top / scale_factor,
-		                     viewport_width / scale_factor, viewport_height / scale_factor);
-
+			viewport_width / scale_factor, viewport_height / scale_factor);
+	}
 	Render();
 }
 
@@ -370,26 +379,34 @@ void VideoDisplay::OnSizeEvent(wxSizeEvent &event) {
 void VideoDisplay::OnMouseEvent(wxMouseEvent& event) {
 	if (event.ButtonDown())
 		SetFocus();
-	mouse_pos = event.GetPosition();
 	bool videoPan = OPT_GET("Experiments/Video Pan")->GetBool();
-	if (event.MiddleIsDown() && HasFocus() && videoPan)
+	last_mouse_pos = mouse_pos = event.GetPosition();
+
+	if (videoPan)
 	{
-		Vector2D delta = Vector2D(mouse_pos) - last_mouse_pos;
-		video_offset = video_offset + delta;
+		if (event.GetButton() == wxMOUSE_BTN_MIDDLE) {
+			if ((panning = event.ButtonDown()))
+				pan_last_pos = event.GetPosition();
+		}
+		if (panning && event.Dragging()) {
+			pan_x += event.GetX() - pan_last_pos.X();
+			pan_y += event.GetY() - pan_last_pos.Y();
+			pan_last_pos = event.GetPosition();
+
+			PositionVideo();
+			render_requested = true;
+		}
+	}
+	else if ((pan_x != 0 || pan_y != 0) && !videoPan)
+	{
+		pan_x = pan_y = 0;
 		PositionVideo();
 		render_requested = true;
 	}
-	if (!videoPan && (video_offset.X() != 0.f || video_offset.Y() != 0.f))
-	{
-		video_offset = Vector2D(0, 0);
-		PositionVideo();
-		render_requested = true;
-	}
-	last_mouse_pos = mouse_pos;
+
 
 	if (tool)
 		tool->OnMouseEvent(event);
-		
 }
 
 void VideoDisplay::OnMouseLeave(wxMouseEvent& event) {
@@ -415,9 +432,17 @@ void VideoDisplay::OnKeyDown(wxKeyEvent &event) {
 	hotkey::check("Video", con, event);
 }
 
+void VideoDisplay::ResetPan() {
+	pan_x = pan_y = 0;
+	PositionVideo();
+}
+
 void VideoDisplay::SetZoom(double value) {
 	if (value == 0) return;
-	zoomValue = std::max(value, .125);
+	value = std::max(value, .125);
+	pan_x *= value / zoomValue;
+	pan_y *= value / zoomValue;
+	zoomValue = value;
 	size_t selIndex = zoomValue / .125 - 1;
 	if (selIndex < zoomBox->GetCount())
 		zoomBox->SetSelection(selIndex);

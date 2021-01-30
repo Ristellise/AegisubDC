@@ -83,6 +83,8 @@ class VideoDisplay final : public wxGLCanvas {
 	int viewport_top = 0;
 	/// The height of the video in screen pixels
 	int viewport_height = 0;
+	/// The REAL bottom of the viewport; used only for glViewport
+	int viewport_bottom_end = 0;
 
 	/// The current zoom level, where 1.0 = 100%
 	double zoomValue;
@@ -156,7 +158,14 @@ public:
 		agi::Context *context);
 	~VideoDisplay();
 
-	Vector2D video_offset;
+	/// The last position of the mouse, when dragging
+	Vector2D pan_last_pos;
+	/// True if middle mouse button is down, and we should update pan_{x,y}
+	bool panning = false;
+	/// The current video pan offset width
+	int pan_x = 0;
+	/// The current video pan offset height
+	int pan_y = 0;
 
 	/// @brief Render the currently visible frame
 	void Render();
@@ -166,6 +175,9 @@ public:
 	void SetZoom(double value);
 	/// @brief Get the current zoom level
 	double GetZoom() const { return zoomValue; }
+
+	/// @brief Reset the video pan
+	void ResetPan();
 
 	/// Get the last seen position of the mouse in script coordinates
 	Vector2D GetMousePosition() const;
