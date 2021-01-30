@@ -267,6 +267,7 @@ elseif(WIN32)
         libaegisub/windows/path_win.cpp
         libaegisub/windows/util_win.cpp
     )
+    target_compile_definitions(libaegisub PRIVATE -D_UNICODE -DUNICODE)
 endif()
 set_target_properties(libaegisub PROPERTIES PREFIX "")
 target_compile_definitions(libaegisub PRIVATE CMAKE_BUILD)
@@ -474,6 +475,7 @@ if(WIN32)
     else()
         target_include_directories(Aegisub PRIVATE "build")
     endif()
+    target_compile_definitions(Aegisub PRIVATE -D_UNICODE -DUNICODE -DWXUSINGDLL)
 else()
     add_custom_target(git_version build/version.sh .
         BYPRODUCTS "${PROJECT_SOURCE_DIR}/build/git_version.h" "${PROJECT_SOURCE_DIR}/build/git_version.xml"
