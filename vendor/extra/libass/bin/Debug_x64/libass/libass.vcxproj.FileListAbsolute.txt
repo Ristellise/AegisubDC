@@ -1,2 +1,0 @@
-D:\Aegisub-DC\vendor\exten\libass\bin\Debug_x64\libass\libass.pdb
-D:\Aegisub-DC\vendor\exten\libass\bin\Debug_x64\libass.pdb
