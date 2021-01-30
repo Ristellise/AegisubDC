@@ -110,7 +110,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\msvc;$(VcpkgRoot)include\fribidi;$(VcpkgRoot)include\harfbuzz;$(SolutionDir)..\fribidi-1.0.10\lib;$(SolutionDir)..\fribidi-1.0.10\build\lib;$(SolutionDir)..\harfbuzz\src;$(SolutionDir)..\freetype\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\extern\installed\x64-windows\include;$(SolutionDir)msvc</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_WIN32_WINNT=0x0600;_LIB;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
@@ -124,7 +124,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </NASM>
     <Lib>
-      <AdditionalDependencies>$(SolutionDir)..\freetype\win64\freetype.lib;$(SolutionDir)..\fribidi-1.0.10\build\lib\fribidi.lib;$(SolutionDir)..\harfbuzz\build\Release\harfbuzz.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)..\..\extern\installed\x64-windows\lib\freetype.lib;$(SolutionDir)..\..\extern\installed\x64-windows\lib\fribidi.lib;$(SolutionDir)..\..\extern\installed\x64-windows\lib\harfbuzz.lib;$(SolutionDir)..\..\extern\installed\x64-windows\lib\harfbuzz-icu.lib</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -155,7 +155,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>false</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir)..\msvc;$(VcpkgRoot)include\fribidi;$(VcpkgRoot)include\harfbuzz;$(SolutionDir)..\fribidi-1.0.10\lib;$(SolutionDir)..\fribidi-1.0.10\build\lib;$(SolutionDir)..\harfbuzz\src;$(SolutionDir)..\freetype\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\..\extern\installed\x64-windows\include;$(SolutionDir)msvc</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>WIN32;_WINDOWS;_WIN32_WINNT=0x0600;_LIB;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -170,7 +170,7 @@
       <PreprocessorDefinitions>ARCH_X86_64=1;HAVE_ALIGNED_STACK=1;HAVE_CPUNOP=0;private_prefix=ass;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </NASM>
     <Lib>
-      <AdditionalDependencies>$(SolutionDir)..\freetype\win64\freetype.lib;$(SolutionDir)..\fribidi-1.0.10\build\lib\fribidi.lib;$(SolutionDir)..\harfbuzz\build\Release\harfbuzz.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>$(SolutionDir)..\..\extern\installed\x64-windows\lib\freetype.lib;$(SolutionDir)..\..\extern\installed\x64-windows\lib\fribidi.lib;$(SolutionDir)..\..\extern\installed\x64-windows\lib\harfbuzz.lib;$(SolutionDir)..\..\extern\installed\x64-windows\lib\harfbuzz-icu.lib</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>

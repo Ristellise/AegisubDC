@@ -523,16 +523,22 @@ target_link_libraries(Aegisub PRIVATE "OpenGL::GL")
 
 
 
-find_package(unofficial-iconv REQUIRED)
-target_link_libraries(libaegisub PRIVATE unofficial::iconv::libiconv unofficial::iconv::libcharset)
+find_package(Iconv REQUIRED)
+target_link_libraries(libaegisub PRIVATE "Iconv::Iconv")
 
 find_package(ICU REQUIRED COMPONENTS uc)
 target_link_libraries(libaegisub PRIVATE "ICU::uc")
 target_link_libraries(Aegisub PRIVATE "ICU::uc")
 
-find_package(wxWidgets REQUIRED adv base core gl stc xml)
+set(wxWidgets_USE_LIBS adv base core gl stc xml)
+find_package(wxWidgets)
 target_link_libraries(Aegisub LINK_PRIVATE ${wxWidgets_LIBRARIES})
-target_include_directories(Aegisub PRIVATE ${wxWidgets_INCLUDE_DIRS})
+if(WIN32)
+    target_include_directories(Aegisub PRIVATE ${wxWidgets_INCLUDE_DIRS} "vendor/extra/wxWidgets/lib/vc14x_x64_dll/mswu")
+else()
+    target_include_directories(Aegisub PRIVATE ${wxWidgets_INCLUDE_DIRS})
+endif()
+
 
 find_package(ZLIB REQUIRED)
 target_link_libraries(Aegisub PRIVATE "ZLIB::ZLIB")

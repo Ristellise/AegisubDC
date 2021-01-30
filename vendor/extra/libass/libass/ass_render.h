@@ -26,7 +26,7 @@
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
 #include FT_SYNTHESIS_H
-#include <hb.h>
+#include <harfbuzz/hb.h>
 
 #include "ass.h"
 #include "ass_font.h"

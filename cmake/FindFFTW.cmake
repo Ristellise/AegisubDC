@@ -37,7 +37,6 @@ if( ${FFTW_USE_STATIC_LIBS} )
 else()
   set( CMAKE_FIND_LIBRARY_SUFFIXES ${CMAKE_SHARED_LIBRARY_SUFFIX} )
 endif()
-
 if( FFTW_ROOT )
 
   #find libs
