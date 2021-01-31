@@ -11,6 +11,15 @@ This is basically a patched wangqr build to include latest libraries et all.
 - Allow font manager (like fontbase) loaded fonts.
 - Removed border UI for Text box. looks cleaner this way.
 - Fixed font detection for gdi.
+- Fixed FFMS2 to allow VP9/Webm videos, includes audio patch
+- Support WWXD keyframes [Requested by Light]
+- Added `Experimental Unicode 6.3+` bracket matching option for libass
+- Bundle Yutils module as default automation
+- Added new hotkey command to reload current font provider. [Default: `CTRL+R`]
+ - Updated VSFilter to Cyberbeing/xy-VSFilter@fc01a8da5ea6af9091aaab839bc62dc94a90094e
+ - Updated VSFilterMod to sorayuki/VSFilterMod@R5.2.3
+ - Made SRT Times to always round down.
+ - Experimental Video Panning by moex3.
 
 The bug tracker can be found at https://github.com/Ristellise/AegisubDC/issues.
 
