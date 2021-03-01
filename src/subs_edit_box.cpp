@@ -271,18 +271,18 @@ SubsEditBox::~SubsEditBox() {
 }
 
 wxTextCtrl *SubsEditBox::MakeMarginCtrl(wxString const& tooltip, int margin, wxString const& commit_msg) {
-	wxTextCtrl *ctrl = new wxTextCtrl(this, -1, "", wxDefaultPosition, wxDefaultSize, wxTE_CENTRE | wxTE_PROCESS_ENTER, IntValidator());
+	wxTextCtrl *ctrl = new wxTextCtrl(this, -1, "", wxDefaultPosition, wxDefaultSize, wxTE_CENTRE | wxTE_PROCESS_ENTER, IntValidator(0, true));
 #if wxCHECK_VERSION(3, 1, 3)
-	ctrl->SetInitialSize(ctrl->GetSizeFromText(wxS("0000")));
+	ctrl->SetInitialSize(ctrl->GetSizeFromText(wxS("00000")));
 #else
-	ctrl->SetInitialSize(ctrl->GetSizeFromTextSize(GetTextExtent(wxS("0000"))));
+	ctrl->SetInitialSize(ctrl->GetSizeFromTextSize(GetTextExtent(wxS("00000"))));
 #endif
-	ctrl->SetMaxLength(4);
+	ctrl->SetMaxLength(5);
 	ctrl->SetToolTip(tooltip);
 	middle_left_sizer->Add(ctrl, wxSizerFlags().Expand());
 
 	Bind(wxEVT_TEXT, [=](wxCommandEvent&) {
-		int value = agi::util::mid(0, atoi(ctrl->GetValue().utf8_str()), 9999);
+		int value = agi::util::mid(-9999, atoi(ctrl->GetValue().utf8_str()), 99999);
 		SetSelectedRows([&](AssDialogue *d) { d->Margin[margin] = value; },
 			commit_msg, AssFile::COMMIT_DIAG_META);
 	}, ctrl->GetId());
