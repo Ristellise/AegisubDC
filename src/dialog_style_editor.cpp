@@ -200,7 +200,7 @@ DialogStyleEditor::DialogStyleEditor(wxWindow *parent, AssStyle *style, agi::Con
 	for (int i = 0; i < 3; i++) {
 		margin[i] = new wxSpinCtrl(this, -1, std::to_wstring(style->Margin[i]),
 			wxDefaultPosition, wxDefaultSize,
-			wxSP_ARROW_KEYS, 0, 9999, style->Margin[i]);
+			wxSP_ARROW_KEYS, -9999, 99999, style->Margin[i]);
 #if wxCHECK_VERSION(3, 1, 3)
 		margin[i]->SetInitialSize(margin[i]->GetSizeFromText(wxS("0000")));
 #else
