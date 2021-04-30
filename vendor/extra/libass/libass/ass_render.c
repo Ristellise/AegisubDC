@@ -24,6 +24,7 @@
 #include <string.h>
 #include <stdbool.h>
 
+#include "ass.h"
 #include "ass_outline.h"
 #include "ass_render.h"
 #include "ass_parse.h"
@@ -49,6 +50,9 @@ ASS_Renderer *ass_renderer_init(ASS_Library *library)
     FT_Library ft;
     ASS_Renderer *priv = 0;
     int vmajor, vminor, vpatch;
+
+    ass_msg(library, MSGL_INFO, "libass API version: 0x%X", LIBASS_VERSION);
+    ass_msg(library, MSGL_INFO, "libass source: %s", CONFIG_SOURCEVERSION);
 
     error = FT_Init_FreeType(&ft);
     if (error) {
@@ -506,15 +510,18 @@ static bool quantize_transform(double m[3][3], ASS_Vector *pos,
     // z = m_zx * x + m_zy * y + m_zz
     //  = m_zx * (x + sign(m_zx) * dx) + m_zy * (y + sign(m_zy) * dy) + z0.
 
-    // D(f)--absolute value of error in quantity f
-    // as function of error in matrix coefficients, i. e. D(m_??).
-    // Error in constant is zero, i. e. D(dx) = D(dy) = D(z0) = 0.
-    // In the following calculation errors are considered small
-    // and second- and higher-order terms are dropped.
-    // That approximation is valid as long as glyph dimensions are larger than couple of pixels.
-    // Therefore standard relations for derivatives can be used for D(?):
-    // D(A * B) <= D(A) * max|B| + max|A| * D(B),
-    // D(1 / C) <= D(C) * max|1 / C^2|.
+    // Let D(f) denote the absolute error of a quantity f.
+    // Our goal is to determine tolerable error for matrix coefficients,
+    // so that the total error of the output x_out, y_out is still acceptable.
+    // As glyph dimensions are usually larger than a couple of pixels, errors
+    // will be relatively small and we can use first order approximation.
+
+    // z0 is effectively a scale factor and can thus be treated as a constant.
+    // Error of constants is obviously zero, so:  D(dx) = D(dy) = D(z0) = 0.
+    // For arbitrary quantities A, B, C with C not zero, the following holds true:
+    //   D(A * B) <= D(A) * max|B| + max|A| * D(B),
+    //   D(1 / C) <= D(C) * max|1 / C^2|.
+    // Write ~ for 'same magnitude' and ~= for 'approximately'.
 
     // D(x_out) = D((m_xx * x + m_xy * y) / z)
     //  <= D(m_xx * x + m_xy * y) * max|1 / z| + max|m_xx * x + m_xy * y| * D(1 / z)
@@ -530,14 +537,14 @@ static bool quantize_transform(double m[3][3], ASS_Vector *pos,
     // D(y_out) <= (D(m_yx) * dx + D(m_yy) * dy) / z0
     //       + 2 * (D(m_zx) * dx + D(m_zy) * dy) * y_lim / z0^2.
 
-    // To estimate acceptable error in matrix coefficient
-    // set error in all other coefficients to zero and solve system
-    // D(x_out) <= ACCURACY & D(y_out) <= ACCURACY for desired D(m_??).
-    // ACCURACY here is some part of total error, i. e. ACCURACY ~ POSITION_PRECISION.
-    // Note that POSITION_PRECISION isn't total error, it's convenient constant.
-    // True error can be up to several POSITION_PRECISION.
+    // To estimate acceptable error in a matrix coefficient, pick ACCURACY for this substep,
+    // set error in all other coefficients to zero and solve the system
+    // D(x_out) <= ACCURACY, D(y_out) <= ACCURACY for desired D(m_ij).
+    // Note that ACCURACY isn't equal to total error.
+    // Total error is larger than each ACCURACY, but still of the same magnitude.
+    // Via our choice of ACCURACY, we get a total error of up to several POSITION_PRECISION.
 
-    // Quantization steps (ACCURACY ~ POSITION_PRECISION):
+    // Quantization steps (pick: ACCURARY = POSITION_PRECISION):
     // D(m_xx), D(m_yx) ~ q_x = POSITION_PRECISION * z0 / dx,
     // D(m_xy), D(m_yy) ~ q_y = POSITION_PRECISION * z0 / dy,
     // qm_xx = round(m_xx / q_x), qm_xy = round(m_xy / q_y),
@@ -561,7 +568,7 @@ static bool quantize_transform(double m[3][3], ASS_Vector *pos,
     // max(x_lim, y_lim) / z0 ~= w
     //  = max(|qm_xx| + |qm_xy|, |qm_yx| + |qm_yy|) * POSITION_PRECISION.
 
-    // Quantization steps (ACCURACY ~ 2 * POSITION_PRECISION):
+    // Quantization steps (pick: ACCURACY = 2 * POSITION_PRECISION):
     // D(m_zx) ~ POSITION_PRECISION * z0^2 / max(x_lim, y_lim) / dx ~= q_zx = q_x / w,
     // D(m_zy) ~ POSITION_PRECISION * z0^2 / max(x_lim, y_lim) / dy ~= q_zy = q_y / w,
     // qm_zx = round(m_zx / q_zx), qm_zy = round(m_zy / q_zy).
@@ -644,7 +651,7 @@ static inline size_t bitmap_size(const Bitmap *bm)
  */
 static void blend_vector_clip(ASS_Renderer *render_priv, ASS_Image *head)
 {
-    if (!render_priv->state.clip_drawing_text)
+    if (!render_priv->state.clip_drawing_text.str)
         return;
 
     OutlineHashKey ol_key;
@@ -707,6 +714,7 @@ static void blend_vector_clip(ASS_Renderer *render_priv, ASS_Image *head)
         bleft = left - bx;
         btop = top - by;
 
+        unsigned align = 1 << render_priv->engine->align_order;
         if (render_priv->state.clip_drawing_mode) {
             // Inverse clip
             if (ax + aw < bx || ay + ah < by || ax > bx + bw ||
@@ -715,7 +723,7 @@ static void blend_vector_clip(ASS_Renderer *render_priv, ASS_Image *head)
             }
 
             // Allocate new buffer and add to free list
-            nbuffer = ass_aligned_alloc(32, as * ah, false);
+            nbuffer = ass_aligned_alloc(align, as * ah + align, false);
             if (!nbuffer)
                 break;
 
@@ -723,7 +731,7 @@ static void blend_vector_clip(ASS_Renderer *render_priv, ASS_Image *head)
             memcpy(nbuffer, abuffer, ((ah - 1) * as) + aw);
             render_priv->engine->sub_bitmaps(nbuffer + atop * as + aleft, as,
                                              bbuffer + btop * bs + bleft, bs,
-                                             h, w);
+                                             w, h);
         } else {
             // Regular clip
             if (ax + aw < bx || ay + ah < by || ax > bx + bw ||
@@ -733,9 +741,8 @@ static void blend_vector_clip(ASS_Renderer *render_priv, ASS_Image *head)
             }
 
             // Allocate new buffer and add to free list
-            unsigned align = (w >= 16) ? 16 : ((w >= 8) ? 8 : 1);
             unsigned ns = ass_align(align, w);
-            nbuffer = ass_aligned_alloc(align, ns * h, false);
+            nbuffer = ass_aligned_alloc(align, ns * h + align, false);
             if (!nbuffer)
                 break;
 
@@ -838,7 +845,7 @@ static void compute_string_bbox(TextInfo *text, ASS_DRect *bbox)
     if (text->length > 0) {
         bbox->x_min = +32000;
         bbox->x_max = -32000;
-        bbox->y_min = d6_to_double(text->glyphs[0].pos.y) - text->lines[0].asc;
+        bbox->y_min = -text->lines[0].asc;
         bbox->y_max = bbox->y_min + text->height;
 
         for (int i = 0; i < text->length; i++) {
@@ -998,13 +1005,9 @@ void reset_render_context(ASS_Renderer *render_priv, ASS_Style *style)
         (style->StrikeOut ? DECO_STRIKETHROUGH : 0);
     render_priv->state.font_size = style->FontSize;
 
-    char* new_family = strdup(style->FontName);
-    if (new_family) {
-        free(render_priv->state.family);
-        render_priv->state.family = new_family;
-        render_priv->state.treat_family_as_pattern =
-            style->treat_fontname_as_pattern;
-    }
+    render_priv->state.family.str = style->FontName;
+    render_priv->state.family.len = strlen(style->FontName);
+    render_priv->state.treat_family_as_pattern = style->treat_fontname_as_pattern;
     render_priv->state.bold = style->Bold;
     render_priv->state.italic = style->Italic;
     update_font(render_priv);
@@ -1067,17 +1070,14 @@ init_render_context(ASS_Renderer *render_priv, ASS_Event *event)
 static void free_render_context(ASS_Renderer *render_priv)
 {
     ass_cache_dec_ref(render_priv->state.font);
-    free(render_priv->state.family);
-    free(render_priv->state.clip_drawing_text);
 
     render_priv->state.font = NULL;
-    render_priv->state.family = NULL;
-    render_priv->state.clip_drawing_text = NULL;
+    render_priv->state.family.str = NULL;
+    render_priv->state.family.len = 0;
+    render_priv->state.clip_drawing_text.str = NULL;
+    render_priv->state.clip_drawing_text.len = 0;
 
-    TextInfo *text_info = &render_priv->text_info;
-    for (int n = 0; n < text_info->length; n++)
-        free(text_info->glyphs[n].drawing_text);
-    text_info->length = 0;
+    render_priv->text_info.length = 0;
 }
 
 /**
@@ -1095,7 +1095,7 @@ get_outline_glyph(ASS_Renderer *priv, GlyphInfo *info)
 
     int32_t asc, desc;
     OutlineHashKey key;
-    if (info->drawing_text) {
+    if (info->drawing_text.str) {
         key.type = OUTLINE_DRAWING;
         key.u.drawing.text = info->drawing_text;
         val = ass_cache_get(priv->cache.outline_cache, &key, priv);
@@ -1143,7 +1143,7 @@ get_outline_glyph(ASS_Renderer *priv, GlyphInfo *info)
     info->bbox.x_max = lrint(val->cbox.x_max * scale.x + offset.x);
     info->bbox.y_max = lrint(val->cbox.y_max * scale.y + offset.y);
 
-    if (info->drawing_text || priv->settings.shaper == ASS_SHAPING_SIMPLE) {
+    if (info->drawing_text.str || priv->settings.shaper == ASS_SHAPING_SIMPLE) {
         info->cluster_advance.x = info->advance.x = lrint(val->advance * scale.x);
         info->cluster_advance.y = info->advance.y = 0;
     }
@@ -1180,7 +1180,7 @@ size_t ass_outline_construct(void *key, void *value, void *priv)
     case OUTLINE_DRAWING:
         {
             ASS_Rect bbox;
-            const char *text = outline_key->u.drawing.text;
+            const char *text = outline_key->u.drawing.text.str;  // always zero-terminated
             if (!ass_drawing_parse(&v->outline[0], &bbox, text, render_priv->library))
                 return 1;
 
@@ -1249,9 +1249,9 @@ size_t ass_outline_construct(void *key, void *value, void *priv)
 static void calc_transform_matrix(ASS_Renderer *render_priv,
                                   GlyphInfo *info, double m[3][3])
 {
-    double frx = M_PI / 180 * info->frx;
-    double fry = M_PI / 180 * info->fry;
-    double frz = M_PI / 180 * info->frz;
+    double frx = ASS_PI / 180 * info->frx;
+    double fry = ASS_PI / 180 * info->fry;
+    double frz = ASS_PI / 180 * info->frz;
 
     double sx = -sin(frx), cx = cos(frx);
     double sy =  sin(fry), cy = cos(fry);
@@ -1403,7 +1403,7 @@ get_bitmap_glyph(ASS_Renderer *render_priv, GlyphInfo *info,
 
         // Notation from quantize_transform().
         // Note that goal here is to estimate acceptable error for stroking, i. e. D(x) and D(y).
-        // Matrix coefficients are constants now, so D(m_??) = 0.
+        // Matrix coefficients are constants now, so D(m_ij) = 0 for all i, j from {x, y, z}.
 
         // D(z) <= |m_zx| * D(x) + |m_zy| * D(y),
         // D(x_out) = D((m_xx * x + m_xy * y) / z)
@@ -1415,7 +1415,7 @@ get_bitmap_glyph(ASS_Renderer *render_priv, GlyphInfo *info,
         //  <= (|m_yx| / z0 + |m_zx| * y_lim / z0^2) * D(x)
         //   + (|m_yy| / z0 + |m_zy| * y_lim / z0^2) * D(y).
 
-        // Quantization steps (ACCURACY ~ POSITION_PRECISION):
+        // Quantization steps (pick: ACCURACY = POSITION_PRECISION):
         // STROKER_PRECISION / 2^scale_ord_x ~ D(x) ~ POSITION_PRECISION /
         //   (max(|m_xx|, |m_yx|) / z0 + |m_zx| * max(x_lim, y_lim) / z0^2),
         // STROKER_PRECISION / 2^scale_ord_y ~ D(y) ~ POSITION_PRECISION /
@@ -1874,9 +1874,9 @@ static void split_style_runs(ASS_Renderer *render_priv)
         info->starts_new_run =
             info->effect_timing ||  // but ignore effect_skip_timing
             (effect_type != EF_NONE && effect_type != last_effect_type) ||
-            info->drawing_text ||
-            last->drawing_text ||
-            strcmp(last->font->desc.family, info->font->desc.family) ||
+            info->drawing_text.str ||
+            last->drawing_text.str ||
+            !ass_string_equal(last->font->desc.family, info->font->desc.family) ||
             last->font->desc.vertical != info->font->desc.vertical ||
             last->font_size != info->font_size ||
             last->c[0] != info->c[0] ||
@@ -1913,11 +1913,10 @@ static bool parse_events(ASS_Renderer *render_priv, ASS_Event *event)
     TextInfo *text_info = &render_priv->text_info;
 
     char *p = event->Text, *q;
-    char *drawing_text;
 
     // Event parsing.
     while (true) {
-        drawing_text = NULL;
+        ASS_StringView drawing_text = {NULL, 0};
 
         // get next char, executing style override
         // this affects render_context
@@ -1933,7 +1932,8 @@ static bool parse_events(ASS_Renderer *render_priv, ASS_Event *event)
                     q++;
                 while ((*q != '{') && (*q != 0))
                     q++;
-                drawing_text = strndup(p, q - p);
+                drawing_text.str = p;
+                drawing_text.len = q - p;
                 code = 0xfffc; // object replacement character
                 p = q;
                 break;
@@ -1966,7 +1966,7 @@ static bool parse_events(ASS_Renderer *render_priv, ASS_Event *event)
         memset(info, 0, sizeof(GlyphInfo));
 
         // Parse drawing
-        if (drawing_text) {
+        if (drawing_text.str) {
             info->drawing_text = drawing_text;
             info->drawing_scale = render_priv->state.drawing_scale;
             info->drawing_pbo = render_priv->state.pbo;
@@ -1975,7 +1975,7 @@ static bool parse_events(ASS_Renderer *render_priv, ASS_Event *event)
         // Fill glyph information
         info->symbol = code;
         info->font = render_priv->state.font;
-        if (!drawing_text)
+        if (!drawing_text.str)
             ass_cache_inc_ref(info->font);
         for (int i = 0; i < 4; i++) {
             uint32_t clr = render_priv->state.c[i];
@@ -2012,13 +2012,16 @@ static bool parse_events(ASS_Renderer *render_priv, ASS_Event *event)
         info->frz = render_priv->state.frz;
         info->fax = render_priv->state.fax;
         info->fay = render_priv->state.fay;
+        info->fade = render_priv->state.fade;
 
-        info->hspacing_scaled = double_to_d6(info->hspacing *
-                render_priv->font_scale * info->scale_x);
+        info->hspacing_scaled = 0;
         info->scale_fix = 1;
 
-        if (!drawing_text)
+        if (!drawing_text.str) {
+            info->hspacing_scaled = double_to_d6(info->hspacing *
+                    render_priv->font_scale * info->scale_x);
             fix_glyph_scaling(render_priv, info);
+        }
 
         text_info->length++;
 
@@ -2031,7 +2034,6 @@ static bool parse_events(ASS_Renderer *render_priv, ASS_Event *event)
 
 fail:
     free_render_context(render_priv);
-    free(drawing_text);
     return false;
 }
 
@@ -2062,9 +2064,6 @@ static void retrieve_glyphs(ASS_Renderer *render_priv)
 
         // add horizontal letter spacing
         info->cluster_advance.x += info->hspacing_scaled;
-
-        // add displacement for vertical shearing
-        info->cluster_advance.y += (info->fay / info->scale_x * info->scale_y) * info->cluster_advance.x;
     }
 }
 
@@ -2105,25 +2104,20 @@ static void reorder_text(ASS_Renderer *render_priv)
     // Reposition according to the map
     ASS_Vector pen = { 0, 0 };
     int lineno = 1;
-    double last_pen_x = 0;
-    double last_fay = 0;
     for (int i = 0; i < text_info->length; i++) {
         GlyphInfo *info = text_info->glyphs + cmap[i];
         if (text_info->glyphs[i].linebreak) {
-            pen.y -= (last_fay / info->scale_x * info->scale_y) * (pen.x - last_pen_x);
-            last_pen_x = pen.x = 0;
+            pen.x = 0;
             pen.y += double_to_d6(text_info->lines[lineno-1].desc);
             pen.y += double_to_d6(text_info->lines[lineno].asc);
             pen.y += double_to_d6(render_priv->settings.line_spacing);
             lineno++;
         }
-        else if (last_fay != info->fay) {
-            pen.y -= (last_fay / info->scale_x * info->scale_y) * (pen.x - last_pen_x);
-            last_pen_x = pen.x;
-        }
-        last_fay = info->fay;
-        if (info->skip) continue;
+        if (info->skip)
+            continue;
         ASS_Vector cluster_pen = pen;
+        pen.x += info->cluster_advance.x;
+        pen.y += info->cluster_advance.y;
         while (info) {
             info->pos.x = info->offset.x + cluster_pen.x;
             info->pos.y = info->offset.y + cluster_pen.y;
@@ -2131,9 +2125,27 @@ static void reorder_text(ASS_Renderer *render_priv)
             cluster_pen.y += info->advance.y;
             info = info->next;
         }
-        info = text_info->glyphs + cmap[i];
-        pen.x += info->cluster_advance.x;
-        pen.y += info->cluster_advance.y;
+    }
+}
+
+static void apply_baseline_shear(ASS_Renderer *render_priv)
+{
+    TextInfo *text_info = &render_priv->text_info;
+    FriBidiStrIndex *cmap = ass_shaper_get_reorder_map(render_priv->shaper);
+    int32_t shear = 0;
+    double last_fay = 0;
+    for (int i = 0; i < text_info->length; i++) {
+        GlyphInfo *info = text_info->glyphs + cmap[i];
+        if (text_info->glyphs[i].linebreak || last_fay != info->fay)
+            shear = 0;
+        last_fay = info->fay;
+        if (!info->scale_x || !info->scale_y)
+            info->skip = true;
+        if (info->skip)
+            continue;
+        for (GlyphInfo *cur = info; cur; cur = cur->next)
+            cur->pos.y += shear;
+        shear += (info->fay / info->scale_x * info->scale_y) * info->cluster_advance.x;
     }
 }
 
@@ -2325,7 +2337,7 @@ static void render_and_combine_glyphs(ASS_Renderer *render_priv,
             if ((flags & FILTER_NONZERO_BORDER &&
                  info->a_pre_fade[0] == 0 &&
                  info->a_pre_fade[1] == 0 &&
-                 _a(info->c[2]) == 0) ||
+                 info->fade == 0) ||
                 info->border_style == 3)
                 flags |= FILTER_FILL_IN_BORDER;
 
@@ -2506,7 +2518,7 @@ size_t ass_composite_construct(void *key, void *value, void *priv)
             unsigned char *buf = dst->buffer + y * dst->stride + x;
             render_priv->engine->add_bitmaps(buf, dst->stride,
                                              src->buffer, src->stride,
-                                             src->h, src->w);
+                                             src->w, src->h);
         }
     }
     if (!bord && n_bm_o == 1) {
@@ -2531,7 +2543,7 @@ size_t ass_composite_construct(void *key, void *value, void *priv)
             unsigned char *buf = dst->buffer + y * dst->stride + x;
             render_priv->engine->add_bitmaps(buf, dst->stride,
                                              src->buffer, src->stride,
-                                             src->h, src->w);
+                                             src->w, src->h);
         }
     }
 
@@ -2676,6 +2688,8 @@ ass_render_event(ASS_Renderer *render_priv, ASS_Event *event,
     // determing text bounding box
     ASS_DRect bbox;
     compute_string_bbox(text_info, &bbox);
+
+    apply_baseline_shear(render_priv);
 
     // determine device coordinates for text
     double device_x = 0;
@@ -2859,6 +2873,12 @@ ass_start_frame(ASS_Renderer *render_priv, ASS_Track *track,
     render_priv->time = now;
 
     ass_lazy_track_init(render_priv->library, render_priv->track);
+
+    if (render_priv->library->num_fontdata != render_priv->num_emfonts) {
+        assert(render_priv->library->num_fontdata > render_priv->num_emfonts);
+        render_priv->num_emfonts = ass_update_embedded_fonts(render_priv->library,
+            render_priv->fontselect, render_priv->ftlibrary, render_priv->num_emfonts);
+    }
 
     ass_shaper_set_kerning(render_priv->shaper, track->Kerning);
     ass_shaper_set_language(render_priv->shaper, track->Language);
