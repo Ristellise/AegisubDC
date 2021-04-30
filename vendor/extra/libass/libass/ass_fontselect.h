@@ -101,11 +101,13 @@ typedef void    (*DestroyProviderFunc)(void *priv);
  * This is called by fontselect whenever a new logical font is created. The
  * font provider set as default is used.
  *
+ * \param priv font provider private data
  * \param lib ASS_Library instance
  * \param provider font provider instance
  * \param name font name (as specified in script)
  */
-typedef void    (*MatchFontsFunc)(ASS_Library *lib,
+typedef void    (*MatchFontsFunc)(void *priv,
+                                  ASS_Library *lib,
                                   ASS_FontProvider *provider,
                                   char *name);
 
@@ -142,12 +144,14 @@ typedef void    (*SubstituteFontFunc)(void *priv, const char *name,
  * fallbacks.
  *
  * \param priv font provider private data
+ * \param lib ASS_Library instance
  * \param family original font family name (try matching a similar font) (never NULL)
  * \param codepoint Unicode codepoint (UTF-32)
  * \return output font family, allocated with malloc(), must be freed
  *         by caller.
  */
 typedef char   *(*GetFallbackFunc)(void *priv,
+                                   ASS_Library *lib,
                                    const char *family,
                                    uint32_t codepoint);
 
@@ -225,9 +229,8 @@ void ass_map_font(const ASS_FontMapping *map, int len, const char *name,
                   ASS_FontProviderMetaData *meta);
 
 ASS_FontSelector *
-ass_fontselect_init(ASS_Library *library,
-                    FT_Library ftlibrary, const char *family,
-                    const char *path, const char *config,
+ass_fontselect_init(ASS_Library *library, FT_Library ftlibrary, size_t *num_emfonts,
+                    const char *family, const char *path, const char *config,
                     ASS_DefaultFontProvider dfp);
 char *ass_font_select(ASS_FontSelector *priv, ASS_Library *library,
                       ASS_Font *font, int *index, char **postscript_name,
@@ -272,12 +275,14 @@ ass_font_provider_add_font(ASS_FontProvider *provider,
  * \param path the path to the font file to read
  * \param postscript_name the PS name of the specific face to read (set either this or index)
  * \param index the face index to read, or -1 if not applicable
+ * \param require_family_name whether to try a fallback family name and fail if none found
  * \param info the struct to store results into
  * \return success
  *
  */
 bool ass_get_font_info(ASS_Library *lib, FT_Library ftlib, const char *path,
                        const char *postscript_name, int index,
+                       bool require_family_name,
                        ASS_FontProviderMetaData *info);
 
 /**
@@ -286,5 +291,11 @@ bool ass_get_font_info(ASS_Library *lib, FT_Library ftlib, const char *path,
  *
  */
 void ass_font_provider_free(ASS_FontProvider *provider);
+
+/**
+ * \brief Update embedded and memory fonts
+ */
+size_t ass_update_embedded_fonts(ASS_Library *lib, ASS_FontSelector *selector,
+                                 FT_Library ftlib, size_t num_loaded);
 
 #endif                          /* LIBASS_FONTSELECT_H */

@@ -26,7 +26,7 @@
 #include FT_FREETYPE_H
 #include FT_GLYPH_H
 #include FT_SYNTHESIS_H
-#include <harfbuzz/hb.h>
+#include <hb.h>
 
 #include "ass.h"
 #include "ass_font.h"
@@ -131,7 +131,7 @@ typedef struct glyph_info {
     int glyph_index;
     hb_script_t script;
     double font_size;
-    char *drawing_text;
+    ASS_StringView drawing_text;
     int drawing_scale;
     int drawing_pbo;
     OutlineHashValue *outline;
@@ -168,6 +168,7 @@ typedef struct glyph_info {
     unsigned italic;
     unsigned bold;
     int flags;
+    int fade;
 
     int shape_run_id;
 
@@ -238,7 +239,7 @@ typedef struct {
     double shadow_x;
     double shadow_y;
     double pbo;                 // drawing baseline offset
-    char *clip_drawing_text;
+    ASS_StringView clip_drawing_text;
 
     // used to store RenderContext.style when doing selective style overrides
     ASS_Style override_style_temp_storage;
@@ -261,7 +262,7 @@ typedef struct {
     int scroll_y0, scroll_y1;
 
     // face properties
-    char *family;
+    ASS_StringView family;
     unsigned bold;
     unsigned italic;
     int treat_family_as_pattern;
@@ -292,6 +293,7 @@ struct ass_renderer {
     ASS_Library *library;
     FT_Library ftlibrary;
     ASS_FontSelector *fontselect;
+    size_t num_emfonts;
     ASS_Settings settings;
     int render_id;
     ASS_Shaper *shaper;

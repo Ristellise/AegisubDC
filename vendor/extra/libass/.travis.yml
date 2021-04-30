@@ -4,7 +4,11 @@ env:
   global:
    # Coverity token
    - secure: "QFUmMNyjyhXhe+zBfGNgnrrgR9NTks90AU6BQXYCxBZm+aaRjjxkN+ITjTJeHxZJEVpqDf/gtidh6KriSWMWM2TcH+ZSsAkVym9XUdk+0Nglh/5mulp++LsbmsERhed5F4YvGS0UAcXPAAv/dESmiJY/EaDPVgXxbTFMa85c6H8="
-   - HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK: 1
+   - COVERITY_SCAN_PROJECT_NAME=libass/libass
+   - COVERITY_SCAN_NOTIFICATION_EMAIL=none@example.com
+   - COVERITY_SCAN_BUILD_COMMAND="make -j2"
+   - COVERITY_SCAN_BRANCH_PATTERN="master|coverity_scan"
+   - HOMEBREW_NO_INSTALLED_DEPENDENTS_CHECK=1
 
 os:
   - linux
@@ -14,12 +18,11 @@ compiler:
   - gcc
   - clang
 
-matrix:
+jobs:
   exclude:
     - os: osx
       compiler: gcc
 
-sudo: required
 dist: bionic
 osx_image: xcode11
 
@@ -29,16 +32,19 @@ branches:
     - ci
     - coverity_scan
 
-before_install:
-  - ./autogen.sh && ./configure
+before_script:
+  - ./autogen.sh
+  - ./configure
+  - if [[ ${TRAVIS_JOB_NUMBER##*.} == 2 ]]; then curl -s https://scan.coverity.com/scripts/travisci_build_coverity_scan.sh | bash || true; fi
 script:
-  - make -j4
+  - make -j2
 
 notifications:
   email: false
   irc:
     channels:
-      - "irc.freenode.org#libass"
+      # "irc.freenode.org#libass", encrypted against libass/libass to prevent IRC spam of forks
+      - secure: "JcINB59M1X8kEM1fi9r4dO8yA5NkA4n7WUy9s+hufa/HiYCNO7B+r7vxIKJLKEjGWrs92iVcq9FnpDn/c2Ufrg7a0NR6JGYrg3PqgDcm0JmxvfYn7lH4cYphExz5t45Ty5oWOZivTcF+ErCt3STvU8tb/E3dUCwnpc8redWu9Mo="
     on_success: change
     on_failure: always
 
@@ -57,11 +63,3 @@ addons:
       - fribidi
       - nasm
       - harfbuzz
-  coverity_scan:
-    project:
-      name: "libass/libass"
-      description: "Build submitted via Travis CI"
-    notification_email: none@example.com
-    build_command_prepend: "./configure"
-    build_command:   "make -j4"
-    branch_pattern: master|coverity_scan
