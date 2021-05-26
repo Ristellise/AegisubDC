@@ -49,7 +49,7 @@
 #include <boost/filesystem/operations.hpp>
 #include <wx/msgdlg.h>
 
-Project::Project(agi::Context *c) : context(c) {
+Project::Project(agi::Context* c) : context(c) {
 	OPT_SUB("Audio/Cache/Type", &Project::ReloadAudio, this);
 	OPT_SUB("Audio/Provider", &Project::ReloadAudio, this);
 	OPT_SUB("Provider/Audio/FFmpegSource/Decode Error Handling", &Project::ReloadAudio, this);
@@ -65,8 +65,8 @@ Project::Project(agi::Context *c) : context(c) {
 Project::~Project() { }
 
 void Project::UpdateRelativePaths() {
-	context->ass->Properties.audio_file     = context->path->MakeRelative(audio_file, "?script").generic_string();
-	context->ass->Properties.video_file     = context->path->MakeRelative(video_file, "?script").generic_string();
+	context->ass->Properties.audio_file = context->path->MakeRelative(audio_file, "?script").generic_string();
+	context->ass->Properties.video_file = context->path->MakeRelative(video_file, "?script").generic_string();
 	context->ass->Properties.timecodes_file = context->path->MakeRelative(timecodes_file, "?script").generic_string();
 	context->ass->Properties.keyframes_file = context->path->MakeRelative(keyframes_file, "?script").generic_string();
 }
@@ -91,7 +91,7 @@ void Project::ShowError(std::string const& message) {
 	ShowError(to_wx(message));
 }
 
-void Project::SetPath(agi::fs::path& var, const char *token, const char *mru, agi::fs::path const& value) {
+void Project::SetPath(agi::fs::path& var, const char* token, const char* mru, agi::fs::path const& value) {
 	var = value;
 	if (*token)
 		context->path->SetToken(token, value);
@@ -100,7 +100,7 @@ void Project::SetPath(agi::fs::path& var, const char *token, const char *mru, ag
 	UpdateRelativePaths();
 }
 
-bool Project::DoLoadSubtitles(agi::fs::path const& path, std::string encoding, ProjectProperties &properties) {
+bool Project::DoLoadSubtitles(agi::fs::path const& path, std::string encoding, ProjectProperties& properties) {
 	try {
 		if (encoding.empty())
 			encoding = CharSetDetect::GetEncoding(path);
@@ -119,8 +119,10 @@ bool Project::DoLoadSubtitles(agi::fs::path const& path, std::string encoding, P
 		// distinguish them based on filename alone, and just ignore failures
 		// rather than trying to differentiate between malformed timecodes
 		// files and things that aren't timecodes files at all
-		try { DoLoadTimecodes(path); return false; } catch (...) { }
-		try { DoLoadKeyframes(path); return false; } catch (...) { }
+		try { DoLoadTimecodes(path); return false; }
+		catch (...) {}
+		try { DoLoadKeyframes(path); return false; }
+		catch (...) {}
 	}
 
 	try {
@@ -146,7 +148,7 @@ bool Project::DoLoadSubtitles(agi::fs::path const& path, std::string encoding, P
 	}
 
 	Selection sel;
-	AssDialogue *active_line = nullptr;
+	AssDialogue* active_line = nullptr;
 	if (!context->ass->Events.empty()) {
 		int row = mid<int>(0, properties.active_row, context->ass->Events.size() - 1);
 		active_line = &*std::next(context->ass->Events.begin(), row);
@@ -169,15 +171,15 @@ void Project::CloseSubtitles() {
 	context->path->SetToken("?script", "");
 	LoadUnloadFiles(context->ass->Properties);
 	auto line = &*context->ass->Events.begin();
-	context->selectionController->SetSelectionAndActive({line}, line);
+	context->selectionController->SetSelectionAndActive({ line }, line);
 }
 
 void Project::LoadUnloadFiles(ProjectProperties properties) {
 	auto load_linked = OPT_GET("App/Auto/Load Linked Files")->GetInt();
 	if (!load_linked) return;
 
-	auto audio     = context->path->MakeAbsolute(properties.audio_file, "?script");
-	auto video     = context->path->MakeAbsolute(properties.video_file, "?script");
+	auto audio = context->path->MakeAbsolute(properties.audio_file, "?script");
+	auto video = context->path->MakeAbsolute(properties.video_file, "?script");
 	auto timecodes = context->path->MakeAbsolute(properties.timecodes_file, "?script");
 	auto keyframes = context->path->MakeAbsolute(properties.keyframes_file, "?script");
 
@@ -221,7 +223,7 @@ void Project::LoadUnloadFiles(ProjectProperties properties) {
 				vc->SetAspectRatio(properties.ar_value);
 			else
 				vc->SetAspectRatio(ar_mode);
-			context->videoDisplay->SetZoom(properties.video_zoom);
+			context->videoDisplay->SetWindowZoom(properties.video_zoom);
 		}
 	}
 
@@ -408,7 +410,7 @@ void Project::LoadList(std::vector<agi::fs::path> const& files) {
 	// Keep these lists sorted
 
 	// Video formats
-	const char *videoList[] = {
+	const char* videoList[] = {
 		".asf",
 		".avi",
 		".avs",
@@ -433,7 +435,7 @@ void Project::LoadList(std::vector<agi::fs::path> const& files) {
 	};
 
 	// Subtitle formats
-	const char *subsList[] = {
+	const char* subsList[] = {
 		".ass",
 		".srt",
 		".ssa",
@@ -442,7 +444,7 @@ void Project::LoadList(std::vector<agi::fs::path> const& files) {
 	};
 
 	// Audio formats
-	const char *audioList[] = {
+	const char* audioList[] = {
 		".aac",
 		".ac3",
 		".ape",
@@ -459,10 +461,10 @@ void Project::LoadList(std::vector<agi::fs::path> const& files) {
 		".wma"
 	};
 
-	auto search = [](const char **begin, const char **end, std::string const& str) {
-		return std::binary_search(begin, end, str.c_str(), [](const char *a, const char *b) {
+	auto search = [](const char** begin, const char** end, std::string const& str) {
+		return std::binary_search(begin, end, str.c_str(), [](const char* a, const char* b) {
 			return strcmp(a, b) < 0;
-		});
+			});
 	};
 
 	agi::fs::path audio, video, subs, timecodes, keyframes;
@@ -480,7 +482,8 @@ void Project::LoadList(std::vector<agi::fs::path> const& files) {
 					DoLoadTimecodes(file);
 					timecodes = file;
 					continue;
-				} catch (...) { }
+				}
+				catch (...) {}
 			}
 
 			if (keyframes.empty()) {
@@ -488,7 +491,8 @@ void Project::LoadList(std::vector<agi::fs::path> const& files) {
 					DoLoadKeyframes(file);
 					keyframes = file;
 					continue;
-				} catch (...) { }
+				}
+				catch (...) {}
 			}
 
 			if (subs.empty() && ext != ".log")
@@ -528,11 +532,12 @@ void Project::LoadList(std::vector<agi::fs::path> const& files) {
 			LoadTimecodes(timecodes);
 		if (!keyframes.empty())
 			LoadKeyframes(keyframes);
-
-		// Load audio from video
-		if (audio.empty() && OPT_GET("Video/Open Audio")->GetBool() && audio_file != video_file)
-			DoLoadAudio(video_file, true);
 	}
+
+	if (!audio.empty())
+		DoLoadAudio(audio, false);
+	else if (OPT_GET("Video/Open Audio")->GetBool() && audio_file != video_file)
+		DoLoadAudio(video_file, true);
 
 	if (!subs.empty())
 		LoadUnloadFiles(properties);
