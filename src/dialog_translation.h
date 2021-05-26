@@ -25,20 +25,20 @@ namespace agi { struct Context; }
 class AssDialogue;
 class AssDialogueBlock;
 class PersistLocation;
-class SubsTextEditCtrl;
+class SubsStyledTextEditCtrl;
 class wxCheckBox;
 class wxStaticText;
 class wxStyledTextCtrl;
 
 /// Assistant for translating subtitles in one language to another language
 class DialogTranslation final : public wxDialog {
-	agi::Context *c;
+	agi::Context* c;
 
 	agi::signal::Connection file_change_connection;
 	agi::signal::Connection active_line_connection;
 
 	/// The active line
-	AssDialogue *active_line;
+	AssDialogue* active_line;
 	/// The parsed dialogue blocks for the active line
 	std::vector<std::unique_ptr<AssDialogueBlock>> blocks;
 	/// Which dialogue block in the active line is currently being translated
@@ -50,24 +50,28 @@ class DialogTranslation final : public wxDialog {
 	/// Should active line change announcements be ignored?
 	bool switching_lines = false;
 
-	wxStaticText *line_number_display;
-	wxStyledTextCtrl *original_text;
-	SubsTextEditCtrl *translated_text;
-	wxCheckBox *seek_video;
+	wxStaticText* line_number_display;
+	wxStyledTextCtrl* original_text;
+#ifdef WITH_WXSTC
+	const bool use_stc;
+	SubsStyledTextEditCtrl* translated_text_stc;
+#endif
+	wxTextCtrl* translated_text_tc;
+	wxCheckBox* seek_video;
 
 	std::unique_ptr<PersistLocation> persist;
 
-	void OnPlayAudioButton(wxCommandEvent &);
-	void OnPlayVideoButton(wxCommandEvent &);
-	void OnKeyDown(wxKeyEvent &evt);
+	void OnPlayAudioButton(wxCommandEvent&);
+	void OnPlayVideoButton(wxCommandEvent&);
+	void OnKeyDown(wxKeyEvent& evt);
 	void OnExternalCommit(int commit_type);
 
 	void UpdateDisplay();
 
-	void OnActiveLineChanged(AssDialogue *new_line);
+	void OnActiveLineChanged(AssDialogue* new_line);
 
 public:
-	DialogTranslation(agi::Context *context);
+	DialogTranslation(agi::Context* context);
 	~DialogTranslation();
 
 	bool NextBlock();

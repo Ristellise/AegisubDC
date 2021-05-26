@@ -431,6 +431,7 @@ add_executable(Aegisub WIN32
     src/subs_controller.cpp
     src/subs_edit_box.cpp
     src/subs_edit_ctrl.cpp
+    src/subs_edit_ctrl_stc.cpp
     src/subs_preview.cpp
     src/subtitles_provider.cpp
     src/subtitles_provider_libass.cpp

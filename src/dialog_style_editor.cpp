@@ -200,11 +200,11 @@ DialogStyleEditor::DialogStyleEditor(wxWindow *parent, AssStyle *style, agi::Con
 	for (int i = 0; i < 3; i++) {
 		margin[i] = new wxSpinCtrl(this, -1, std::to_wstring(style->Margin[i]),
 			wxDefaultPosition, wxDefaultSize,
-			wxSP_ARROW_KEYS, -9999, 99999, style->Margin[i]);
+			wxSP_ARROW_KEYS, -90000, 100000, style->Margin[i]);
 #if wxCHECK_VERSION(3, 1, 3)
-		margin[i]->SetInitialSize(margin[i]->GetSizeFromText(wxS("0000")));
+		margin[i]->SetInitialSize(margin[i]->GetSizeFromText(wxS("00000")));
 #else
-		margin[i]->SetInitialSize(margin[i]->GetSizeFromTextSize(GetTextExtent(wxS("0000"))));
+		margin[i]->SetInitialSize(margin[i]->GetSizeFromTextSize(GetTextExtent(wxS("00000"))));
 #endif
 	}
 
@@ -410,7 +410,7 @@ std::string DialogStyleEditor::GetStyleName() const {
 void DialogStyleEditor::Apply(bool apply, bool close) {
 	if (apply) {
 		std::string new_name = from_wx(StyleName->GetValue());
-
+		std::replace(new_name.begin(), new_name.end(), ',', ';');
 		// Get list of existing styles
 		std::vector<std::string> styles = store ? store->GetNames() : c->ass->GetStyles();
 
