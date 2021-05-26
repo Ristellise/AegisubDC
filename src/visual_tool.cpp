@@ -132,9 +132,8 @@ AssDialogue* VisualToolBase::GetActiveDialogueLine() {
 	return nullptr;
 }
 
-void VisualToolBase::SetClientSize(int w, int h, int pan_x, int pan_y) {
+void VisualToolBase::SetClientSize(int w, int h) {
 	client_size = Vector2D(w, h);
-	pan_adjust = Vector2D(pan_x, pan_y);
 }
 
 void VisualToolBase::SetDisplayArea(int x, int y, int w, int h) {
