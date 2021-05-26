@@ -1,4 +1,4 @@
-// Copyright (c) 2005, Rodrigo Braz Monteiro
+// Copyright (c) 2021, Qirui Wang
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
@@ -30,7 +30,6 @@
 #include <memory>
 #include <string>
 #include <vector>
-#include <wx/stc/stc.h>
 
 class Thesaurus;
 namespace agi {
@@ -39,84 +38,23 @@ namespace agi {
 	namespace ass { struct DialogueToken; }
 }
 
-/// @class SubsTextEditCtrl
-/// @brief A Scintilla control with spell checking and syntax highlighting
-class SubsTextEditCtrl final : public wxStyledTextCtrl {
-	/// Backend spellchecker to use
-	std::unique_ptr<agi::SpellChecker> spellchecker;
-
-	/// Backend thesaurus to use
-	std::unique_ptr<Thesaurus> thesaurus;
-
+class SubsTextEditCtrl final : public wxTextCtrl {
 	/// Project context, for splitting lines
-	agi::Context *context;
-
-	/// The word right-clicked on, used for spellchecker replacing
-	std::string currentWord;
-
-	/// The beginning of the word right-clicked on, for spellchecker replacing
-	std::pair<int, int> currentWordPos;
-
-	/// Spellchecker suggestions for the last right-clicked word
-	std::vector<std::string> sugs;
-
-	/// Thesaurus suggestions for the last right-clicked word
-	std::vector<std::string> thesSugs;
-
-	/// Text of the currently shown calltip, to avoid flickering from
-	/// pointlessly reshowing the current tip
-	std::string calltip_text;
-
-	/// Position of the currently show calltip
-	size_t calltip_position = 0;
-
-	/// Cursor position which the current calltip is for
-	int cursor_pos;
+	agi::Context* context;
 
 	/// The last seen line text, used to avoid reparsing the line for syntax
 	/// highlighting when possible
 	std::string line_text;
 
-	/// Tokenized version of line_text
-	std::vector<agi::ass::DialogueToken> tokenized_line;
+	void OnContextMenu(wxContextMenuEvent&);
+	void OnKeyDown(wxKeyEvent& event);
 
-	void OnContextMenu(wxContextMenuEvent &);
-	void OnDoubleClick(wxStyledTextEvent&);
-	void OnUseSuggestion(wxCommandEvent &event);
-	void OnSetDicLanguage(wxCommandEvent &event);
-	void OnSetThesLanguage(wxCommandEvent &event);
-	void OnLoseFocus(wxFocusEvent &event);
-	void OnKeyDown(wxKeyEvent &event);
-
-	void SetSyntaxStyle(int id, wxFont &font, std::string const& name, wxColor const& default_background);
-	void Subscribe(std::string const& name);
-
-	void StyleSpellCheck();
-	void UpdateCallTip();
 	void SetStyles();
 
-	void UpdateStyle();
-
-	/// Add the thesaurus suggestions to a menu
-	void AddThesaurusEntries(wxMenu &menu);
-
-	/// Add the spell checker suggestions to a menu
-	void AddSpellCheckerEntries(wxMenu &menu);
-
-	/// Generate a languages submenu from a list of locales and a current language
-	/// @param base_id ID to use for the first menu item
-	/// @param curLang Currently selected language
-	/// @param lang Full list of languages
-	wxMenu *GetLanguagesMenu(int base_id, wxString const& curLang, wxArrayString const& langs);
 
 public:
-	SubsTextEditCtrl(wxWindow* parent, wxSize size, long style, agi::Context *context);
+	SubsTextEditCtrl(wxWindow* parent, wxSize size, long style, agi::Context* context);
 	~SubsTextEditCtrl();
 
-	void SetTextTo(std::string const& text);
 	void Paste() override;
-
-	std::pair<int, int> GetBoundsOfWordAtPosition(int pos);
-
-	DECLARE_EVENT_TABLE()
 };

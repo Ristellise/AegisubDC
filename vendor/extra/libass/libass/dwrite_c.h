@@ -699,10 +699,11 @@ DECLARE_INTERFACE_(IDWriteGdiInterop, IUnknown)
     STDMETHOD(CreateFontFromLOGFONT)(THIS_
         LOGFONTW const* logFont,
         IDWriteFont * *font) PURE;
-
+    STDMETHOD(dummy1)(THIS);
+    STDMETHOD(dummy2)(THIS);
     STDMETHOD(CreateFontFaceFromHdc)(THIS_
-        HDC logFont,
-        IDWriteFontFace ** fontFace) PURE;
+        HDC hdc,
+        IDWriteFontFace * *fontFace) PURE;
     /* rest dropped */
     END_INTERFACE
 };
