@@ -236,6 +236,8 @@ namespace {
         }
     };
 
+
+
 struct video_reload_subtitles_provider final : public cmd::Command {
 	CMD_NAME("video/subtitles_provider/reload")
 		STR_MENU("Reload active subtitles provider")
@@ -672,6 +674,18 @@ struct video_reload_subtitles_provider final : public cmd::Command {
         }
     };
 
+    struct video_zoom_reset final : public validator_video_attached {
+        CMD_NAME("video/zoom_video/reset")
+            STR_MENU("Reset video render zoom")
+            STR_DISP("Reset video render zoom")
+            STR_HELP("Reset the video render zoom to the original value")
+            CMD_TYPE(COMMAND_VALIDATE | COMMAND_RADIO)
+
+            void operator()(agi::Context* c) override {
+            c->videoDisplay->SetRawVideoZoom(1.0);
+        }
+    };
+
     class video_zoom_100 : public validator_video_attached {
     public:
         CMD_NAME("video/zoom/100")
@@ -806,5 +820,6 @@ namespace cmd {
         reg(agi::make_unique<video_zoom_50>());
         reg(agi::make_unique<video_zoom_in>());
         reg(agi::make_unique<video_zoom_out>());
+        reg(agi::make_unique<video_zoom_reset>());
     }
 }

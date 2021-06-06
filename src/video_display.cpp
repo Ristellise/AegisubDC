@@ -448,6 +448,12 @@ VideoDisplay::VideoDisplay(wxToolBar* toolbar, bool freeSize, wxComboBox* zoomBo
             UpdateSize();
         }
 
+        void VideoDisplay::SetRawVideoZoom(double value)
+        {
+            videoZoomValue = value;
+            UpdateSize();
+        }
+
         void VideoDisplay::SetVideoZoom(int step) {
             if (step == 0) return;
             double newVideoZoom = videoZoomValue + (.125 * step) * videoZoomValue;
