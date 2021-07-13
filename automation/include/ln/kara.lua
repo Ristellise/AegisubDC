@@ -114,7 +114,7 @@ local lnlib
 
 local function startbuffertime(k_min, fad_min)
   if lnlib.line.tag("fad") ~= "" then
-    return math.max(fad_min, tonumber(string.match(lnlib.line.tag("fad"), "(%d+),%d+"))), true
+    return math.max(fad_min, tonumber(string.match(lnlib.line.tag("fad"), "(%d+),%s*%d+"))), true
   else
     if #(tenv.line.kara or {}) == 0 then
       return k_min, false
@@ -128,7 +128,7 @@ end
 
 local function endbuffertime(k_min, fad_min)
   if lnlib.line.tag("fad") ~= "" then
-    return math.max(fad_min, tonumber(string.match(lnlib.line.tag("fad"), "%d+,(%d+)"))), true
+    return math.max(fad_min, tonumber(string.match(lnlib.line.tag("fad"), "%d+,%s*(%d+)"))), true
   else
     if #(tenv.line.kara or {}) == 0 then
       return k_min, false
@@ -817,7 +817,7 @@ lnlib = {
 
       dutyCycle = dutyCycle or 1
 
-      jumpToStartingPosition = jumpToStartingPosition or true
+      if jumpToStartingPosition == nil then jumpToStartingPosition = true end
 
       local timestep = framestep * 1000 / 23.976
       local tfs = {}
@@ -838,6 +838,19 @@ lnlib = {
         local valHalf = wave.getValue(i + timestep / 2 - delay)
         local val1    = wave.getValue(i + timestep - delay)
 
+        --[[
+        -- Assumed ASS accel curve:
+        -- ratio = ((t - t0) / (t1 - t0)) ^ accel
+        -- value = val0 + (val1 - val0) * ratio
+        -- Ratio range is 0-1 so exponent just curves it.
+        -- knowns: value = valHalf
+        -- ((t - t0) / (t1 - t0)) = 0.5 since we're halfway through the timestep, so:
+        --  ratio = 0.5 ^ accel
+        -- place the knowns into the latter equation:
+        -- valHalf = val0 + (val1 - val0) * 0.5 ^ accel
+        -- (valHalf - val0) / (val1 - val0) = 0.5 ^ accel
+        -- log_0.5( (valHalf - val0) / (val1 - val0) ) = log_0.5(0.5 ^accel) = accel
+        --]]
         local accel_unclamped = lnlib.math.log(0.5, math.abs((valHalf - val0) / (val1 - val0)))
         local accel = lnlib.math.clamp(accel_unclamped, 0.01, 100);
         
