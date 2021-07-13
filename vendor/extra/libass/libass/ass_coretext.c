@@ -126,29 +126,7 @@ static char *get_name(CTFontDescriptorRef fontd, CFStringRef attr)
     return ret;
 }
 
-static bool fill_family_name(CTFontDescriptorRef fontd,
-                             ASS_FontProviderMetaData *info)
-{
-    if (info->n_family)
-        return true;
-
-    char *family_name = get_name(fontd, kCTFontFamilyNameAttribute);
-    if (!family_name)
-        return false;
-
-    info->families = malloc(sizeof(char *));
-    if (!info->families) {
-        free(family_name);
-        return false;
-    }
-
-    info->families[0] = family_name;
-    info->n_family++;
-    return true;
-}
-
-static bool get_font_info_ct(ASS_Library *lib, FT_Library ftlib,
-                             CTFontDescriptorRef fontd,
+static bool get_font_info_ct(CTFontDescriptorRef fontd,
                              char **path_out,
                              ASS_FontProviderMetaData *info)
 {
@@ -160,17 +138,19 @@ static bool get_font_info_ct(ASS_Library *lib, FT_Library ftlib,
     }
 
     char *ps_name = get_name(fontd, kCTFontNameAttribute);
+    info->postscript_name = ps_name;
     if (!ps_name)
         return false;
 
-    bool got_info = ass_get_font_info(lib, ftlib, path, ps_name, -1, false, info);
-    free(ps_name);
+    char *family_name = get_name(fontd, kCTFontFamilyNameAttribute);
+    info->extended_family = family_name;
+    if (!family_name)
+        return false;
 
-    return got_info && fill_family_name(fontd, info);
+    return true;
 }
 
-static void process_descriptors(ASS_Library *lib, FT_Library ftlib,
-                                ASS_FontProvider *provider, CFArrayRef fontsd)
+static void process_descriptors(ASS_FontProvider *provider, CFArrayRef fontsd)
 {
     if (!fontsd)
         return;
@@ -181,21 +161,13 @@ static void process_descriptors(ASS_Library *lib, FT_Library ftlib,
         int index = -1;
 
         char *path = NULL;
-        if (get_font_info_ct(lib, ftlib, fontd, &path, &meta)) {
+        if (get_font_info_ct(fontd, &path, &meta)) {
             CFRetain(fontd);
             ass_font_provider_add_font(provider, &meta, path, index, (void*)fontd);
         }
 
-        for (int j = 0; j < meta.n_family; j++)
-            free(meta.families[j]);
-
-        for (int j = 0; j < meta.n_fullname; j++)
-            free(meta.fullnames[j]);
-
-        free(meta.families);
-        free(meta.fullnames);
-
         free(meta.postscript_name);
+        free(meta.extended_family);
 
         free(path);
     }
@@ -204,8 +176,6 @@ static void process_descriptors(ASS_Library *lib, FT_Library ftlib,
 static void match_fonts(void *priv, ASS_Library *lib, ASS_FontProvider *provider,
                         char *name)
 {
-    FT_Library ftlib = priv;
-
     CFStringRef cfname =
         CFStringCreateWithCString(NULL, name, kCFStringEncodingUTF8);
     if (!cfname)
@@ -242,7 +212,21 @@ static void match_fonts(void *priv, ASS_Library *lib, ASS_FontProvider *provider
     if (!descriptors)
         goto cleanup;
 
-    ctcoll = CTFontCollectionCreateWithFontDescriptors(descriptors, 0);
+    const int nonzero = 1;
+    CFNumberRef cfnonzero = CFNumberCreate(NULL, kCFNumberIntType, &nonzero);
+    if (!cfnonzero)
+        goto cleanup;
+    CFDictionaryRef options =
+        CFDictionaryCreate(NULL,
+            (const void **)&kCTFontCollectionRemoveDuplicatesOption,
+            (const void **)&cfnonzero,
+            1, NULL, NULL);
+    CFRelease(cfnonzero);
+    if (!options)
+        goto cleanup;
+
+    ctcoll = CTFontCollectionCreateWithFontDescriptors(descriptors, options);
+    CFRelease(options);
     if (!ctcoll)
         goto cleanup;
 
@@ -250,7 +234,7 @@ static void match_fonts(void *priv, ASS_Library *lib, ASS_FontProvider *provider
     if (!fontsd)
         goto cleanup;
 
-    process_descriptors(lib, ftlib, provider, fontsd);
+    process_descriptors(provider, fontsd);
 
 cleanup:
     SAFE_CFRelease(fontsd);
@@ -266,8 +250,6 @@ cleanup:
 static char *get_fallback(void *priv, ASS_Library *lib,
                           const char *family, uint32_t codepoint)
 {
-    FT_Library ftlib = priv;
-
     CFStringRef name = CFStringCreateWithBytes(
         0, (UInt8 *)family, strlen(family), kCFStringEncodingUTF8, false);
     if (!name)
@@ -294,33 +276,15 @@ static char *get_fallback(void *priv, ASS_Library *lib,
     if (!fb)
         return NULL;
 
-    CTFontDescriptorRef fontd = CTFontCopyFontDescriptor(fb);
+    CFStringRef cffamily = CTFontCopyFamilyName(fb);
     CFRelease(fb);
-    if (!fontd)
+    if (!cffamily)
         return NULL;
 
-    char *res_name = NULL;
-    char *path = NULL;
-    ASS_FontProviderMetaData meta = {0};
-    if (get_font_info_ct(lib, ftlib, fontd, &path, &meta))
-        res_name = meta.families[0];
+    char *res_family = cfstr2buf(cffamily);
+    CFRelease(cffamily);
 
-    CFRelease(fontd);
-
-    for (int i = 1 /* skip res_name */; i < meta.n_family; i++)
-        free(meta.families[i]);
-
-    for (int i = 0; i < meta.n_fullname; i++)
-        free(meta.fullnames[i]);
-
-    free(meta.families);
-    free(meta.fullnames);
-
-    free(meta.postscript_name);
-
-    free(path);
-
-    return res_name;
+    return res_family;
 }
 
 static void get_substitutions(void *priv, const char *name,
@@ -343,5 +307,5 @@ ASS_FontProvider *
 ass_coretext_add_provider(ASS_Library *lib, ASS_FontSelector *selector,
                           const char *config, FT_Library ftlib)
 {
-    return ass_font_provider_new(selector, &coretext_callbacks, ftlib);
+    return ass_font_provider_new(selector, &coretext_callbacks, NULL);
 }

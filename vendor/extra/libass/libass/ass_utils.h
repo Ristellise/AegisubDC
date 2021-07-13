@@ -61,7 +61,7 @@ typedef struct {
 
 static inline char *ass_copy_string(ASS_StringView src)
 {
-    char *buf = (char*)malloc(src.len + 1);
+    char *buf = malloc(src.len + 1);
     if (buf) {
         memcpy(buf, src.str, src.len);
         buf[src.len] = '\0';
@@ -104,6 +104,11 @@ int numpad2align(int val);
 unsigned ass_utf8_get_char(char **str);
 unsigned ass_utf8_put_char(char *dest, uint32_t ch);
 void ass_utf16be_to_utf8(char *dst, size_t dst_size, uint8_t *src, size_t src_size);
+#if defined(__MINGW32__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ >= 4))
+    __attribute__ ((format (gnu_printf, 3, 4)))
+#elif defined(__GNUC__)
+    __attribute__ ((format (printf, 3, 4)))
+#endif
 void ass_msg(ASS_Library *priv, int lvl, const char *fmt, ...);
 int lookup_style(ASS_Track *track, char *name);
 ASS_Style *lookup_style_strict(ASS_Track *track, char *name, size_t len);
@@ -185,7 +190,7 @@ static inline uint32_t fnv_32a_buf(const void *buf, size_t len, uint32_t hval)
     if (!len)
         return hval;
 
-    const uint8_t *bp = (const uint8_t*)buf;
+    const uint8_t *bp = buf;
     size_t n = (len + 3) / 4;
 
     switch (len % 4) {

@@ -183,6 +183,7 @@
     <ClInclude Include="ass_cache_template.h" />
     <ClInclude Include="ass_compat.h" />
     <ClInclude Include="ass_directwrite.h" />
+    <ClInclude Include="ass_directwrite_info_template.h" />
     <ClInclude Include="ass_drawing.h" />
     <ClInclude Include="ass_font.h" />
     <ClInclude Include="ass_fontconfig.h" />
