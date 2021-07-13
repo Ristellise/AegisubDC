@@ -141,6 +141,7 @@
     <ClInclude Include="ass_priv.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="ass_directwrite_info_template.h" />
   </ItemGroup>
   <ItemGroup>
     <NASM Include="x86\be_blur.asm">

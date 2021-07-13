@@ -18,3 +18,13 @@ F:\AegisubDC-git\vendor\extra\libass\bin\Release_x64\libass\blur.obj
 F:\AegisubDC-git\vendor\extra\libass\bin\Release_x64\libass\cpuid.obj
 ^x86\rasterizer.asm
 F:\AegisubDC-git\vendor\extra\libass\bin\Release_x64\libass\rasterizer.obj
+^x86\be_blur.asm
+F:\AegisubDC-git\vendor\extra\libass\bin\Release_x64\libass\be_blur.obj
+^x86\blend_bitmaps.asm
+F:\AegisubDC-git\vendor\extra\libass\bin\Release_x64\libass\blend_bitmaps.obj
+^x86\blur.asm
+F:\AegisubDC-git\vendor\extra\libass\bin\Release_x64\libass\blur.obj
+^x86\cpuid.asm
+F:\AegisubDC-git\vendor\extra\libass\bin\Release_x64\libass\cpuid.obj
+^x86\rasterizer.asm
+F:\AegisubDC-git\vendor\extra\libass\bin\Release_x64\libass\rasterizer.obj

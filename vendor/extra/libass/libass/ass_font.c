@@ -130,6 +130,38 @@ static void set_font_metrics(FT_Face face)
     }
 }
 
+FT_Face ass_face_open(ASS_Library *lib, FT_Library ftlib, const char *path,
+                      const char *postscript_name, int index)
+{
+    FT_Face face;
+    int error = FT_New_Face(ftlib, path, index, &face);
+    if (error) {
+        ass_msg(lib, MSGL_WARN, "Error opening font: '%s', %d", path, index);
+        return NULL;
+    }
+
+    if (postscript_name && index < 0 && face->num_faces > 0) {
+        // The font provider gave us a postscript name and is not sure
+        // about the face index.. so use the postscript name to find the
+        // correct face_index in the collection!
+        for (int i = 0; i < face->num_faces; i++) {
+            FT_Done_Face(face);
+            error = FT_New_Face(ftlib, path, i, &face);
+            if (error) {
+                ass_msg(lib, MSGL_WARN, "Error opening font: '%s', %d", path, i);
+                return NULL;
+            }
+
+            const char *face_psname = FT_Get_Postscript_Name(face);
+            if (face_psname != NULL &&
+                strcmp(face_psname, postscript_name) == 0)
+                break;
+        }
+    }
+
+    return face;
+}
+
 static unsigned long
 read_stream_font(FT_Stream stream, unsigned long offset, unsigned char *buffer,
                  unsigned long count)
@@ -147,6 +179,45 @@ close_stream_font(FT_Stream stream)
     free(stream);
 }
 
+FT_Face ass_face_stream(ASS_Library *lib, FT_Library ftlib, const char *name,
+                        const ASS_FontStream *stream, int index)
+{
+    ASS_FontStream *fs = calloc(1, sizeof(ASS_FontStream));
+    if (!fs)
+        return NULL;
+    *fs = *stream;
+
+    FT_Stream ftstream = calloc(1, sizeof(FT_StreamRec));
+    if (!ftstream) {
+        free(fs);
+        return NULL;
+    }
+    ftstream->size  = stream->func(stream->priv, NULL, 0, 0);
+    ftstream->read  = read_stream_font;
+    ftstream->close = close_stream_font;
+    ftstream->descriptor.pointer = (void *)fs;
+
+    FT_Open_Args args = {
+        .flags  = FT_OPEN_STREAM,
+        .stream = ftstream,
+    };
+
+    FT_Face face;
+    int error = FT_Open_Face(ftlib, &args, index, &face);
+    if (error) {
+        if (name) {
+            ass_msg(lib, MSGL_WARN,
+                    "Error opening memory font: '%s'", name);
+        } else {
+            ass_msg(lib, MSGL_WARN,
+                    "Error opening memory font");
+        }
+        return NULL;
+    }
+
+    return face;
+}
+
 /**
  * \brief Select a face with the given charcode and add it to ASS_Font
  * \return index of the new face in font->faces, -1 if failed
@@ -155,14 +226,14 @@ static int add_face(ASS_FontSelector *fontsel, ASS_Font *font, uint32_t ch)
 {
     char *path;
     char *postscript_name = NULL;
-    int i, index, uid, error;
+    int i, index, uid;
     ASS_FontStream stream = { NULL, NULL };
     FT_Face face;
 
     if (font->n_faces == ASS_FONT_MAX_FACES)
         return -1;
 
-    path = ass_font_select(fontsel, font->library, font , &index,
+    path = ass_font_select(fontsel, font, &index,
             &postscript_name, &uid, &stream, ch);
 
     if (!path)
@@ -177,56 +248,15 @@ static int add_face(ASS_FontSelector *fontsel, ASS_Font *font, uint32_t ch)
     }
 
     if (stream.func) {
-        FT_Open_Args args;
-        FT_Stream ftstream = calloc(1, sizeof(FT_StreamRec));
-        ASS_FontStream *fs  = calloc(1, sizeof(ASS_FontStream));
-
-        *fs = stream;
-        ftstream->size  = stream.func(stream.priv, NULL, 0, 0);
-        ftstream->read  = read_stream_font;
-        ftstream->close = close_stream_font;
-        ftstream->descriptor.pointer = (void *)fs;
-
-        memset(&args, 0, sizeof(FT_Open_Args));
-        args.flags  = FT_OPEN_STREAM;
-        args.stream = ftstream;
-
-        error = FT_Open_Face(font->ftlibrary, &args, index, &face);
-
-        if (error) {
-            ass_msg(font->library, MSGL_WARN,
-                    "Error opening memory font: '%s'", path);
-            return -1;
-        }
-
+        face = ass_face_stream(font->library, font->ftlibrary, path,
+                               &stream, index);
     } else {
-        error = FT_New_Face(font->ftlibrary, path, index, &face);
-        if (error) {
-            ass_msg(font->library, MSGL_WARN,
-                    "Error opening font: '%s', %d", path, index);
-            return -1;
-        }
-
-        if (postscript_name && index < 0 && face->num_faces > 0) {
-            // The font provider gave us a post_script name and is not sure
-            // about the face index.. so use the postscript name to find the
-            // correct face_index in the collection!
-            for (int i = 0; i < face->num_faces; i++) {
-                FT_Done_Face(face);
-                error = FT_New_Face(font->ftlibrary, path, i, &face);
-                if (error) {
-                    ass_msg(font->library, MSGL_WARN,
-                            "Error opening font: '%s', %d", path, i);
-                    return -1;
-                }
-
-                const char *face_psname = FT_Get_Postscript_Name(face);
-                if (face_psname != NULL &&
-                    strcmp(face_psname, postscript_name) == 0)
-                    break;
-            }
-        }
+        face = ass_face_open(font->library, font->ftlibrary, path,
+                             postscript_name, index);
     }
+
+    if (!face)
+        return -1;
 
     charmap_magic(font->library, face);
     set_font_metrics(face);
@@ -474,7 +504,7 @@ int ass_font_get_index(ASS_FontSelector *fontsel, ASS_Font *font,
         int face_idx;
         ass_msg(font->library, MSGL_INFO,
                 "Glyph 0x%X not found, selecting one more "
-                "font for (%s, %d, %d)", symbol, font->desc.family,
+                "font for (%.*s, %d, %d)", symbol, (int) font->desc.family.len, font->desc.family.str,
                 font->desc.bold, font->desc.italic);
         face_idx = *face_index = add_face(fontsel, font, symbol);
         if (face_idx >= 0) {
@@ -491,8 +521,8 @@ int ass_font_get_index(ASS_FontSelector *fontsel, ASS_Font *font,
             }
             if (index == 0) {
                 ass_msg(font->library, MSGL_ERR,
-                        "Glyph 0x%X not found in font for (%s, %d, %d)",
-                        symbol, font->desc.family, font->desc.bold,
+                        "Glyph 0x%X not found in font for (%.*s, %d, %d)",
+                        symbol, (int) font->desc.family.len, font->desc.family.str, font->desc.bold,
                         font->desc.italic);
             }
         }
