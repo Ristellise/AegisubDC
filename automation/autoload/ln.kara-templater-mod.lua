@@ -31,19 +31,6 @@
 -- Parse and apply a karaoke effect written in ASS karaoke template language
 -- See help file and wiki for more information on this
 
---[[
- List of unauthorized unofficial modifications by logarithm:
-  - gave the execution environment access to the subtitles object
-  - made notext and noblank modifiers work with pre-line templates and non-k-timed lines like they do with other template types(maybe some other stuff too)
-  - added variable ci, available with by-char templates, which tells which letter of the current syllable is being processed
-  - increased inline variable positioning precision to .1 pixel
-  - added option to generate kfx without generating furigana styles
-  - calling maxloop() with something below the current j will abort outputting the current template line
-  - redid line, preline, syl and other such keywords: pre-line is now just line, old line is now lsyl, and lword/lchar are like lsyl for words and chars. char and word also work with code lines
-  - added 'style' modifier which works kind of like fxgroup: for example templates with 'style romaji' are run on only lines with "romaji" in the style name. Intended for use with the 'all' keyword
-	- added k_retime function that acts like retime but moves karaoke timings as needed (you should only run this once per line)
- ]]
-
 local tr = aegisub.gettext
 
 script_name = tr"Karaoke Templater mod"
@@ -351,8 +338,14 @@ function apply_templates(meta, styles, subs, templates)
 		-- put in some standard libs, and the subs object for much fun :3
 		string = string,
 		math = math,
+		table = table,
 		subs = subs,
-		_G = _G
+		_G = _G,
+		ipairs = ipairs,
+		pairs = pairs,
+		tonumber = tonumber,
+		tostring = tostring,
+		type = type
 	}
 	tenv.tenv = tenv
 
@@ -948,9 +941,9 @@ function apply_line(meta, styles, subs, line, templates, tenv)
 				local newline = table.copy(line)
 				tenv.line = newline
 				newline.layer = t.layer
-				newline.text = ""
+				textbuffer = {}
 				if t.pre ~= "" then
-					newline.text = newline.text .. run_text_template(t.pre, tenv, varctx)
+					table.insert(textbuffer, run_text_template(t.pre, tenv, varctx))
 				end
 				if t.t ~= "" then
 					if t.perword then
@@ -961,12 +954,12 @@ function apply_line(meta, styles, subs, line, templates, tenv)
 							tenv.syl = word
 							tenv.basesyl = word
 							set_ctx_syl(varctx, line, word)
-							newline.text = newline.text .. run_text_template(t.t, tenv, varctx)
+							table.insert(textbuffer, run_text_template(t.t, tenv, varctx))
 							if t.addtext then
 								if t.keeptags then
-									newline.text = newline.text .. word.text
+									table.insert(textbuffer, word.text)
 								else
-									newline.text = newline.text .. word.text_stripped
+									table.insert(textbuffer, word.text_stripped)
 								end
 							end
 						end
@@ -980,12 +973,12 @@ function apply_line(meta, styles, subs, line, templates, tenv)
 							tenv.syl = syl
 							tenv.basesyl = syl
 							set_ctx_syl(varctx, line, syl)
-							newline.text = newline.text .. run_text_template(t.t, tenv, varctx)
+							table.insert(textbuffer, run_text_template(t.t, tenv, varctx))
 							if t.addtext then
 								if t.keeptags then
-									newline.text = newline.text .. syl.text
+									table.insert(textbuffer, syl.text)
 								else
-									newline.text = newline.text .. syl.text_stripped
+									table.insert(textbuffer, syl.text_stripped)
 								end
 							end
 						end
@@ -1001,12 +994,12 @@ function apply_line(meta, styles, subs, line, templates, tenv)
 							tenv.syl = char
 							tenv.basesyl = char
 							set_ctx_syl(varctx, line, char)
-							newline.text = newline.text .. run_text_template(t.t, tenv, varctx)
+							table.insert(textbuffer, run_text_template(t.t, tenv, varctx))
 							if t.addtext then
 								if t.keeptags then
-									newline.text = newline.text .. char.text
+									table.insert(textbuffer, char.text)
 								else
-									newline.text = newline.text .. char.text_stripped
+									table.insert(textbuffer, char.text_stripped)
 								end
 							end
 						end
@@ -1015,12 +1008,13 @@ function apply_line(meta, styles, subs, line, templates, tenv)
 					-- hmm, no main template for the line... put original text in
 					if t.addtext then
 						if t.keeptags then
-							newline.text = newline.text .. line.text
+							table.insert(textbuffer, line.text)
 						else
-							newline.text = newline.text .. line.text_stripped
+							table.insert(textbuffer, line.text_stripped)
 						end
 					end
 				end
+				newline.text = table.concat(textbuffer)
 				newline.effect = "fx"
 				if j <= tenv.maxj then subs.append(newline) end
 			end
@@ -1300,7 +1294,7 @@ function macro_can_template(subs)
 		if l.class == "dialogue" then
 			num_dia = num_dia + 1
 			-- test if the line is a template
-			if (string.headtail(l.effect)):lower() == "template" then
+			if (string.headtail(l.effect)):lower() == "template" or (string.headtail(l.effect)):lower() == "code" then
 				return true
 			end
 			-- don't try forever, this has to be fast
