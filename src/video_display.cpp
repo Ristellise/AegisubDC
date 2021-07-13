@@ -511,7 +511,6 @@ VideoDisplay::VideoDisplay(wxToolBar* toolbar, bool freeSize, wxComboBox* zoomBo
             // Hide the tool bar first to eliminate unecessary size changes
             toolBar->Show(false);
             toolBar->ClearTools();
-            toolBar->AddSeparator();
             tool->SetToolbar(toolBar);
 
             // Update size as the new typesetting tool may have changed the subtoolbar size
