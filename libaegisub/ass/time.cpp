@@ -91,9 +91,10 @@ std::string Time::GetSrtFormatted() const {
 }
 
 void Time::RoundTime() {
-	float floatTime = (float)this->time / 10.0f;
-
-	time = floor(floatTime - 0.5) * 10;
+	if (this->time % 10 == 0)
+		return;
+	else
+		this->time = this->time - this->time % 10;
 }
 
 SmpteFormatter::SmpteFormatter(vfr::Framerate fps, char sep)
