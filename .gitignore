@@ -1,11 +1,12 @@
 build-dir
 .vs/
-vendor/exten/harfbuzz/test/
-vendor/exten/harfbuzz/test/*
 *.obj
 *.log
 *.tlog/
-vendor/exten/harfbuzz/tests/
+/obj
+/vendor/exten/harfbuzz/test/
+/vendor/exten/harfbuzz/test/*
+/vendor/exten/harfbuzz/tests/
 /vendor/exten/hunspell/tests
 /vendor/exten/fribidi-1.0.10/build/gen.tab
 /vendor/exten/libiconv/tests
