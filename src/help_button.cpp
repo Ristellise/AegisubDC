@@ -63,7 +63,7 @@ static const char *pages[][2] = {
 namespace {
 	const char *url(const char *page) {
 		auto it = std::lower_bound(std::begin(pages), std::end(pages), page, [](const char *pair[], const char *page) {
-			return strcmp(pair[0], page) < 0;
+			return strcmp(pair[0], page) == 0;
 		});
 		return it == std::end(pages) ? nullptr : (*it)[1];
 	}
