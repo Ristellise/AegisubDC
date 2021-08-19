@@ -52,10 +52,8 @@ class DialogTranslation final : public wxDialog {
 
 	wxStaticText* line_number_display;
 	wxStyledTextCtrl* original_text;
-#ifdef WITH_WXSTC
 	const bool use_stc;
 	SubsStyledTextEditCtrl* translated_text_stc;
-#endif
 	wxTextCtrl* translated_text_tc;
 	wxCheckBox* seek_video;
 

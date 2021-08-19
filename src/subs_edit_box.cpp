@@ -465,7 +465,7 @@ void SubsEditBox::OnActiveLineChanged(AssDialogue *new_line) {
 	wxEventBlocker blocker(this);
 	line = new_line;
 	commit_id = -1;
-
+	UpdateCharacterCount(line->Text);
 	UpdateFields(AssFile::COMMIT_DIAG_FULL, false);
 }
 
