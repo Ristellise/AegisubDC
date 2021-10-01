@@ -24,7 +24,8 @@ enum class ycbcr_matrix {
 	bt601,
 	bt709,
 	fcc,
-	smpte_240m
+	smpte_240m,
+	bt2020
 };
 
 enum class ycbcr_range {

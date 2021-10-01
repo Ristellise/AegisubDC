@@ -60,8 +60,9 @@ template<typename Source>
 class DownmixToMono {
 	Source src;
 	int channels;
+	bool asAmplitudeEnv;
 public:
-	DownmixToMono(Source src, int channels) :src(src), channels(channels) {}
+	DownmixToMono(Source src, int channels, bool asAmpEnv = false) :src(src), channels(channels), asAmplitudeEnv(asAmpEnv) {}
 	int16_t operator[](size_t idx) const {
 		int ret = 0;
 		// Just average the channels together
@@ -73,7 +74,7 @@ public:
 }
 
 namespace agi {
-void AudioProvider::FillBufferInt16Mono(int16_t* buf, int64_t start, int64_t count) const {
+void AudioProvider::FillBufferInt16Mono(int16_t* buf, int64_t start, int64_t count, bool asAmplitude) const {
 	if (!float_samples && bytes_per_sample == 2 && channels == 1) {
 		FillBuffer(buf, start, count);
 		return;
@@ -102,18 +103,18 @@ void AudioProvider::FillBufferInt16Mono(int16_t* buf, int64_t start, int64_t cou
 		if (float_samples) {
 			if (bytes_per_sample == sizeof(float))
 				for (int64_t i = 0; i < count; ++i)
-					buf[i] = DownmixToMono<ConvertFloatToInt16<float> >(ConvertFloatToInt16<float>(reinterpret_cast<float*>(buff)), channels)[i];
+					buf[i] = DownmixToMono<ConvertFloatToInt16<float> >(ConvertFloatToInt16<float>(reinterpret_cast<float*>(buff)), channels, asAmplitude)[i];
 			else if (bytes_per_sample == sizeof(double))
 				for (int64_t i = 0; i < count; ++i)
-					buf[i] = DownmixToMono<ConvertFloatToInt16<double> >(ConvertFloatToInt16<double>(reinterpret_cast<double*>(buff)), channels)[i];
+					buf[i] = DownmixToMono<ConvertFloatToInt16<double> >(ConvertFloatToInt16<double>(reinterpret_cast<double*>(buff)), channels, asAmplitude)[i];
 		}
 		else {
 			if (bytes_per_sample == sizeof(uint8_t))
 				for (int64_t i = 0; i < count; ++i)
-					buf[i] = DownmixToMono<ConvertUInt8ToInt16>(ConvertUInt8ToInt16(reinterpret_cast<uint8_t*>(buff)), channels)[i];
+					buf[i] = DownmixToMono<ConvertUInt8ToInt16>(ConvertUInt8ToInt16(reinterpret_cast<uint8_t*>(buff)), channels, asAmplitude)[i];
 			else
 				for (int64_t i = 0; i < count; ++i)
-					buf[i] = DownmixToMono<ConvertIntToInt16>(ConvertIntToInt16(buff, bytes_per_sample), channels)[i];
+					buf[i] = DownmixToMono<ConvertIntToInt16>(ConvertIntToInt16(buff, bytes_per_sample), channels, asAmplitude)[i];
 		}
 	}
 	free(buff);

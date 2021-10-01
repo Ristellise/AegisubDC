@@ -35,7 +35,9 @@ enum class YCbCrMatrix : int {
 	tv_fcc,
 	pc_fcc,
 	tv_240m,
-	pc_240m
+	pc_240m,
+	tv_2020,
+	pc_2020,
 };
 
 YCbCrMatrix MatrixFromString(std::string const& str);
