@@ -29,7 +29,7 @@ class LockAudioProvider final : public agi::AudioProviderWrapper {
 		source->GetAudio(buf, start, count);
 	}
 
-	void FillBufferInt16Mono(int16_t *buf, int64_t start, int64_t count) const override {
+	void FillBufferInt16Mono(int16_t *buf, int64_t start, int64_t count, bool _) const override {
 		std::unique_lock<std::mutex> lock(mutex);
 		source->GetInt16MonoAudio(buf, start, count);
 	}

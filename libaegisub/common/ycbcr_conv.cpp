@@ -22,6 +22,7 @@ double matrix_coefficients[][3] = {
 	{.2126, .7152, .0722}, // BT.709
 	{.3, .59, .11},        // FCC
 	{.212, .701, .087},    // SMPTE 240M
+	{.2627, .014, .0593}   // BT.2020
 };
 
 void row_mult(std::array<double, 9>& arr, std::array<double, 3> values) {

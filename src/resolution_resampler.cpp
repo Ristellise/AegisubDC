@@ -44,7 +44,9 @@ static const std::string names[] = {
 	"TV.601", "PC.601",
 	"TV.709", "PC.709",
 	"TV.FCC", "PC.FCC",
-	"TV.240M", "PC.240M"
+	"TV.240M", "PC.240M",
+	"TV.2020", "PC.2020",
+
 };
 
 YCbCrMatrix MatrixFromString(std::string const& str) {
@@ -200,6 +202,7 @@ namespace {
 			case YCbCrMatrix::tv_709:  case YCbCrMatrix::pc_709:  return agi::ycbcr_matrix::bt709;
 			case YCbCrMatrix::tv_fcc:  case YCbCrMatrix::pc_fcc:  return agi::ycbcr_matrix::fcc;
 			case YCbCrMatrix::tv_240m: case YCbCrMatrix::pc_240m: return agi::ycbcr_matrix::smpte_240m;
+			case YCbCrMatrix::tv_2020: case YCbCrMatrix::pc_2020: return agi::ycbcr_matrix::bt2020;
 		}
 		throw agi::InternalError("Invalid matrix");
 	}
@@ -211,11 +214,13 @@ namespace {
 			case YCbCrMatrix::tv_709:
 			case YCbCrMatrix::tv_fcc:
 			case YCbCrMatrix::tv_240m:
+			case YCbCrMatrix::tv_2020:
 				return agi::ycbcr_range::tv;
 			case YCbCrMatrix::pc_601:
 			case YCbCrMatrix::pc_709:
 			case YCbCrMatrix::pc_fcc:
 			case YCbCrMatrix::pc_240m:
+			case YCbCrMatrix::pc_2020:
 				return agi::ycbcr_range::pc;
 		}
 		throw agi::InternalError("Invalid matrix");

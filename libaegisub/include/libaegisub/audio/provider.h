@@ -36,7 +36,7 @@ protected:
 	bool float_samples = false;
 
 	virtual void FillBuffer(void *buf, int64_t start, int64_t count) const = 0;
-	virtual void FillBufferInt16Mono(int16_t* buf, int64_t start, int64_t count) const;
+	virtual void FillBufferInt16Mono(int16_t* buf, int64_t start, int64_t count, bool asAmplitude=false) const;
 
 	void ZeroFill(void *buf, int64_t count) const;
 
