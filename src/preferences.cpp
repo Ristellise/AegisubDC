@@ -417,7 +417,7 @@ void Advanced_Audio(wxTreebook *book, Preferences *parent) {
 
 	p->OptionAdd(ffms, _("Always index all audio tracks"), "Provider/FFmpegSource/Index All Tracks");
 	wxControl* stereo = p->OptionAdd(ffms, _("Downmix to stereo"), "Provider/Audio/FFmpegSource/Downmix");
-	stereo->SetToolTip("Reduces memory usage on surround audio, but may cause audio tracks to sound blank in specific circumstances. This will not affect audio with 2 channels or lesser.");
+	stereo->SetToolTip("Reduces memory usage on surround audio, but may cause audio tracks to sound blank in specific circumstances.\nThis will not affect audio with 2 channels or fewer.");
 #endif
 
 #ifdef WITH_PORTAUDIO

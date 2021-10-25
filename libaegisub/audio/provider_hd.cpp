@@ -27,6 +27,7 @@
 #include <ctime>
 #include <thread>
 
+
 namespace {
 using namespace agi;
 
@@ -49,18 +50,21 @@ class HDAudioProvider final : public AudioProviderWrapper {
 		}
 	}
 
-	fs::path CacheFilename(fs::path const& dir) {
+	fs::path CacheFilename(fs::path dir, int hash) {
 		// Check free space
 		if ((uint64_t)num_samples * bytes_per_sample * channels > fs::FreeSpace(dir))
 			throw AudioProviderError("Not enough free disk space in " + dir.string() + " to cache the audio");
-
-		return "audio";
+		std::stringstream hexstream;
+		hexstream << std::hex << hash;
+		if (!fs::DirectoryExists(dir))
+			fs::CreateDirectory(dir);
+		return std::string("aegisub-audio-") + hexstream.str() + ".cache";
 	}
 
 public:
 	HDAudioProvider(std::unique_ptr<AudioProvider> src, agi::fs::path const& dir)
 	: AudioProviderWrapper(std::move(src))
-	, file(dir / CacheFilename(dir), num_samples * bytes_per_sample* channels)
+	, file(dir / CacheFilename(dir, this->GetHash()), num_samples* bytes_per_sample* channels)
 	{
 		decoded_samples = 0;
 		decoder = std::thread([&] {
