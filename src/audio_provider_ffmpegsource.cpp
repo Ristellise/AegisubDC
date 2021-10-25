@@ -41,6 +41,7 @@
 #include <libaegisub/fs.h>
 #include <libaegisub/make_unique.h>
 
+#include <functional>
 #include <map>
 
 namespace {
@@ -76,6 +77,7 @@ FFmpegSourceAudioProvider::FFmpegSourceAudioProvider(agi::fs::path const& filena
 	SetLogLevel();
 
 	LoadAudio(filename);
+	audioHash = std::hash<std::string>{}(filename.filename().string());
 }
 catch (agi::EnvironmentError const& err) {
 	throw agi::AudioProviderError(err.GetMessage());

@@ -34,6 +34,7 @@ protected:
 	int sample_rate = 0;
 	int bytes_per_sample = 0;
 	bool float_samples = false;
+	int audioHash = 0;
 
 	virtual void FillBuffer(void *buf, int64_t start, int64_t count) const = 0;
 	virtual void FillBufferInt16Mono(int16_t* buf, int64_t start, int64_t count, bool asAmplitude=false) const;
@@ -53,6 +54,7 @@ public:
 	int     GetBytesPerSample() const { return bytes_per_sample; }
 	int     GetChannels()       const { return channels; }
 	bool    AreSamplesFloat()   const { return float_samples; }
+	int     GetHash()   const { return audioHash; }
 
 	/// Does this provider benefit from external caching?
 	virtual bool NeedsCache() const { return false; }
@@ -72,6 +74,7 @@ public:
 		sample_rate = source->GetSampleRate();
 		bytes_per_sample = source->GetBytesPerSample();
 		float_samples = source->AreSamplesFloat();
+		audioHash = source->GetHash();
 	}
 };
 

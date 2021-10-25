@@ -172,7 +172,7 @@ namespace {
 		, ht_context(std::move(ht_context))
 		, retina_helper(parent)
 #ifdef __WXMSW__
-		, icon_size(parent->FromDIP(16))
+		, icon_size(parent->FromDIP(OPT_GET("App/Toolbar Icon Size")->GetInt()))
 #else
 		, icon_size(OPT_GET("App/Toolbar Icon Size")->GetInt())
 #endif
@@ -191,7 +191,7 @@ namespace {
 		, retina_helper(parent)
 #ifndef __WXMAC__
 #ifdef __WXMSW__
-		, icon_size(parent->FromDIP(16))
+		, icon_size(parent->FromDIP(OPT_GET("App/Toolbar Icon Size")->GetInt()))
 #else
 		, icon_size(OPT_GET("App/Toolbar Icon Size")->GetInt())
 #endif
