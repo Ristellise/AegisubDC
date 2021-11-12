@@ -1,190 +1,190 @@
-��Aegisub 2.1.6(SVN r2496)���{�ꌾ��t�@�C�� Ver0.25
+■Aegisub 2.1.6(SVN r2496)日本語言語ファイル Ver0.25
 
-�{�̂̃R���p�C���Ƃ��悭�킩��Ȃ��B
-�uwxstd.mo�v�قڂ��ׂē��{�ꉻ�����B
-�uaegisub.mo�v����96���قǓ��{�ꉻ�����B
-��1237�s��48�s�͖��|��
+本体のコンパイルとかよくわかんない。
+「wxstd.mo」ほぼすべて日本語化完了。
+「aegisub.mo」現在96％ほど日本語化した。
+※1237行中48行は未翻訳
 
-�|��̊ԈႢ��w���ȂƂ��낪����܂�����A���C�y�Ƀ��[�����������B
-���Fh-h23@edogawa.home.ne.jp
-
-
-��Aegisub �g�p��̒��ӁI
-
-�����t�@�C���̊֘A�t���ł����A����PC�ł͊֘A�t������Ɖ�������肭�����܂���B
-ASS�t�@�C���̑�R�������t�H���_���J���ƁA�ڋʃA�C�R�����C�b�p�C�Łc
-�����ڂ��|���ł��B
-
-�ڋʃA�C�R�����C���������Ɗ�����l�́A
-�{�̂̃o�O������܂Ŏ����̊֘A�t���͔����������ǂ��ł��傤�B
+翻訳の間違いやヘンなところがありましたら、お気軽にメールください。
+博：h-h23@edogawa.home.ne.jp
 
 
-�����{�ꉻ
+■Aegisub 使用上の注意！
 
-�uaegisub.mo�v�Ɓuwxstd.mo�v�̓������uja�v�t�H���_���A
-Aegisub�C���X�g�[���t�H���_���́ulocale�v�t�H���_�ɓ���Ă��������B
+字幕ファイルの関連付けですが、私のPCでは関連付けすると解除が上手くいきません。
+ASSファイルの沢山入ったフォルダを開くと、目玉アイコンがイッパイで…
+見た目が怖いです。
 
-�f�t�H���g�ł́A
+目玉アイコンが気持ち悪いと感じる人は、
+本体のバグが直るまで字幕の関連付けは避けた方が良いでしょう。
+
+
+■日本語化
+
+「aegisub.mo」と「wxstd.mo」の入った「ja」フォルダを、
+Aegisubインストールフォルダ内の「locale」フォルダに入れてください。
+
+デフォルトでは、
 C:\Program Files\Aegisub\locale
-�ł��B
+です。
 
-Aegisub�̃��j���[�uLanguage�v��I���A
-Language�E�B���h�E�ɁuJapanese�v�������̂Ŏw�肵��OK�������Ă��������B
+Aegisubのメニュー「Language」を選択、
+Languageウィンドウに「Japanese」が現れるので指定してOKを押してください。
 
-�uRestart Aegisub?�v�Ə����ꂽ�_�C�A���O���\������܂��B
+「Restart Aegisub?」と書かれたダイアログが表示されます。
 
-�uAegisub needs to be restarted so that the new language can be applied. Restart now?�v
-�@���|��
-�u�V���Ȍ����K�p����ɂ�Aegisub���ċN������K�v������܂��AAegisub���ċN�����܂����H�v
+「Aegisub needs to be restarted so that the new language can be applied. Restart now?」
+　↑翻訳↓
+「新たな言語を適用するにはAegisubを再起動する必要があります、Aegisubを再起動しますか？」
 
-�u�͂��v��������Aegisub���ċN�����ē��{�ꃆ�[�U�[�C���^�[�t�F�[�X�ɑւ��܂��B
+「はい」を押せばAegisubが再起動して日本語ユーザーインターフェースに替わります。
 
 
-���ȒP�Ȍ���t�@�C���̎d�g��
+■簡単な言語ファイルの仕組み
 
-�uaegisub.po�v�Ɓuaegisub.mo�v�FAegisub�ŗL�̌���t�@�C���B
+「aegisub.po」と「aegisub.mo」：Aegisub固有の言語ファイル。
 
-�uwxstd.po�v�Ɓuwxstd.mo�v�F�\�t�g�����{�̌���t�@�C���i���̃\�t�g�Ƌ��p�\�j�B
+「wxstd.po」と「wxstd.mo」：ソフト動作基本の言語ファイル（他のソフトと共用可能）。
 
-�u*.po�v�̓\�[�X�L�q�̌���t�@�C���B
-�u*.mo�v�̓R���p�C���ς݂̌���t�@�C���B
+「*.po」はソース記述の言語ファイル。
+「*.mo」はコンパイル済みの言語ファイル。
 
 poEdit
 http://www.google.co.jp/search?hl=ja&q=poedit&btnG=Google+%E6%A4%9C%E7%B4%A2&lr=lang_ja
-���ă\�t�g�œ����́uaegisub.po�v�Ɓuwxstd.po�v���J���ƃC�W���A
-�ۑ�����Ɓuaegisub.mo�v�Ɓuwxstd.mo�v�������������ĕۑ����Ă����B
+ってソフトで同梱の「aegisub.po」と「wxstd.po」を開くとイジれる、
+保存すると「aegisub.mo」と「wxstd.mo」を自動生成して保存してくれる。
 
-�C�W�邾���Ȃ�UTF-8�ɑΉ����Ă�e�L�X�g�G�f�B�^�Łu*.po�v�t�@�C�������������A
-poEdit�œǂݍ��݁A�ۑ������OK�I
+イジるだけならUTF-8に対応してるテキストエディタで「*.po」ファイルを書き換え、
+poEditで読み込み、保存すればOK！
 
-��wxstd.mo���D�悳���̂ŁAwxstd.mo�̓I�m�łȂ��|�󕔕��͂킴�Ƌ󔒂ɂ��Ă��܂��B
-���e�L�X�g�G�f�B�^�F�t���[��TeraPad��L���̏G�ۂȂ�
+※wxstd.moが優先されるので、wxstd.moの的確でない翻訳部分はわざと空白にしています。
+※テキストエディタ：フリーのTeraPadや有料の秀丸など
 
 
 
-���|���
+■翻訳環境
 
 WindowsXP Pro SP3
 
 
-���X�V����
+■更新履歴
 
 
-���uaegisub.mo�v
+▼「aegisub.mo」
 
-��2009/01/08
-Hiroshi�X�V
+●2009/01/08
+Hiroshi更新
 
-��2008/12/04
-Hiroshi�X�V
+●2008/12/04
+Hiroshi更新
 
-��2008/08/31
-Hiroshi�X�V
+●2008/08/31
+Hiroshi更新
 
-��2008/08/17
-Hiroshi�X�V
+●2008/08/17
+Hiroshi更新
 
-��2008/08/16
-Hiroshi�X�V
+●2008/08/16
+Hiroshi更新
 
-��2008/08/05
-Hiroshi�A�V����SVN�T�[�o�[����\�[�X�擾���aegisub.pot�ɂăJ�^���O�t�@�C���X�V
+●2008/08/05
+Hiroshi、新たなSVNサーバーからソース取得後にaegisub.potにてカタログファイル更新
 
-��2008/07/31
-Hiroshi�X�V
+●2008/07/31
+Hiroshi更新
 
-��2008/07/31
-Hiroshi�X�V���Əy643�X�V�����}�[�W
+●2008/07/31
+Hiroshi更新分と准643更新分をマージ
 
-��2008/07/30
-�y643�X�V
+●2008/07/30
+准643更新
 
-��2008/07/30
-Hiroshi�X�V
+●2008/07/30
+Hiroshi更新
 
-��2008/07/29
-Hiroshi�X�V
+●2008/07/29
+Hiroshi更新
 
-��2008/07/28
-Hiroshi�X�V
+●2008/07/28
+Hiroshi更新
 
-��2008/07/27
-Hiroshi�X�V
+●2008/07/27
+Hiroshi更新
 
-��2008/07/27
-Hiroshi�X�V
+●2008/07/27
+Hiroshi更新
 
-��2008/07/26
-Hiroshi�X�V����Elec�X�V�����}�[�W
+●2008/07/26
+Hiroshi更新分とElec更新分をマージ
 
-��2008/07/25
-Elec�X�V
+●2008/07/25
+Elec更新
 
-��2008/07/23
-Hiroshi�X�V
+●2008/07/23
+Hiroshi更新
 
-��2008/07/23
-Hiroshi�X�V
+●2008/07/23
+Hiroshi更新
 
-��2008/07/22
-Hiroshi�X�V
+●2008/07/22
+Hiroshi更新
 
-��2008/07/21
-Hiroshi�X�V
+●2008/07/21
+Hiroshi更新
 
-��2008/07/20
-Hiroshi�X�V
+●2008/07/20
+Hiroshi更新
 
-��2008/07/15
-Hiroshi�X�V
+●2008/07/15
+Hiroshi更新
 
-��2007/06/07
-Hibiki�X�V
+●2007/06/07
+Hibiki更新
 
-��2007/05/13
-Hiroshi�쐬
+●2007/05/13
+Hiroshi作成
 
 
-���uwxstd.mo�v
+▼「wxstd.mo」
 
-��2007/07/23
-Hiroshi�X�V
+●2007/07/23
+Hiroshi更新
 
-��2008/07/20
-�錩��N������̃\�[�X���Q�l�ɂقڊ����AHiroshi�X�V
+●2008/07/20
+鈴見咲君高さんのソースを参考にほぼ完了、Hiroshi更新
 
-��2007/05/13
-Hiroshi�쐬
+●2007/05/13
+Hiroshi作成
 
 
 
 
 Hiroshi Haga
-mail�Fh-h23@edogawa.home.ne.jp
-WEB�Fhttp://g-mark.jpn.org/
+mail：h-h23@edogawa.home.ne.jp
+WEB：http://g-mark.jpn.org/
 
 Hibiki
-mail�Fhibikiotemae@gmail.com
+mail：hibikiotemae@gmail.com
 
 Elec
-mail�F
-WEB�F
+mail：
+WEB：
 
-�y643
-mail�F
-WEB�Fhttp://www13.atwiki.jp/cc/
-
-
+准643
+mail：
+WEB：http://www13.atwiki.jp/cc/
 
 
-�����[�J���C�Y�p�J�^���O�t�@�C���̍쐬
 
-Subversion�Ǘ��p�c�[����p����B
-���E�߂́uTortoiseSVN�v
+
+■ローカライズ用カタログファイルの作成
+
+Subversion管理用ツールを用いる。
+お薦めは「TortoiseSVN」
 http://tortoisesvn.net/
 
-Aegisub��SVN�T�[�o�[����`�F�b�N�A�E�g
+AegisubのSVNサーバーからチェックアウト
 
-poEdit���N�����āA
-�u�t�@�C���v���uPOT �t�@�C�������ɐV�����J�^���O���쐬���܂��v
-��SVN�T�[�o�[���痎�Ƃ����upo�v�t�H���_���́uaegisub.pot�v�ŃJ�^���O�쐬�B
+poEditを起動して、
+「ファイル」→「POT ファイルを元に新しいカタログを作成します」
+でSVNサーバーから落とした「po」フォルダ内の「aegisub.pot」でカタログ作成。
