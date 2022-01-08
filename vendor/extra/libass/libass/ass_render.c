@@ -85,8 +85,7 @@ ASS_Renderer *ass_renderer_init(ASS_Library *library)
     priv->engine = &ass_bitmap_engine_c;
 #endif
 
-    if (!rasterizer_init(&priv->rasterizer, priv->engine->tile_order,
-                         RASTERIZER_PRECISION))
+    if (!rasterizer_init(priv->engine, &priv->rasterizer, RASTERIZER_PRECISION))
         goto fail;
 
     priv->cache.font_cache = ass_font_cache_create();
@@ -731,9 +730,9 @@ static void blend_vector_clip(ASS_Renderer *render_priv, ASS_Image *head)
 
             // Blend together
             memcpy(nbuffer, abuffer, ((ah - 1) * as) + aw);
-            render_priv->engine->sub_bitmaps(nbuffer + atop * as + aleft, as,
-                                             bbuffer + btop * bs + bleft, bs,
-                                             w, h);
+            render_priv->engine->imul_bitmaps(nbuffer + atop * as + aleft, as,
+                                              bbuffer + btop * bs + bleft, bs,
+                                              w, h);
         } else {
             // Regular clip
             if (ax + aw < bx || ay + ah < by || ax > bx + bw ||
@@ -1165,18 +1164,15 @@ size_t ass_outline_construct(void *key, void *value, void *priv)
         {
             GlyphHashKey *k = &outline_key->u.glyph;
             ass_face_set_size(k->font->faces[k->face_index], k->size);
-            FT_Glyph glyph =
-                ass_font_get_glyph(k->font, k->face_index, k->glyph_index,
-                                   render_priv->settings.hinting, k->flags);
-            if (glyph != NULL) {
-                FT_Outline *src = &((FT_OutlineGlyph) glyph)->outline;
-                if (!outline_convert(&v->outline[0], src))
-                    return 1;
-                v->advance = d16_to_d6(glyph->advance.x);
-                FT_Done_Glyph(glyph);
-                ass_font_get_asc_desc(k->font, k->face_index,
-                                      &v->asc, &v->desc);
-            }
+            if (!ass_font_get_glyph(k->font, k->face_index, k->glyph_index,
+                                    render_priv->settings.hinting))
+                return 1;
+            if (!ass_get_glyph_outline(&v->outline[0], &v->advance,
+                                       k->font->faces[k->face_index],
+                                       k->flags))
+                return 1;
+            ass_font_get_asc_desc(k->font, k->face_index,
+                                  &v->asc, &v->desc);
             break;
         }
     case OUTLINE_DRAWING:
@@ -2887,7 +2883,7 @@ ass_start_frame(ASS_Renderer *render_priv, ASS_Track *track,
     ass_shaper_set_level(render_priv->shaper, render_priv->settings.shaper);
 #ifdef USE_FRIBIDI_EX_API
     ass_shaper_set_bidi_brackets(render_priv->shaper,
-            track->parser_priv->bidi_brackets);
+            track->parser_priv->feature_flags & FEATURE_MASK(ASS_FEATURE_BIDI_BRACKETS));
 #endif
 
     // PAR correction

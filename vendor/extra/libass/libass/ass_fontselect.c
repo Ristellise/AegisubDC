@@ -171,22 +171,35 @@ static void load_fonts_from_dir(ASS_Library *library, const char *dir)
     DIR *d = opendir(dir);
     if (!d)
         return;
+    size_t dirlen = strlen(dir);
+    size_t namemax = 0;
+    char *namebuf = NULL;
     while (1) {
         struct dirent *entry = readdir(d);
         if (!entry)
             break;
         if (entry->d_name[0] == '.')
             continue;
-        char fullname[4096];
-        snprintf(fullname, sizeof(fullname), "%s/%s", dir, entry->d_name);
+        size_t namelen = dirlen + strlen(entry->d_name) + 2u;
+        if (namelen < 2 || namelen - 2 < dirlen)
+            continue;
+        if (namelen > namemax) {
+            size_t newlen = FFMAX(2048, namelen + FFMIN(256, SIZE_MAX - namelen));
+            if (ASS_REALLOC_ARRAY(namebuf, newlen))
+                namemax = newlen;
+            else
+                continue;
+        }
+        snprintf(namebuf, namemax, "%s/%s", dir, entry->d_name);
         size_t bufsize = 0;
-        ass_msg(library, MSGL_INFO, "Loading font file '%s'", fullname);
-        void *data = read_file(library, fullname, &bufsize);
+        ass_msg(library, MSGL_INFO, "Loading font file '%s'", namebuf);
+        void *data = read_file(library, namebuf, &bufsize);
         if (data) {
             ass_add_font(library, entry->d_name, data, bufsize);
             free(data);
         }
     }
+    free(namebuf);
     closedir(d);
 }
 
@@ -843,6 +856,7 @@ static char *select_font(ASS_FontSelector *priv,
     }
 
     if (!meta.n_fullname) {
+        free(meta.fullnames);
         meta = default_meta;
     }
 
@@ -941,8 +955,8 @@ char *ass_font_select(ASS_FontSelector *priv,
                 italic, res, *index, *postscript_name ? *postscript_name : "(none)");
     else
         ass_msg(priv->library, MSGL_WARN,
-                "fontselect: failed to find any fallback for font: "
-                "(%s, %d, %d)", family, bold, italic);
+                "fontselect: failed to find any fallback with glyph 0x%X for font: "
+                "(%s, %d, %d)", code, family, bold, italic);
 
     return res;
 }

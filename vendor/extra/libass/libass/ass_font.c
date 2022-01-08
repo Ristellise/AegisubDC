@@ -140,7 +140,9 @@ FT_Face ass_face_open(ASS_Library *lib, FT_Library ftlib, const char *path,
         return NULL;
     }
 
-    if (postscript_name && index < 0 && face->num_faces > 0) {
+    if (index >= 0) {
+        return face;
+    } else {
         // The font provider gave us a postscript name and is not sure
         // about the face index.. so use the postscript name to find the
         // correct face_index in the collection!
@@ -152,14 +154,28 @@ FT_Face ass_face_open(ASS_Library *lib, FT_Library ftlib, const char *path,
                 return NULL;
             }
 
+            // If there is only one face, don't bother checking the name.
+            // The font might not even *have* a valid PostScript name.
+            if (!i && face->num_faces == 1)
+                return face;
+
+            // Otherwise, we really need a name to search for.
+            if (!postscript_name) {
+                FT_Done_Face(face);
+                return NULL;
+            }
+
             const char *face_psname = FT_Get_Postscript_Name(face);
             if (face_psname != NULL &&
                 strcmp(face_psname, postscript_name) == 0)
-                break;
+                return face;
         }
-    }
 
-    return face;
+        FT_Done_Face(face);
+        ass_msg(lib, MSGL_WARN, "Failed to find font '%s' in file: '%s'",
+                postscript_name, path);
+        return NULL;
+    }
 }
 
 static unsigned long
@@ -357,93 +373,6 @@ void ass_font_get_asc_desc(ASS_Font *font, int face_index,
     *desc = FT_MulFix(-face->descender, y_scale);
 }
 
-static void add_line(FT_Outline *ol, int bear, int advance, int dir, int pos, int size) {
-    FT_Vector points[4] = {
-        {.x = bear,      .y = pos + size},
-        {.x = advance,   .y = pos + size},
-        {.x = advance,   .y = pos - size},
-        {.x = bear,      .y = pos - size},
-    };
-
-    if (dir == FT_ORIENTATION_TRUETYPE) {
-        int i;
-        for (i = 0; i < 4; i++) {
-            ol->points[ol->n_points] = points[i];
-            ol->tags[ol->n_points++] = 1;
-        }
-    } else {
-        int i;
-        for (i = 3; i >= 0; i--) {
-            ol->points[ol->n_points] = points[i];
-            ol->tags[ol->n_points++] = 1;
-        }
-    }
-
-    ol->contours[ol->n_contours++] = ol->n_points - 1;
-}
-
-/*
- * Strike a glyph with a horizontal line; it's possible to underline it
- * and/or strike through it.  For the line's position and size, truetype
- * tables are consulted.  Obviously this relies on the data in the tables
- * being accurate.
- *
- */
-static int ass_strike_outline_glyph(FT_Face face, ASS_Font *font,
-                                    FT_Glyph glyph, int under, int through)
-{
-    TT_OS2 *os2 = FT_Get_Sfnt_Table(face, ft_sfnt_os2);
-    TT_Postscript *ps = FT_Get_Sfnt_Table(face, ft_sfnt_post);
-    FT_Outline *ol = &((FT_OutlineGlyph) glyph)->outline;
-    int advance, y_scale, i, dir;
-
-    if (!under && !through)
-        return 0;
-
-    // Grow outline
-    i = (under ? 4 : 0) + (through ? 4 : 0);
-    if (ol->n_points > SHRT_MAX - i)
-        return 0;
-    if (!ASS_REALLOC_ARRAY(ol->points, ol->n_points + i))
-        return 0;
-    if (!ASS_REALLOC_ARRAY(ol->tags, ol->n_points + i))
-        return 0;
-    i = !!under + !!through;
-    if (ol->n_contours > SHRT_MAX - i)
-        return 0;
-    if (!ASS_REALLOC_ARRAY(ol->contours, ol->n_contours + i))
-        return 0;
-
-    advance = d16_to_d6(glyph->advance.x);
-    y_scale = face->size->metrics.y_scale;
-
-    // Reverse drawing direction for non-truetype fonts
-    dir = FT_Outline_Get_Orientation(ol);
-
-    // Add points to the outline
-    if (under && ps) {
-        int pos = FT_MulFix(ps->underlinePosition, y_scale);
-        int size = FT_MulFix(ps->underlineThickness, y_scale / 2);
-
-        if (pos > 0 || size <= 0)
-            return 1;
-
-        add_line(ol, 0, advance, dir, pos, size);
-    }
-
-    if (through && os2) {
-        int pos = FT_MulFix(os2->yStrikeoutPosition, y_scale);
-        int size = FT_MulFix(os2->yStrikeoutSize, y_scale / 2);
-
-        if (pos < 0 || size <= 0)
-            return 1;
-
-        add_line(ol, 0, advance, dir, pos, size);
-    }
-
-    return 0;
-}
-
 /**
  * Slightly embold a glyph without touching its metrics
  */
@@ -486,13 +415,6 @@ int ass_font_get_index(ASS_FontSelector *fontsel, ASS_Font *font,
         return 0;
     }
 
-    // try with the requested face
-    if (*face_index < font->n_faces) {
-        face = font->faces[*face_index];
-        index = FT_Get_Char_Index(face, ass_font_index_magic(face, symbol));
-    }
-
-    // not found in requested face, try all others
     for (i = 0; i < font->n_faces && index == 0; ++i) {
         face = font->faces[i];
         index = FT_Get_Char_Index(face, ass_font_index_magic(face, symbol));
@@ -539,15 +461,10 @@ int ass_font_get_index(ASS_FontSelector *fontsel, ASS_Font *font,
  * \brief Get a glyph
  * \param ch character code
  **/
-FT_Glyph ass_font_get_glyph(ASS_Font *font, int face_index, int index,
-                            ASS_Hinting hinting, int deco)
+bool ass_font_get_glyph(ASS_Font *font, int face_index, int index,
+                        ASS_Hinting hinting)
 {
-    int error;
-    FT_Glyph glyph;
-    FT_Face face = font->faces[face_index];
-    int flags = 0;
-
-    flags = FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_GLOBAL_ADVANCE_WIDTH
+    FT_Int32 flags = FT_LOAD_NO_BITMAP | FT_LOAD_IGNORE_GLOBAL_ADVANCE_WIDTH
             | FT_LOAD_IGNORE_TRANSFORM;
     switch (hinting) {
     case ASS_HINTING_NONE:
@@ -563,47 +480,18 @@ FT_Glyph ass_font_get_glyph(ASS_Font *font, int face_index, int index,
         break;
     }
 
-    error = FT_Load_Glyph(face, index, flags);
+    FT_Face face = font->faces[face_index];
+    FT_Error error = FT_Load_Glyph(face, index, flags);
     if (error) {
         ass_msg(font->library, MSGL_WARN, "Error loading glyph, index %d",
                 index);
-        return 0;
+        return false;
     }
-    if (!(face->style_flags & FT_STYLE_FLAG_ITALIC) &&
-        (font->desc.italic > 55)) {
+    if (!(face->style_flags & FT_STYLE_FLAG_ITALIC) && (font->desc.italic > 55))
         FT_GlyphSlot_Oblique(face->glyph);
-    }
-
-    if (font->desc.bold > ass_face_get_weight(face) + 150) {
+    if (font->desc.bold > ass_face_get_weight(face) + 150)
         ass_glyph_embolden(face->glyph);
-    }
-    error = FT_Get_Glyph(face->glyph, &glyph);
-    if (error) {
-        ass_msg(font->library, MSGL_WARN, "Error loading glyph, index %d",
-                index);
-        return 0;
-    }
-
-    // Rotate glyph, if needed
-    if (deco & DECO_ROTATE) {
-        FT_Matrix m = { 0, double_to_d16(-1.0), double_to_d16(1.0), 0 };
-        TT_OS2 *os2 = FT_Get_Sfnt_Table(face, ft_sfnt_os2);
-        int desc = 0;
-
-        if (os2)
-            desc = FT_MulFix(os2->sTypoDescender, face->size->metrics.y_scale);
-
-        FT_Outline_Translate(&((FT_OutlineGlyph) glyph)->outline, 0, -desc);
-        FT_Outline_Transform(&((FT_OutlineGlyph) glyph)->outline, &m);
-        FT_Outline_Translate(&((FT_OutlineGlyph) glyph)->outline,
-                             face->glyph->metrics.vertAdvance, desc);
-        glyph->advance.x = face->glyph->linearVertAdvance;
-    }
-
-    ass_strike_outline_glyph(face, font, glyph, deco & DECO_UNDERLINE,
-                             deco & DECO_STRIKETHROUGH);
-
-    return glyph;
+    return true;
 }
 
 /**
@@ -619,4 +507,89 @@ void ass_font_clear(ASS_Font *font)
             FT_Done_Face(font->faces[i]);
     }
     free((char *) font->desc.family.str);
+}
+
+/**
+ * \brief Convert glyph into ASS_Outline according to decoration flags
+ **/
+bool ass_get_glyph_outline(ASS_Outline *outline, int32_t *advance,
+                           FT_Face face, unsigned flags)
+{
+    int32_t y_scale = face->size->metrics.y_scale;
+    int32_t adv = face->glyph->advance.x;
+    if (flags & DECO_ROTATE)
+        adv = d16_to_d6(face->glyph->linearVertAdvance);
+    *advance = adv;
+
+    int n_lines = 0;
+    int32_t line_y[2][2];
+    if (adv > 0 && (flags & DECO_UNDERLINE)) {
+        TT_Postscript *ps = FT_Get_Sfnt_Table(face, ft_sfnt_post);
+        if (ps && ps->underlinePosition <= 0 && ps->underlineThickness > 0) {
+            int64_t pos  = ((int64_t) ps->underlinePosition  * y_scale + 0x8000) >> 16;
+            int64_t size = ((int64_t) ps->underlineThickness * y_scale + 0x8000) >> 16;
+            pos = -pos - (size >> 1);
+            if (pos >= -OUTLINE_MAX && pos + size <= OUTLINE_MAX) {
+                line_y[n_lines][0] = pos;
+                line_y[n_lines][1] = pos + size;
+                n_lines++;
+            }
+        }
+    }
+    if (adv > 0 && (flags & DECO_STRIKETHROUGH)) {
+        TT_OS2 *os2 = FT_Get_Sfnt_Table(face, ft_sfnt_os2);
+        if (os2 && os2->yStrikeoutPosition >= 0 && os2->yStrikeoutSize > 0) {
+            int64_t pos  = ((int64_t) os2->yStrikeoutPosition * y_scale + 0x8000) >> 16;
+            int64_t size = ((int64_t) os2->yStrikeoutSize     * y_scale + 0x8000) >> 16;
+            pos = -pos - (size >> 1);
+            if (pos >= -OUTLINE_MAX && pos + size <= OUTLINE_MAX) {
+                line_y[n_lines][0] = pos;
+                line_y[n_lines][1] = pos + size;
+                n_lines++;
+            }
+        }
+    }
+
+    assert(face->glyph->format == FT_GLYPH_FORMAT_OUTLINE);
+    FT_Outline *source = &face->glyph->outline;
+    if (!source->n_points && !n_lines) {
+        outline_clear(outline);
+        return true;
+    }
+
+    size_t max_points = 2 * source->n_points + 4 * n_lines;
+    size_t max_segments = source->n_points + 4 * n_lines;
+    if (!outline_alloc(outline, max_points, max_segments))
+        return false;
+
+    if (!outline_convert(outline, source))
+        goto fail;
+
+    if (flags & DECO_ROTATE) {
+        TT_OS2 *os2 = FT_Get_Sfnt_Table(face, ft_sfnt_os2);
+        int64_t desc = 0;
+        if (os2) {
+            desc = ((int64_t) os2->sTypoDescender * y_scale + 0x8000) >> 16;
+            if (llabs(desc) > 2 * OUTLINE_MAX)
+                goto fail;
+        }
+        int64_t dv = face->glyph->metrics.vertAdvance + desc;
+        if (llabs(dv) > 2 * OUTLINE_MAX)
+            goto fail;
+        ASS_Vector offs = { dv, -desc };
+        if (!outline_rotate_90(outline, offs))
+            goto fail;
+    }
+
+    if (!n_lines)
+        return true;
+    FT_Orientation dir = FT_Outline_Get_Orientation(source);
+    int iy = (dir == FT_ORIENTATION_TRUETYPE ? 0 : 1);
+    for (int i = 0; i < n_lines; i++)
+        outline_add_rect(outline, 0, line_y[i][iy], adv, line_y[i][iy ^ 1]);
+    return true;
+
+fail:
+    outline_free(outline);
+    return false;
 }

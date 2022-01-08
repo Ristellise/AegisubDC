@@ -24,7 +24,7 @@
 #include <stdarg.h>
 #include "ass_types.h"
 
-#define LIBASS_VERSION 0x01501000
+#define LIBASS_VERSION 0x01502000
 
 #ifdef __cplusplus
 extern "C" {
@@ -714,6 +714,9 @@ void ass_clear_fonts(ASS_Library *library);
  * \return timeshift in milliseconds
  */
 long long ass_step_sub(ASS_Track *track, long long now, int movement);
+
+#undef ASS_DEPRECATED
+#undef ASS_DEPRECATED_ENUM
 
 #ifdef __cplusplus
 }

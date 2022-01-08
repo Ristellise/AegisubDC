@@ -363,6 +363,7 @@ static int process_event_tail(ASS_Track *track, ASS_Event *event,
         NEXT(p, token);
 
         ALIAS(End, Duration)    // temporarily store end timecode in event->Duration
+        ALIAS(Actor, Name)      // both variants are used in files
         PARSE_START
             INTVAL(Layer)
             STYLEVAL(Style)
@@ -579,6 +580,14 @@ static int process_style(ASS_Track *track, char *str)
 
 static bool format_line_compare(const char *fmt1, const char *fmt2)
 {
+#define TOKEN_ALIAS1(token, name, alias) \
+    if (token ## _end - token ## _start == sizeof( #alias ) - 1 &&     \
+            !strncmp(token ## _start, #alias, sizeof( #alias ) - 1)) { \
+        token ## _start = #name;                                       \
+        token ## _end = token ## _start + sizeof( #name ) - 1;         \
+    }
+#define TOKEN_ALIAS(name, alias) TOKEN_ALIAS1(tk1, name, alias) TOKEN_ALIAS1(tk2, name, alias)
+
     while (true) {
         const char *tk1_start, *tk2_start;
         const char *tk1_end, *tk2_end;
@@ -591,12 +600,16 @@ static bool format_line_compare(const char *fmt1, const char *fmt2)
         advance_token_pos(&fmt1, &tk1_start, &tk1_end);
         advance_token_pos(&fmt2, &tk2_start, &tk2_end);
 
+        TOKEN_ALIAS(Name, Actor)
         if ((tk1_end-tk1_start) != (tk2_end-tk2_start))
             return false;
         if (ass_strncasecmp(tk1_start, tk2_start, tk1_end-tk1_start))
             return false;
     }
     return *fmt1 == *fmt2;
+
+#undef TOKEN_ALIAS
+#undef TOKEN_ALIAS1
 }
 
 
@@ -1522,17 +1535,33 @@ fail:
 
 int ass_track_set_feature(ASS_Track *track, ASS_Feature feature, int enable)
 {
+    if (feature >= sizeof(track->parser_priv->feature_flags) * CHAR_BIT || feature < 0)
+        return -1;
+
+    // all supported non-meta features
+    static const uint32_t supported =
+#ifdef USE_FRIBIDI_EX_API
+        FEATURE_MASK(ASS_FEATURE_BIDI_BRACKETS) |
+#endif
+        0;
+    uint32_t requested = 0;
+
     switch (feature) {
     case ASS_FEATURE_INCOMPATIBLE_EXTENSIONS:
-        //-fallthrough
-#ifdef USE_FRIBIDI_EX_API
-    case ASS_FEATURE_BIDI_BRACKETS:
-        track->parser_priv->bidi_brackets = !!enable;
-#endif
-        return 0;
+        requested = supported;
+        break;
     default:
-        return -1;
+        if (!(FEATURE_MASK(feature) & supported))
+            return -1;
+        requested = FEATURE_MASK(feature);
     }
+
+    if (enable)
+        track->parser_priv->feature_flags |= requested;
+    else
+        track->parser_priv->feature_flags &= ~requested;
+
+    return 0;
 }
 
 /**

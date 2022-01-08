@@ -30,6 +30,18 @@
 #include "ass_outline.h"
 #include "ass_cache.h"
 
+// Always enable native-endian mode, since we don't care about cross-platform consistency of the hash
+#define WYHASH_LITTLE_ENDIAN 1
+#include "wyhash.h"
+
+// With wyhash any arbitrary 64 bit value will suffice
+#define ASS_HASH_INIT 0xb3e46a540bd36cd4ULL
+
+static inline ass_hashcode ass_hash_buf(const void *buf, size_t len, ass_hashcode hval)
+{
+    return wyhash(buf, len, hval, _wyp);
+}
+
 // type-specific functions
 // create hash/compare functions for bitmap, outline and composite cache
 #define CREATE_HASH_FUNCTIONS
@@ -99,7 +111,7 @@ const CacheDesc bitmap_cache_desc = {
 
 
 // composite cache
-static uint32_t composite_hash(void *key, uint32_t hval)
+static ass_hashcode composite_hash(void *key, ass_hashcode hval)
 {
     CompositeHashKey *k = key;
     hval = filter_hash(&k->filter, hval);
@@ -166,7 +178,7 @@ const CacheDesc composite_cache_desc = {
 
 
 // outline cache
-static uint32_t outline_hash(void *key, uint32_t hval)
+static ass_hashcode outline_hash(void *key, ass_hashcode hval)
 {
     OutlineHashKey *k = key;
     switch (k->type) {
@@ -342,7 +354,7 @@ void *ass_cache_get(Cache *cache, void *key, void *priv)
 {
     const CacheDesc *desc = cache->desc;
     size_t key_offs = CACHE_ITEM_SIZE + align_cache(desc->value_size);
-    unsigned bucket = desc->hash_func(key, FNV1_32A_INIT) % cache->buckets;
+    unsigned bucket = desc->hash_func(key, ASS_HASH_INIT) % cache->buckets;
     CacheItem *item = cache->map[bucket];
     while (item) {
         if (desc->compare_func(key, (char *) item + key_offs)) {

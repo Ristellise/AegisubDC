@@ -48,6 +48,8 @@
 
 #define ASS_PI 3.14159265358979323846
 
+#define FEATURE_MASK(feat) (((uint32_t) 1) << (feat))
+
 #if (defined(__i386__) || defined(__x86_64__)) && CONFIG_ASM
 int has_sse2(void);
 int has_avx(void);
@@ -180,28 +182,6 @@ static inline double d22_to_double(int x)
 static inline int double_to_d22(double x)
 {
     return lrint(x * 0x400000);
-}
-
-#define FNV1_32A_INIT 0x811c9dc5U
-#define FNV1_32A_PRIME 16777619U
-
-static inline uint32_t fnv_32a_buf(const void *buf, size_t len, uint32_t hval)
-{
-    if (!len)
-        return hval;
-
-    const uint8_t *bp = buf;
-    size_t n = (len + 3) / 4;
-
-    switch (len % 4) {
-    case 0: do { hval ^= *bp++; hval *= FNV1_32A_PRIME; //-fallthrough
-    case 3:      hval ^= *bp++; hval *= FNV1_32A_PRIME; //-fallthrough
-    case 2:      hval ^= *bp++; hval *= FNV1_32A_PRIME; //-fallthrough
-    case 1:      hval ^= *bp++; hval *= FNV1_32A_PRIME;
-               } while (--n > 0);
-    }
-
-    return hval;
 }
 
 static inline int mystrtoi(char **p, int *res)
