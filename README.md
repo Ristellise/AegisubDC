@@ -55,15 +55,6 @@ Open the newly created `bin/moonscript.lua`, and within it make the following ch
 
 The file is now ready for use, to be placed in `automation/include` within the Aegisub repo.
 
-## Expanding the Git history
-
-The Git history of this project is truncated.
-To fetch and graft the remaining history, run the following command (replace `origin` with the appropriate remote name as necessary):
-
-```sh
-git fetch origin "+refs/replace/*:refs/replace/*"
-```
-
 ## License
 
 All files in this repository are licensed under various GPL-compatible BSD-style licenses; see LICENCE and the individual source files for more information.

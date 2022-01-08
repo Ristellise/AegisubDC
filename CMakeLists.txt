@@ -105,7 +105,7 @@ add_custom_command(
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/vendor/luajit/src
 )
 
-add_library(luajit STATIC
+add_library(luajit SHARED
     vendor/luajit/src/lib_base.c
     vendor/luajit/src/lib_math.c
     vendor/luajit/src/lib_bit.c
@@ -183,7 +183,7 @@ add_library(luajit STATIC
     "${CMAKE_CURRENT_BINARY_DIR}/vendor/luajit/src/gen/lj_libdef.h"
     # "${CMAKE_CURRENT_BINARY_DIR}/vendor/luajit/src/jit/vmdef.lua"
 )
-target_compile_definitions(luajit PRIVATE LUAJIT_ENABLE_LUA52COMPAT)
+target_compile_definitions(luajit PRIVATE LUAJIT_ENABLE_LUA52COMPAT LUA_BUILD_AS_DLL)
 target_include_directories(luajit PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/vendor/luajit/src/gen" PUBLIC "vendor/luajit/src")
 if(WIN32)
     target_sources(luajit PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/vendor/luajit/src/lj_vm.obj")
