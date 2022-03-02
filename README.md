@@ -2,6 +2,10 @@
 
 This is basically a patched wangqr build to include latest libraries et all.
 
+### Maintaince Notice
+
+This project is considered **unmaintained**, due to developer's lack of time and motivation.  
+
 ### Changes
 - Updated all dependencies
 - Includes harfbuzz wich shows correct zalgo text
