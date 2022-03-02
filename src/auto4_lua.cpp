@@ -491,7 +491,7 @@ namespace {
 		set_field<lua_set_status_text>(L, "set_status_text");
 
 		// store aegisub table to globals
-		lua_settable(L, LUA_GLOBALSINDEX);
+		lua_pushglobaltable(L);
 		stackcheck.check_stack(0);
 
 		// load user script
