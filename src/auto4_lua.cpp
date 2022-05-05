@@ -51,6 +51,7 @@
 #include "selection_controller.h"
 #include "subs_controller.h"
 #include "video_controller.h"
+#include "video_frame.h"
 #include "utils.h"
 
 #include <libaegisub/dispatch.h>
@@ -197,6 +198,34 @@ namespace {
 			lua_pushnil(L);
 			return 1;
 		}
+	}
+
+	int get_pixel_value(lua_State *L)
+	{
+		const agi::Context *c = get_context(L);
+		int y = lua_tointeger(L, -1);
+		lua_pop(L, 1);
+		int x = lua_tointeger(L, -1);
+		lua_pop(L, 1);
+		int frameNumber = lua_tointeger(L, -1);
+		lua_pop(L, 1);
+		if (c && c->project->Timecodes().IsLoaded()) {
+			std::shared_ptr<VideoFrame> frame = c->videoController->GetFrame(frameNumber);
+
+			if (x < frame->width && y < frame->height) {
+				int pos = (frame->width * y + x)*4;
+
+				// Color expects RGBA, VideoFrames are stored in BGRA.
+				agi::Color* color = new agi::Color(frame->data[pos+2], frame->data[pos+1], frame->data[pos], frame->data[pos+3]);
+				push_value(L, color->GetAssOverrideFormatted());
+			} else {
+				lua_pushnil(L);
+			}
+		} else {
+			lua_pushnil(L);
+		}
+
+		return 1;
 	}
 
 	int get_keyframes(lua_State *L)
@@ -489,6 +518,15 @@ namespace {
 		set_field<project_properties>(L, "project_properties");
 		set_field<lua_get_audio_selection>(L, "get_audio_selection");
 		set_field<lua_set_status_text>(L, "set_status_text");
+
+		// store aegisub table to globals
+		lua_settable(L, LUA_GLOBALSINDEX);
+		stackcheck.check_stack(0);
+
+		// make "aegisubdc" table
+		lua_pushstring(L, "aegisubdc");
+		lua_createtable(L, 0, 1);
+		set_field<get_pixel_value>(L, "get_pixel_value");
 
 		// store aegisub table to globals
 		lua_settable(L, LUA_GLOBALSINDEX);
