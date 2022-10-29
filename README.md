@@ -1,3 +1,8 @@
+# Notice
+I will no longer be maintaining AegisubDC as there has been a much better alternative: over at [here (arch1t3cht/Aegisub)](https://github.com/arch1t3cht/Aegisub)
+
+No support will be provided. The repo will be locked and frozen.
+
 # Aegisub [Daydream Cafe] Edition
 
 This is basically a patched wangqr build to include latest libraries et all.
